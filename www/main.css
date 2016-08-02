@@ -2,10 +2,10 @@
 html{font-size:100%;}
 
 /* landscape phone and portrait tablet */
-@media(max-width:59.9999em){html{font-size: 70%}}
+@media(max-width:60em){html{font-size: 70%}}
 
 /* portrait phone */
-@media(max-width:29.9999em){html{font-size: 45%}}
+@media(max-width:30em){html{font-size: 45%}}
 
 body, div#page {
   margin: 0px;
@@ -33,7 +33,7 @@ span.out {
   color: white;
 }
 
-div#cmd {
+div#in {
   position: fixed;
   bottom: 0px;
   width: 100%;
