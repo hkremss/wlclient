@@ -129,15 +129,12 @@ function writeServerData(buf) {
 
   for(var i=0; i<lines.length; i++) {
 
-    // Don't replace double spaces!
-    var line = lines[i]; //.replace(/\s\s/g, '&nbsp;');
-    if(i < lines.length-1) line += '<br/>';
+    var line = lines[i];
 
-    // Don't eat the prompt!
-    // var len = line.length;
-    // if(len>=2 && line.substr(len-2) == '> ') line = line.substr(0, line-2) + '<br/>';
-
+    line = ansi_up.escape_for_html(line);
     line = ansi_up.ansi_to_html(line);
+
+    if(i < lines.length-1) line += '<br/>';
 
     writeToScreen(line);
   }
@@ -161,6 +158,15 @@ function adjustLayout() {
 $(window).resize(adjustLayout);
 
 $(document).ready(function(){
+
+  // show help text
+  jQuery.get('/help.txt', function(data) {
+    var lines = data.split('\n');
+    for(var i=0; i<lines.length; i++) {
+      writeToScreen(lines[i] + '<br/>');
+    }
+  });
+
   // websocket
   var sock = io.connect();
   sock.on('stream', function(buf){

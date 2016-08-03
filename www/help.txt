@@ -1,0 +1,6 @@
+
+Wunderland Web Client
+~~~~~~~~~~~~~~~~~~~~~~
+Basierend auf Mudchinas <a href="https://github.com/mudchina/webtelnet" target="_blank">WebTelnet</a> und Dru Nelsons <a href="https://github.com/drudru/ansi_up" target="_blank">ansi_up</a> Javascript library.
+(MIT Lizenz)
+
