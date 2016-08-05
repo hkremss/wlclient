@@ -14,6 +14,7 @@ function writeToScreen(str) {
   var out = $('div#out');
   out.append('<span class="out">' + str + '</span>');
   out.scrollTop(out.prop("scrollHeight"));
+  while(out.children().length>5000) out.children().first().remove();
 }
 
 // New: Telnet negotiations (Holger).
