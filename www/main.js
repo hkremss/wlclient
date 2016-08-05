@@ -1,3 +1,14 @@
+// Split the query-string into key-value pairs and return a map.
+// Stolen from: http://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
+function parseQuery(qstr) {
+  var query = {};
+  var a = qstr.substr(1).split('&');
+  for (var i = 0; i < a.length; i++) {
+     var b = a[i].split('=');
+     query[decodeURIComponent(b[0])] = decodeURIComponent(b[1] || '');
+  }
+  return query;
+}
 
 function writeToScreen(str) {
   var out = $('div#out');
@@ -158,6 +169,13 @@ function adjustLayout() {
 $(window).resize(adjustLayout);
 
 $(document).ready(function(){
+
+  // adjust colors
+  var queryParams=parseQuery(document.location.search);
+  var bgColor = queryParams['bg'];
+  if(bgColor!=null) { $(this).get(0).body.style.backgroundColor='#'+bgColor; }
+  var fgColor = queryParams['fg'];
+  if(fgColor!=null){ $(this).get(0).body.style.color='#'+fgColor; }
 
   // show help text
   jQuery.get('/help.txt', function(data) {

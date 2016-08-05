@@ -12,8 +12,12 @@ body, div#page {
   padding: 0px;
   width: 100%;
   height: 100%;
-  background-color: #000000;
   font-family: Fixed, monospace;
+}
+
+body {
+  color: white;
+  background-color: #000000;
 }
 
 div#out {
@@ -30,7 +34,6 @@ span.out {
   word-wrap: break-word;
   line-height:100%;
   font-family: Fixed, monospace;
-  color: white;
 }
 
 div#in {
