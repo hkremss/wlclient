@@ -17,6 +17,16 @@ function writeToScreen(str) {
   while(out.children().length>5000) out.children().first().remove();
 }
 
+// New: GMCP support (Holger)
+function getGMCPHello(){
+  return 'Core.Hello { \"client\": \"WL@Web\", \"version\": \"1.0.0\" }';
+}
+
+function doGMCPReceive(sock, data) {
+  // handle JSON data here and update UI!
+  writeToScreen('GMCP: ' + data + '<br>');
+}
+
 // New: Telnet negotiations (Holger).
 function doTelnetNegotions(sock, buf) {
 
@@ -37,6 +47,7 @@ function doTelnetNegotions(sock, buf) {
   var TELOPT_LINEMODE = '\x22'; // 34
   var TELOPT_XDISPLOC = '\x23'; // 35
   var TELOPT_ENVIRON  = '\x24'; // 36
+  var TELOPT_GMCP     = '\xc9'; // 201 -> http://www.gammon.com.au/gmcp
 
   var strippedBuf = '';
   var len = buf.length;
@@ -104,6 +115,14 @@ function doTelnetNegotions(sock, buf) {
                 if(sock) sock.emit('stream', IAC+DO+TELOPT_ECHO);
 //                strippedBuf+='[respond: IAC DO ECHO]\n';
                 break;
+              case TELOPT_GMCP:
+                // use GMCP
+//                strippedBuf+='[receive: IAC WILL GMCP]\n';
+                if(sock) sock.emit('stream', IAC+DO+TELOPT_GMCP);
+//                strippedBuf+='[respond: IAC DO GMCP]\n';
+		if(sock) sock.emit('stream', IAC+SB+TELOPT_GMCP+getGMCPHello()+IAC+SE);
+//                strippedBuf+='[respond: IAC SB GMCP \''+getGMCPHello()+'\' IAC SE]\n';
+		break;
               default:
                 // we DONT accept anything else. So just reply all WILL by DONT
 //                strippedBuf+='[receive: IAC WILL ('+buf.charCodeAt(newIacIdx+2)+')]\n';
@@ -116,7 +135,13 @@ function doTelnetNegotions(sock, buf) {
           case SB:
             var endSubNegIdx=buf.indexOf(SE, newIacIdx+2);
             if(endSubNegIdx>0){
-              strippedBuf+='[receive IAC SB ... SE]\n';
+              if (buf[newIacIdx+2]==TELOPT_GMCP){
+                // Received GMCP message!
+                doGMCPReceive(sock, buf.substr(newIacIdx+3, endSubNegIdx-(newIacIdx+4)));
+              }
+              else {
+//                strippedBuf+='[receive IAC SB ... SE]\n';
+              }
               oldIacIdx = endSubNegIdx+1;
             }
             break;
