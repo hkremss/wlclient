@@ -28,16 +28,70 @@ function getGMCPHello(){
 }
 
 function doGMCPReceive(sock, data) {
-  // handle JSON data here and update UI!
-  writeToScreen('GMCP: ' + data + '<br>');
+  if(data.length>0) {
+
+    // handle JSON data here and update UI!
+    //writeToScreen('GMCP: ' + data + '<br>');
+
+    var module = data.split(' ', 1)[0];
+    var payload = data.substr(module.length);
   
-  // wenn data ist module 'Char.Vitals' {
-  //   var hp = extrahiere das irgendwie aus 'data'
-  //   $('span#hp.info').text(pad(hp, ' ', 3));
-  //   var max_hp = extrahiere das irgendwie aus 'data'
-  //   $('span#max_hp.info').text(pad(max_hp, ' ', 3));
-  // }
- 
+    if(module=='Char.Vitals') {
+      //writeToScreen('GMCP: Char.Vitals!<br>');
+      var values = JSON.parse(payload);
+
+      // XP
+      if('xp' in values){
+        $('span#xp.info').text(pad(values['xp'], ' ', 3));
+      }
+
+      // HP
+      if('hp' in values){
+        $('span#hp.info').text(pad(values['hp'], ' ', 3));
+      }
+      if('max_hp' in values){
+        $('span#max_hp.info').text(pad(values['max_hp'], ' ', 3));
+      }
+
+      // SP
+      if('sp' in values){
+        $('span#sp.info').text(pad(values['sp'], ' ', 3));
+      }
+      if('max_sp' in values){
+        $('span#max_sp.info').text(pad(values['max_sp'], ' ', 3));
+      }
+
+      // QP
+      if('qp' in values){
+        $('span#qp.info').text(pad(values['qp'], ' ', 3));
+      }
+      if('max_qp' in values){
+        $('span#max_qp.info').text(pad(values['max_qp'], ' ', 3));
+      }
+
+      // Wimpy
+      if('wimpy' in values){
+        $('span#wimpy.info').text(pad(values['wimpy'], ' ', 3));
+      }
+      if('wimpy_dir' in values){
+        $('span#wimpy_dir.info').text(pad(values['wimpy_dir'], ' ', 3));
+      }
+
+      // INT, STR, DEX, CON
+      if('int' in values){
+        $('span#int.info').text(pad(values['int'], ' ', 3));
+      }
+      if('str' in values){
+        $('span#str.info').text(pad(values['str'], ' ', 3));
+      }
+      if('dex' in values){
+        $('span#dex.info').text(pad(values['dex'], ' ', 3));
+      }
+      if('con' in values){
+        $('span#con.info').text(pad(values['con'], ' ', 3));
+      }
+    }
+  } 
 }
 
 // New: Telnet negotiations (Holger).
