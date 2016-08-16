@@ -1,28 +1,41 @@
-/* desktop browsers */
-html{font-size:100%;}
+/* full size desktop browsers */
+html{font-size:100%;} #in{width:900px;} #info{width:300px;display:inline;} #page{width:1200px;left:50%;margin-left:-600px;}
+
+/* bigger desktop browsers */
+@media(max-width:76em){html{font-size: 70%;} #in{width:600px;} #info{width:300px;display:inline;} #page{width:900px;left:50%;margin-left:-450px;}}
 
 /* landscape phone and portrait tablet */
-@media(max-width:60em){html{font-size: 70%}}
+@media(max-width:57em){html{font-size: 45%;} #in{width:400px;} #info{width:300px;display:inline;} #page{width:700px;left:50%;margin-left:-350px;}}
 
-/* portrait phone */
-@media(max-width:30em){html{font-size: 45%}}
+/* portrait phone (< 480px) */
+@media screen and (max-width:44em) {html{font-size: 45%;} #in{width:400px;} #info{width:0;display:none;} #page{width:400px;left:0;margin:0;}}
 
-body, div#page {
+body {
   margin: 0px;
   padding: 0px;
   width: 100%;
   height: 100%;
   font-family: Fixed, monospace;
-}
-
-body {
   color: white;
   background-color: #000000;
+}
+
+div#page {
+  position:absolute;
+  top:0;
+  bottom:0;
+/*  margin-left:-25%;*/
+/*  left:50%;*/
+  padding: 0px;
+/*  width: 800px;
+  height: 100%; */
+  font-family: Fixed, monospace;
 }
 
 div#out {
   margin: 0px;
   padding: 0px;
+  float:left;
   overflow-y: scroll;
  /* overflow-x: scroll; */
   border: 1px solid gray; 
@@ -36,10 +49,36 @@ span.out {
   font-family: Fixed, monospace;
 }
 
+div#info {
+  position:absolute;
+  top:0;
+  bottom:0px; //36px;
+  right:0;
+/*  width:300px;*/
+  padding: 0;
+  color: black;
+  white-space:pre;
+  font-size:small;
+/*  background-color:white;
+  border-color: black;
+  border-style: dashed;
+  border-width: 2px; */
+  background-color:#ffeeaa;
+  border-color: #aa9977;
+  border-style: outset;
+  border-width: 2px;
+}
+
+span.info {
+  word-wrap: break-word;
+  padding: 0px 4px;
+  font-family: Fixed, monospace;
+}
+
 div#in {
   position: fixed;
   bottom: 0px;
-  width: 100%;
+  /*width: 100%;*/
   padding: 0px;
   margin: 0px;
 }

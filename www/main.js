@@ -17,6 +17,11 @@ function writeToScreen(str) {
   while(out.children().length>5000) out.children().first().remove();
 }
 
+function pad (str, pad_str, max) {
+  str = str.toString();
+  return str.length < max ? pad(pad_str.toString() + str, max) : str;
+}
+
 // New: GMCP support (Holger)
 function getGMCPHello(){
   return 'Core.Hello { \"client\": \"WL@Web\", \"version\": \"1.0.0\" }';
@@ -25,6 +30,14 @@ function getGMCPHello(){
 function doGMCPReceive(sock, data) {
   // handle JSON data here and update UI!
   writeToScreen('GMCP: ' + data + '<br>');
+  
+  // wenn data ist module 'Char.Vitals' {
+  //   var hp = extrahiere das irgendwie aus 'data'
+  //   $('span#hp.info').text(pad(hp, ' ', 3));
+  //   var max_hp = extrahiere das irgendwie aus 'data'
+  //   $('span#max_hp.info').text(pad(max_hp, ' ', 3));
+  // }
+ 
 }
 
 // New: Telnet negotiations (Holger).
@@ -178,18 +191,27 @@ function writeServerData(buf) {
 }
 
 function adjustLayout() {
-  var w = $(window).width(), h = $(window).height();
+
+  var w = $('div#page').width(), h = $('div#page').height();
   var w0 = $('div#in').width();
   var w1 = $('button#send').outerWidth(true);
   var w2 = $('button#clear').outerWidth(true);
-  $('input#cmd').css({
-    width: (w0 - (w1+w2+14)) + 'px',
+  var w3 = $('div#info').width();
+  $('div#in').css({
+    width: (w-(w3+6)) + 'px',
   });
+  $('input#cmd').css({
+    width: (w0 - (w1+w2+14+4)) + 'px',
+  });
+    
+  //writeToScreen('w -> ' + w + 'px w0 -> '+w0+'px w1 -> '+w1+'px w2 -> '+w2+'px w3 -> '+w3+'\n');
+  
   var h0 = $('div#in').outerHeight(true);
   $('div#out').css({
-    width: (w-2) + 'px',
+    width: (w-(w3+6)) + 'px',
     height: (h - h0 -2) + 'px',
   });
+
 }
 
 $(window).resize(adjustLayout);
@@ -200,8 +222,10 @@ $(document).ready(function(){
   var queryParams=parseQuery(document.location.search);
   var bgColor = queryParams['bg'];
   if(bgColor!=null) { $(this).get(0).body.style.backgroundColor='#'+bgColor; }
+//  if(bgColor!=null) { $('div#out').get(0).style.backgroundColor='#'+bgColor; }
   var fgColor = queryParams['fg'];
   if(fgColor!=null){ $(this).get(0).body.style.color='#'+fgColor; }
+//  if(fgColor!=null){ $('div#out').get(0).style.color='#'+fgColor; }
 
   // show help text
   jQuery.get('/help.txt', function(data) {
