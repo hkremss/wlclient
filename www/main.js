@@ -31,7 +31,7 @@ function doGMCPReceive(sock, data) {
   if(data.length>0) {
 
     // handle JSON data here and update UI!
-    //writeToScreen('GMCP: ' + data + '<br>');
+    writeToScreen('GMCP: ' + data + '<br>');
 
     var module = data.split(' ', 1)[0];
     var payload = data.substr(module.length);
@@ -62,33 +62,36 @@ function doGMCPReceive(sock, data) {
       }
 
       // QP
-      if('qp' in values){
-        $('span#qp.info').text(pad(values['qp'], ' ', 3));
+      if('questpoints' in values){
+        $('span#questpoints.info').text(pad(values['questpoints'], ' ', 3));
       }
-      if('max_qp' in values){
-        $('span#max_qp.info').text(pad(values['max_qp'], ' ', 3));
+      if('max_questpoints' in values){
+        $('span#max_questpoints.info').text(pad(values['max_questpoints'], ' ', 3));
       }
 
       // Wimpy
       if('wimpy' in values){
-        $('span#wimpy.info').text(pad(values['wimpy'], ' ', 3));
+        $('span#wimpy.info').text(values['wimpy']);
       }
       if('wimpy_dir' in values){
-        $('span#wimpy_dir.info').text(pad(values['wimpy_dir'], ' ', 3));
+        if(values['wimpy_dir']=='' || values['wimpy_dir']=='0')
+          $('span#wimpy_dir.info').text('keine');
+        else
+          $('span#wimpy_dir.info').text(values['wimpy_dir']);
       }
 
       // INT, STR, DEX, CON
       if('int' in values){
-        $('span#int.info').text(pad(values['int'], ' ', 3));
+        $('span#int.info').text(pad(values['int'], ' ', 2));
       }
       if('str' in values){
-        $('span#str.info').text(pad(values['str'], ' ', 3));
+        $('span#str.info').text(pad(values['str'], ' ', 2));
       }
       if('dex' in values){
-        $('span#dex.info').text(pad(values['dex'], ' ', 3));
+        $('span#dex.info').text(pad(values['dex'], ' ', 2));
       }
       if('con' in values){
-        $('span#con.info').text(pad(values['con'], ' ', 3));
+        $('span#con.info').text(pad(values['con'], ' ', 2));
       }
     }
   } 
