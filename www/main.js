@@ -31,7 +31,7 @@ function doGMCPReceive(sock, data) {
   if(data.length>0) {
 
     // handle JSON data here and update UI!
-    writeToScreen('GMCP: ' + data + '<br>');
+    //writeToScreen('GMCP: ' + data + '<br>');
 
     var module = data.split(' ', 1)[0];
     var payload = data.substr(module.length);
