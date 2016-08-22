@@ -5,10 +5,11 @@ html{font-size:100%;} #in{width:900px;} #info{width:300px;display:inline;} #page
 @media(max-width:76em){html{font-size: 70%;} #in{width:600px;} #info{width:300px;display:inline;} #page{width:900px;left:50%;margin-left:-450px;}}
 
 /* landscape phone and portrait tablet */
-@media(max-width:57em){html{font-size: 45%;} #in{width:400px;} #info{width:300px;display:inline;} #page{width:700px;left:50%;margin-left:-350px;}}
+/*@media(max-width:56em){html{font-size: 45%;} #in{width:360px;} #info{width:280px;display:inline;} #page{width:640px;left:50%;margin-left:-350px;}}*/
+@media(max-width:56em){html{font-size: 45%;} #in{width:360px;} #info{width:280px;display:inline;} #page{width:640px;left:0;margin:0;}}
 
 /* portrait phone (< 480px) */
-@media screen and (max-width:44em) {html{font-size: 45%;} #in{width:400px;} #info{width:0;display:none;} #page{width:400px;left:0;margin:0;}}
+@media screen and (max-width:35em) {html{font-size: 45%;} #in{width:360px;} #info{width:0;display:none;} #page{width:360px;left:0;margin:0;}}
 
 body {
   margin: 0px;

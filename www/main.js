@@ -37,7 +37,6 @@ function doGMCPReceive(sock, data) {
     var payload = data.substr(module.length);
   
     if(module=='Char.Vitals') {
-      //writeToScreen('GMCP: Char.Vitals!<br>');
       var values = JSON.parse(payload);
 
       // XP
@@ -92,6 +91,22 @@ function doGMCPReceive(sock, data) {
       }
       if('con' in values){
         $('span#con.info').text(pad(values['con'], ' ', 2));
+      }
+    }
+    if(module=='Room.Info') {
+      var values = JSON.parse(payload);
+
+      // name
+      if('name' in values){
+        $('span#room_name').text(values['name']);
+      }
+
+      // image
+      if('image' in values){
+        if(values['image']=='')
+          $('img#room_image').attr('src', 'img/aaa_no_signal.png');
+        else
+          $('img#room_image').attr('src', values['image']);
       }
     }
   } 
