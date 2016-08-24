@@ -31,7 +31,7 @@ function doGMCPReceive(sock, data) {
   if(data.length>0) {
 
     // handle JSON data here and update UI!
-    //writeToScreen('GMCP: ' + data + '<br>');
+    writeToScreen('GMCP: ' + data + '<br>');
 
     var module = data.split(' ', 1)[0];
     var payload = data.substr(module.length);
@@ -93,6 +93,7 @@ function doGMCPReceive(sock, data) {
         $('span#con.info').text(pad(values['con'], ' ', 2));
       }
     }
+
     if(module=='Room.Info') {
       var values = JSON.parse(payload);
 
@@ -101,12 +102,28 @@ function doGMCPReceive(sock, data) {
         $('span#room_name').text(values['name']);
       }
 
+      // Modify this line, if you need a different base URL
+      // or leave it blank to use a pure relative path.
+      var staticContentBase = 'http://wl.mud.de/webclient/';
+
       // image
       if('image' in values){
-        if(values['image']=='')
-          $('img#room_image').attr('src', 'img/aaa_no_signal.png');
-        else
-          $('img#room_image').attr('src', values['image']);
+        var img_a = $('a#room_image_a');
+        var img = $('img#room_image');
+        if(values['image']=='') {
+          img.attr('src', staticContentBase + 'img/aaa_no_signal.png');
+          img.attr('alt', 'Bildstoerung');
+          img_a.attr('href', staticContentBase + 'img/aaa_no_signal.png');
+          img_a.attr('data-title', 'Bildstoerung');
+        }
+        else {
+          img.attr('src', staticContentBase + values['image']);
+          img_a.attr('href', staticContentBase + values['image']);
+          if('name' in values) {
+            img.attr('alt', values['name']);
+            img_a.attr('data-title', values['name']);
+          }
+        }
       }
     }
   } 
