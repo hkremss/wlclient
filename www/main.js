@@ -19,7 +19,7 @@ function writeToScreen(str) {
 
 function pad (str, pad_str, max) {
   str = str.toString();
-  return str.length < max ? pad(pad_str.toString() + str, max) : str;
+  return str.length < max ? pad(pad_str.toString() + str, pad_str, max) : str;
 }
 
 // New: GMCP support (Holger)
@@ -31,7 +31,7 @@ function doGMCPReceive(sock, data) {
   if(data.length>0) {
 
     // handle JSON data here and update UI!
-    writeToScreen('GMCP: ' + data + '<br>');
+    //writeToScreen('GMCP: ' + data + '<br>');
 
     var module = data.split(' ', 1)[0];
     var payload = data.substr(module.length);
@@ -41,7 +41,7 @@ function doGMCPReceive(sock, data) {
 
       // XP
       if('xp' in values){
-        $('span#xp.info').text(pad(values['xp'], ' ', 3));
+        $('span#xp.info').text(values['xp']);
       }
 
       // HP
@@ -70,7 +70,7 @@ function doGMCPReceive(sock, data) {
 
       // Wimpy
       if('wimpy' in values){
-        $('span#wimpy.info').text(values['wimpy']);
+        $('span#wimpy.info').text(pad(values['wimpy'], ' ', 3));
       }
       if('wimpy_dir' in values){
         if(values['wimpy_dir']=='' || values['wimpy_dir']=='0')
