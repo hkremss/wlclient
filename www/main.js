@@ -39,6 +39,27 @@ function doGMCPReceive(sock, data) {
 
     var module = data.split(' ', 1)[0];
     var payload = data.substr(module.length);
+
+    if(module=='Core.Ping') {
+      // This should be the response of our ping, so ignore it!
+      return;
+    }
+
+    if(module=='Core.Goodbye') {
+      // The server tells us, we will be disconnected now.
+      var value = JSON.parse(payload);
+
+      if(value!=0) {
+        $('span#room_name').text(value);
+      }
+
+      $('img#room_image').attr('src', staticContentBase + 'img/aaa_no_signal.jpg');
+      $('img#room_image').attr('alt', 'Bildstoerung');
+      $('a#room_image_a').attr('href', staticContentBase + 'img/aaa_no_signal.jpg');
+      $('a#room_image_a').attr('data-title', 'Bildstoerung');
+
+      return;
+    }
   
     if(module=='Char.Vitals') {
       var values = JSON.parse(payload);
@@ -96,6 +117,8 @@ function doGMCPReceive(sock, data) {
       if('con' in values){
         $('span#con.info').text(values['con']);
       }
+
+      return;
     }
 
     if(module=='Room.Info') {
@@ -129,6 +152,8 @@ function doGMCPReceive(sock, data) {
           }
         }
       }
+
+      return;
     }
   } 
 }
