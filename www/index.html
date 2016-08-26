@@ -44,11 +44,12 @@
   function bildstoerung(){
     var img_a = $('a#room_image_a');
     var img = $('img#room_image');
-    if(img.attr('src')!='img/aaa_no_signal.png') {
-      img.attr('src', 'img/aaa_no_signal.png');
-      img.attr('alt', 'Bildstoerung');
-      img_a.attr('href', 'img/aaa_no_signal.png');
-      img_a.attr('data-title', 'Bildstoerung');
+    var brokenPath = img.attr('src');
+    if(brokenPath!='img/aaa_no_signal.jpg') {
+      img.attr('src', 'img/aaa_no_signal.jpg');
+      img.attr('alt', 'Bildstoerung: ' + brokenPath + ' is broken!');
+      img_a.attr('href', 'img/aaa_no_signal.jpg');
+      img_a.attr('data-title', 'Bildstoerung: ' + brokenPath + ' is broken!');
     }
   }
   </script>
@@ -58,20 +59,47 @@
   <div id="page">
     <div id="out"></div>
     <div id="info">
-<span id="room_name" style="margin:0 auto;display:table;">--== Bildstoerung ==--</span>
-<a id="room_image_a" href="img/aaa_no_signal.png" data-lightbox="Images" data-title="--== Bildstoerung ==--">
-<img id="room_image" src="img/aaa_no_signal.png" onerror="bildstoerung();" alt="Bildstoerung" style="width:100%;height:auto;">
-</a>
-<br>
-<span class="info">Erfahrungspunkte : <span class="info" id="xp">?</span></span><br>
-<span class="info">Lebenspunkte     : <span class="info" id="hp">?  </span>  von  <span class="info" id="max_hp">?  </span></span><br>
-<span class="info">Magiepunkte      : <span class="info" id="sp">?  </span>  von  <span class="info" id="max_sp">?  </span></span><br>
-<span class="info">Abenteuerpunkte  : <span class="info" id="questpoints">?  </span>  von  <span class="info" id="max_questpoints">?  </span></span><br>
-<span class="info">Vorsichtsmodus   : <span class="info" id="wimpy">?</span></span><br>
-<span class="info">Fluchtrichtung   : <span class="info" id="wimpy_dir">?</span></span><br>
-<span class="info">--------------------------------</span><br>
-<span class="info"> I: <span class="info" id="int"> ?</span>   K: <span class="info" id="str"> ?</span>   G: <span class="info" id="dex"> ?</span>   A: <span class="info" id="con"> ?</span></span><br>
-	</div>
+      <p><span class="info_heading" id="room_name">--== Bildstoerung ==--</span></p>
+      <a id="room_image_a" href="img/aaa_no_signal.jpg" data-lightbox="Images" data-title="--== Bildstoerung ==--">
+        <img id="room_image" src="img/aaa_no_signal.jpg" onerror="bildstoerung();" alt="Bildstoerung" style="width:100%;height:auto;">
+      </a>
+      <p>
+      <div class="rTbl" style="margin:0 auto;">
+        <div class="rTblRow">
+          <div class="rTblCell" style="width:10em;text-align:right;">Erfahrung:</div>
+          <div class="rTblCell" style="width:10em;"><span class="info" id="xp">?</span></div>
+        </div>
+        <div class="rTblRow">
+          <div class="rTblCell" style="text-align:right;">Leben:</div>
+          <div class="rTblCell"><span class="info" id="hp">?</span>/<span class="info" id="max_hp">?</span></div>
+        </div>
+        <div class="rTblRow">
+          <div class="rTblCell" style="text-align:right;">Magie:</div>
+          <div class="rTblCell"><span class="info" id="sp">?</span>/<span class="info" id="max_sp">?</span></div>
+        </div>
+        <div class="rTblRow">
+          <div class="rTblCell" style="text-align:right;">Abenteuer:</div>
+          <div class="rTblCell"><span class="info" id="questpoints">?</span>/<span class="info" id="max_questpoints">?</span></div>
+        </div>
+        <div class="rTblRow">
+          <div class="rTblCell" style="text-align:right;">Vorsicht:</div>
+          <div class="rTblCell"><span class="info" id="wimpy">?</span></div>
+        </div>
+        <div class="rTblRow">
+          <div class="rTblCell" style="text-align:right;">Fluchtrichtung:</div>
+          <div class="rTblCell"><span class="info" id="wimpy_dir">?</span></div>
+        </div>
+      </div>
+      </p>
+      <div class="rTbl" style="margin:0 auto;">
+        <div class="rTblRow">
+          <div class="rTblCell" style="width:5em;text-align:center;">I: <span class="info" id="int">?</span></div>
+          <div class="rTblCell" style="width:5em;text-align:center;">K: <span class="info" id="str">?</span></div>
+          <div class="rTblCell" style="width:5em;text-align:center;">G: <span class="info" id="dex">?</span></div>
+          <div class="rTblCell" style="width:5em;text-align:center;">A: <span class="info" id="con">?</span></div>
+        </div>
+      </div>
+    </div>
     <div id="in">
       <input id='cmd' type="text" value="" autofocus><button id='send' class='cmd I18N' i18n='send'>Send</button><button id='clear' class='cmd I18N' i18n='clear'>Clear</button>
     </div>

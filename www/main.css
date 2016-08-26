@@ -58,8 +58,9 @@ div#info {
 /*  width:300px;*/
   padding: 0;
   color: black;
-  white-space:pre;
+/*  white-space:pre; */
   font-size:small;
+  line-height: 1.0;
 /*  background-color:white;
   border-color: black;
   border-style: dashed;
@@ -68,12 +69,17 @@ div#info {
   border-color: #aa9977;
   border-style: outset;
   border-width: 2px;
+  font-family:Tahoma, Geneva, sans-serif;
+}
+
+span.info_heading {
+  margin:0 auto;
+  display:table;
 }
 
 span.info {
   word-wrap: break-word;
   padding: 0px 4px;
-  font-family: Fixed, monospace;
 }
 
 div#in {
@@ -95,3 +101,10 @@ button.cmd {
   padding: 5px;
   margin: 1px;
 }
+
+.rTbl        { display: table; }
+.rTblRow     { display: table-row; }
+.rTblHeading { display: table-header-group; }
+.rTblBody    { display: table-row-group; }
+.rTblFoot    { display: table-footer-group; }
+.rTblCell, .rTblHead  { display: table-cell; }
