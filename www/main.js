@@ -32,6 +32,11 @@ function getGMCPHello(){
 }
 
 function doGMCPReceive(sock, data) {
+
+  // Modify this line, if you need a different base URL
+  // or leave it blank to use a pure relative path.
+  var staticContentBase = 'http://wl.mud.de/webclient/';
+
   if(data.length>0) {
 
     // handle JSON data here and update UI!
@@ -128,10 +133,6 @@ function doGMCPReceive(sock, data) {
       if('name' in values){
         $('span#room_name').text(values['name']);
       }
-
-      // Modify this line, if you need a different base URL
-      // or leave it blank to use a pure relative path.
-      var staticContentBase = 'http://wl.mud.de/webclient/';
 
       // image
       if('image' in values){

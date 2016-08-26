@@ -65,9 +65,9 @@ div#info {
   border-color: black;
   border-style: dashed;
   border-width: 2px; */
-  background-color:#ffeeaa;
-  border-color: #aa9977;
-  border-style: outset;
+  background-color:#eeffaa;
+  border-color: #eeffaa;
+  border-style: solid;
   border-width: 2px;
   font-family:Tahoma, Geneva, sans-serif;
 }
