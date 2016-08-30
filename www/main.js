@@ -350,6 +350,9 @@ function adjustColors() {
     $('div#info').get(0).style.color='#'+infoFgColor; 
     $('div#info').get(0).style.borderColor='#'+infoFgColor; 
   }
+
+  var infoBorderColor = queryParams['ibc'];
+  if(infoBorderColor!=null) { $('div#info').get(0).style.borderColor='#'+infoBorderColor; }
 }
 
 $(window).resize(adjustLayout);
