@@ -17,13 +17,9 @@ function writeToScreen(str) {
   while(out.children().length>5000) out.children().first().remove();
 }
 
-function pad(str, pad_str, max) {
+function pad (str, pad_str, max) {
   str = str.toString();
-  return str.length < max ? pad(pad_str.toString() + str, pad_str, max) : str;
-}
-
-function numberWithDots(x) {
-    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return str.length < max ? pad(pad_str.toString() + str, max) : str;
 }
 
 // New: GMCP support (Holger)
@@ -32,11 +28,6 @@ function getGMCPHello(){
 }
 
 function doGMCPReceive(sock, data) {
-
-  // Modify this line, if you need a different base URL
-  // or leave it blank to use a pure relative path.
-  var staticContentBase = 'http://wl.mud.de/webclient/';
-
   if(data.length>0) {
 
     // handle JSON data here and update UI!
@@ -44,117 +35,61 @@ function doGMCPReceive(sock, data) {
 
     var module = data.split(' ', 1)[0];
     var payload = data.substr(module.length);
-
-    if(module=='Core.Ping') {
-      // This should be the response of our ping, so ignore it!
-      return;
-    }
-
-    if(module=='Core.Goodbye') {
-      // The server tells us, we will be disconnected now.
-      var value = JSON.parse(payload);
-
-      if(value!=0) {
-        $('span#room_name').text(value);
-      }
-
-      $('img#room_image').attr('src', staticContentBase + 'img/aaa_no_signal.jpg');
-      $('img#room_image').attr('alt', 'Bildstoerung');
-      $('a#room_image_a').attr('href', staticContentBase + 'img/aaa_no_signal.jpg');
-      $('a#room_image_a').attr('data-title', 'Bildstoerung');
-
-      return;
-    }
   
     if(module=='Char.Vitals') {
+      //writeToScreen('GMCP: Char.Vitals!<br>');
       var values = JSON.parse(payload);
 
       // XP
       if('xp' in values){
-        $('span#xp.info').text(numberWithDots(values['xp']));
+        $('span#xp.info').text(pad(values['xp'], ' ', 3));
       }
 
       // HP
       if('hp' in values){
-        $('span#hp.info').text(values['hp']);
+        $('span#hp.info').text(pad(values['hp'], ' ', 3));
       }
       if('max_hp' in values){
-        $('span#max_hp.info').text(values['max_hp']);
+        $('span#max_hp.info').text(pad(values['max_hp'], ' ', 3));
       }
 
       // SP
       if('sp' in values){
-        $('span#sp.info').text(values['sp']);
+        $('span#sp.info').text(pad(values['sp'], ' ', 3));
       }
       if('max_sp' in values){
-        $('span#max_sp.info').text(values['max_sp']);
+        $('span#max_sp.info').text(pad(values['max_sp'], ' ', 3));
       }
 
       // QP
-      if('questpoints' in values){
-        $('span#questpoints.info').text(values['questpoints']);
+      if('qp' in values){
+        $('span#qp.info').text(pad(values['qp'], ' ', 3));
       }
-      if('max_questpoints' in values){
-        $('span#max_questpoints.info').text(values['max_questpoints']);
+      if('max_qp' in values){
+        $('span#max_qp.info').text(pad(values['max_qp'], ' ', 3));
       }
 
       // Wimpy
       if('wimpy' in values){
-        $('span#wimpy.info').text(values['wimpy']);
+        $('span#wimpy.info').text(pad(values['wimpy'], ' ', 3));
       }
       if('wimpy_dir' in values){
-        if(values['wimpy_dir']=='' || values['wimpy_dir']=='0')
-          $('span#wimpy_dir.info').text('keine');
-        else
-          $('span#wimpy_dir.info').text(values['wimpy_dir']);
+        $('span#wimpy_dir.info').text(pad(values['wimpy_dir'], ' ', 3));
       }
 
       // INT, STR, DEX, CON
       if('int' in values){
-        $('span#int.info').text(values['int']);
+        $('span#int.info').text(pad(values['int'], ' ', 3));
       }
       if('str' in values){
-        $('span#str.info').text(values['str']);
+        $('span#str.info').text(pad(values['str'], ' ', 3));
       }
       if('dex' in values){
-        $('span#dex.info').text(values['dex']);
+        $('span#dex.info').text(pad(values['dex'], ' ', 3));
       }
       if('con' in values){
-        $('span#con.info').text(values['con']);
+        $('span#con.info').text(pad(values['con'], ' ', 3));
       }
-
-      return;
-    }
-
-    if(module=='Room.Info') {
-      var values = JSON.parse(payload);
-
-      // name
-      if('name' in values){
-        $('span#room_name').text(values['name']);
-      }
-
-      // image
-      if('image' in values){
-        var img_a = $('a#room_image_a');
-        var img = $('img#room_image');
-        if(values['image']=='') {
-          img.attr('src', staticContentBase + 'img/aaa_no_signal.jpg');
-          img.attr('alt', 'Bildstoerung');
-          img_a.attr('href', staticContentBase + 'img/aaa_no_signal.jpg');
-          img_a.attr('data-title', 'Bildstoerung');
-        }
-        else {
-          img.attr('src', staticContentBase + values['image']);
-          img_a.attr('href', staticContentBase + values['image']);
-          if('name' in values) {
-            img.attr('alt', values['name']);
-            img_a.attr('data-title', values['name']);
-          }
-        }
-      }
-
-      return;
     }
   } 
 }
@@ -333,18 +268,31 @@ function adjustLayout() {
 
 }
 
+function adjustColors() {
+  var queryParams=parseQuery(document.location.search);
+
+  var bgColor = queryParams['bg'];
+  if(bgColor!=null) { $(document).get(0).body.style.backgroundColor='#'+bgColor; }
+
+  var fgColor = queryParams['fg'];
+  if(fgColor!=null){ $(document).get(0).body.style.color='#'+fgColor; }
+
+  var infoBgColor = queryParams['ibg'];
+  if(infoBgColor!=null) { $('div#info').get(0).style.backgroundColor='#'+infoBgColor; }
+
+  var infoFgColor = queryParams['ifg'];
+  if(infoFgColor!=null) { 
+    $('div#info').get(0).style.color='#'+infoFgColor; 
+    $('div#info').get(0).style.borderColor='#'+infoFgColor; 
+  }
+}
+
 $(window).resize(adjustLayout);
 
 $(document).ready(function(){
 
   // adjust colors
-  var queryParams=parseQuery(document.location.search);
-  var bgColor = queryParams['bg'];
-  if(bgColor!=null) { $(this).get(0).body.style.backgroundColor='#'+bgColor; }
-//  if(bgColor!=null) { $('div#out').get(0).style.backgroundColor='#'+bgColor; }
-  var fgColor = queryParams['fg'];
-  if(fgColor!=null){ $(this).get(0).body.style.color='#'+fgColor; }
-//  if(fgColor!=null){ $('div#out').get(0).style.color='#'+fgColor; }
+  adjustColors();
 
   // show help text
   jQuery.get('/help.txt', function(data) {
