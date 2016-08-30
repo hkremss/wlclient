@@ -53,7 +53,7 @@ span.out {
 div#info {
   position:absolute;
   top:0;
-  bottom:0px; //36px;
+  bottom:0px;
   right:0;
 /*  width:300px;*/
   padding: 0;

@@ -320,7 +320,7 @@ function adjustLayout() {
     width: (w-(w3+6)) + 'px',
   });
   $('input#cmd').css({
-    width: (w0 - (w1+w2+14+4)) + 'px',
+    width: (w0 - (w1+w2+15+4)) + 'px',
   });
     
   //writeToScreen('w -> ' + w + 'px w0 -> '+w0+'px w1 -> '+w1+'px w2 -> '+w2+'px w3 -> '+w3+'\n');
