@@ -17,9 +17,13 @@ function writeToScreen(str) {
   while(out.children().length>5000) out.children().first().remove();
 }
 
-function pad (str, pad_str, max) {
+function pad(str, pad_str, max) {
   str = str.toString();
-  return str.length < max ? pad(pad_str.toString() + str, max) : str;
+  return str.length < max ? pad(pad_str.toString() + str, pad_str, max) : str;
+}
+
+function numberWithDots(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
 // New: GMCP support (Holger)
@@ -37,58 +41,93 @@ function doGMCPReceive(sock, data) {
     var payload = data.substr(module.length);
   
     if(module=='Char.Vitals') {
-      //writeToScreen('GMCP: Char.Vitals!<br>');
       var values = JSON.parse(payload);
 
       // XP
       if('xp' in values){
-        $('span#xp.info').text(pad(values['xp'], ' ', 3));
+        $('span#xp.info').text(numberWithDots(values['xp']));
       }
 
       // HP
       if('hp' in values){
-        $('span#hp.info').text(pad(values['hp'], ' ', 3));
+        $('span#hp.info').text(values['hp']);
       }
       if('max_hp' in values){
-        $('span#max_hp.info').text(pad(values['max_hp'], ' ', 3));
+        $('span#max_hp.info').text(values['max_hp']);
       }
 
       // SP
       if('sp' in values){
-        $('span#sp.info').text(pad(values['sp'], ' ', 3));
+        $('span#sp.info').text(values['sp']);
       }
       if('max_sp' in values){
-        $('span#max_sp.info').text(pad(values['max_sp'], ' ', 3));
+        $('span#max_sp.info').text(values['max_sp']);
       }
 
       // QP
-      if('qp' in values){
-        $('span#qp.info').text(pad(values['qp'], ' ', 3));
+      if('questpoints' in values){
+        $('span#questpoints.info').text(values['questpoints']);
       }
-      if('max_qp' in values){
-        $('span#max_qp.info').text(pad(values['max_qp'], ' ', 3));
+      if('max_questpoints' in values){
+        $('span#max_questpoints.info').text(values['max_questpoints']);
       }
 
       // Wimpy
       if('wimpy' in values){
-        $('span#wimpy.info').text(pad(values['wimpy'], ' ', 3));
+        $('span#wimpy.info').text(values['wimpy']);
       }
       if('wimpy_dir' in values){
-        $('span#wimpy_dir.info').text(pad(values['wimpy_dir'], ' ', 3));
+        if(values['wimpy_dir']=='' || values['wimpy_dir']=='0')
+          $('span#wimpy_dir.info').text('keine');
+        else
+          $('span#wimpy_dir.info').text(values['wimpy_dir']);
       }
 
       // INT, STR, DEX, CON
       if('int' in values){
-        $('span#int.info').text(pad(values['int'], ' ', 3));
+        $('span#int.info').text(values['int']);
       }
       if('str' in values){
-        $('span#str.info').text(pad(values['str'], ' ', 3));
+        $('span#str.info').text(values['str']);
       }
       if('dex' in values){
-        $('span#dex.info').text(pad(values['dex'], ' ', 3));
+        $('span#dex.info').text(values['dex']);
       }
       if('con' in values){
-        $('span#con.info').text(pad(values['con'], ' ', 3));
+        $('span#con.info').text(values['con']);
+      }
+    }
+
+    if(module=='Room.Info') {
+      var values = JSON.parse(payload);
+
+      // name
+      if('name' in values){
+        $('span#room_name').text(values['name']);
+      }
+
+      // Modify this line, if you need a different base URL
+      // or leave it blank to use a pure relative path.
+      var staticContentBase = 'http://wl.mud.de/webclient/';
+
+      // image
+      if('image' in values){
+        var img_a = $('a#room_image_a');
+        var img = $('img#room_image');
+        if(values['image']=='') {
+          img.attr('src', staticContentBase + 'img/aaa_no_signal.jpg');
+          img.attr('alt', 'Bildstoerung');
+          img_a.attr('href', staticContentBase + 'img/aaa_no_signal.jpg');
+          img_a.attr('data-title', 'Bildstoerung');
+        }
+        else {
+          img.attr('src', staticContentBase + values['image']);
+          img_a.attr('href', staticContentBase + values['image']);
+          if('name' in values) {
+            img.attr('alt', values['name']);
+            img_a.attr('data-title', values['name']);
+          }
+        }
       }
     }
   } 
