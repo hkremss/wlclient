@@ -35,6 +35,9 @@ function getGMCPHello(){
 var living_room_image = '';
 var living_room_name = '';
 
+// Debug flags
+var debug_GMCP = false;
+
 function doGMCPReceive(sock, data) {
 
   // Modify this line, if you need a different base URL
@@ -44,7 +47,7 @@ function doGMCPReceive(sock, data) {
   if(data.length>0) {
 
     // handle JSON data here and update UI!
-    writeToScreen('GMCP: ' + data + '<br>');
+    if(debug_GMCP) writeToScreen('GMCP: ' + data + '<br>');
 
     var module = data.split(' ', 1)[0];
     var payload = data.substr(module.length);
@@ -369,8 +372,11 @@ function adjustLayout() {
 
 }
 
-function adjustColors() {
+function processQueryParams() {
   var queryParams=parseQuery(document.location.search);
+
+  var debugGMCP = queryParams['debug'];
+  if (debugGMCP=='true') debug_GMCP = true;
 
   var bgColor = queryParams['bg'];
   if(bgColor!=null) { $(document).get(0).body.style.backgroundColor='#'+bgColor; }
@@ -395,8 +401,8 @@ $(window).resize(adjustLayout);
 
 $(document).ready(function(){
 
-  // adjust colors
-  adjustColors();
+  // adjust colors, etc.
+  processQueryParams();
 
   // show help text
   jQuery.get('/help.txt', function(data) {
