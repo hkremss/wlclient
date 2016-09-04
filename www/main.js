@@ -31,6 +31,10 @@ function getGMCPHello(){
   return 'Core.Hello { \"client\": \"WL@Web\", \"version\": \"1.0.0\" }';
 }
 
+// remember these values, if player dies and becomes alive again
+var living_room_image = '';
+var living_room_name = '';
+
 function doGMCPReceive(sock, data) {
 
   // Modify this line, if you need a different base URL
@@ -40,7 +44,7 @@ function doGMCPReceive(sock, data) {
   if(data.length>0) {
 
     // handle JSON data here and update UI!
-    //writeToScreen('GMCP: ' + data + '<br>');
+    writeToScreen('GMCP: ' + data + '<br>');
 
     var module = data.split(' ', 1)[0];
     var payload = data.substr(module.length);
@@ -68,6 +72,36 @@ function doGMCPReceive(sock, data) {
 
     if(module=='Char.Vitals') {
       var values = JSON.parse(payload);
+
+      // if dead
+      if('ghost' in values && values['ghost']=='1'){
+        var img_a = $('a#room_image_a');
+        var img = $('img#room_image');
+        img.attr('src', staticContentBase + 'img/std/tod.jpg');
+        img.attr('alt', 'DU BIST TOT!');
+        img_a.attr('href', staticContentBase + 'img/std/tod.jpg');
+        img_a.attr('data-title', 'DU BIST TOT!');
+        $('span#room_name').text('DU BIST TOT!');
+      }
+
+      // if alive again
+      if('ghost' in values && values['ghost']=='0'){
+        var img_a = $('a#room_image_a');
+        var img = $('img#room_image');
+        if(living_room_image == '') {
+          img.attr('src', staticContentBase + 'img/aaa_no_signal.jpg');
+          img.attr('alt', 'Bildstoerung');
+          img_a.attr('href', staticContentBase + 'img/aaa_no_signal.jpg');
+          img_a.attr('data-title', 'Bildstoerung');
+        }
+        else {
+          img.attr('src', staticContentBase + living_room_image);
+          img.attr('alt', living_room_name);
+          img_a.attr('href', staticContentBase + living_room_image);
+          img_a.attr('data-title', living_room_name);
+        }
+        $('span#room_name').text(living_room_name);
+      }
 
       // XP
       if('xp' in values){
@@ -131,25 +165,27 @@ function doGMCPReceive(sock, data) {
 
       // name
       if('name' in values){
-        $('span#room_name').text(values['name']);
+        living_room_name = values['name'];
+        $('span#room_name').text(living_room_name);
       }
 
       // image
       if('image' in values){
+        living_room_image = values['image'];
         var img_a = $('a#room_image_a');
         var img = $('img#room_image');
-        if(values['image']=='') {
+        if(living_room_image == '') {
           img.attr('src', staticContentBase + 'img/aaa_no_signal.jpg');
           img.attr('alt', 'Bildstoerung');
           img_a.attr('href', staticContentBase + 'img/aaa_no_signal.jpg');
           img_a.attr('data-title', 'Bildstoerung');
         }
         else {
-          img.attr('src', staticContentBase + values['image']);
-          img_a.attr('href', staticContentBase + values['image']);
+          img.attr('src', staticContentBase + living_room_image);
+          img_a.attr('href', staticContentBase + living_room_image);
           if('name' in values) {
-            img.attr('alt', values['name']);
-            img_a.attr('data-title', values['name']);
+            img.attr('alt', living_room_name);
+            img_a.attr('data-title', living_room_name);
           }
         }
       }
