@@ -395,6 +395,14 @@ function processQueryParams() {
 
   var infoBorderColor = queryParams['ibc'];
   if(infoBorderColor!=null) { $('div#info').get(0).style.borderColor='#'+infoBorderColor; }
+
+  var infoPanel = queryParams['infopanel'];
+  if (infoPanel==null || infoPanel!='hidden') 
+    $('div#info').get(0).style.visibility = 'visible'
+  else
+    $('div#info').get(0).style.visibility = 'hidden'
+  console.log('infoPanel = ' + infoPanel);
+  
 }
 
 $(window).resize(adjustLayout);
