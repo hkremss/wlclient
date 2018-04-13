@@ -7,7 +7,9 @@ var info = require('./package.json');
 var path = require('path'),
     socketio = require('socket.io'),
     express = require('express'),
+    https = require('https'),
     http = require('http'),
+    fs = require('fs'),
     webtelnet = require('./webtelnet-proxy.js');
 
 var conf = {
@@ -33,6 +35,7 @@ if(args._.length < 2) {
   process.stdout.write(
     'Syntax: webtelnet <http-port> <telnet-port> [options]\n' +
     'Options: \n' +
+    '    [-s]\n' +
     '    [-h <telnet-host>]\n' +
     '    [-w <path/to/www>]\n' +
     '    [-c <charset>]\n'
@@ -47,10 +50,26 @@ if(args.h) conf.telnet.host = args.h;
 if(args.w) conf.www = path.resolve(args.w);
 
 var app = express().use(express.static(conf.www));
-var httpserver = http.createServer(app);
-httpserver.listen(conf.web.port, conf.web.host, function(){
-  console.log('listening on ' + conf.web.host + ':' + conf.web.port);
-});
+
+var httpserver = null;
+
+if (args.s) {
+  // This line is from the Node.js HTTPS documentation.
+  var options = {
+    key: fs.readFileSync('/home/www/ssl/wl-key.pem'),
+    cert: fs.readFileSync('/home/www/ssl/wl-cert.pem')
+  };
+  httpserver = https.createServer(options, app);
+  httpserver.listen(conf.web.port, conf.web.host, function(){
+    console.log('HTTPS listening on ' + conf.web.host + ':' + conf.web.port);
+  });
+} 
+else {
+  httpserver = http.createServer(app);
+  httpserver.listen(conf.web.port, conf.web.host, function(){
+    console.log('HTTP listening on ' + conf.web.host + ':' + conf.web.port);
+  });
+}
 
 // create socket io
 var io = socketio.listen(httpserver);

@@ -1,327 +1,335 @@
-// ansi_up.js
-// version : 1.3.0
-// author : Dru Nelson
-// license : MIT
-// http://github.com/drudru/ansi_up
-
-(function (Date, undefined) {
-
-    var ansi_up,
-        VERSION = "1.3.0",
-
-        // check for nodeJS
-        hasModule = (typeof module !== 'undefined'),
-
-        // Normal and then Bright
-        ANSI_COLORS = [
-          [
-            { color: "0, 0, 0",        'class': "ansi-black"   },
-            { color: "187, 0, 0",      'class': "ansi-red"     },
-            { color: "0, 187, 0",      'class': "ansi-green"   },
-            { color: "187, 187, 0",    'class': "ansi-yellow"  },
-            { color: "0, 0, 187",      'class': "ansi-blue"    },
-            { color: "187, 0, 187",    'class': "ansi-magenta" },
-            { color: "0, 187, 187",    'class': "ansi-cyan"    },
-            { color: "255,255,255",    'class': "ansi-white"   }
-          ],
-          [
-            { color: "85, 85, 85",     'class': "ansi-bright-black"   },
-            { color: "255, 85, 85",    'class': "ansi-bright-red"     },
-            { color: "0, 255, 0",      'class': "ansi-bright-green"   },
-            { color: "255, 255, 85",   'class': "ansi-bright-yellow"  },
-            { color: "85, 85, 255",    'class': "ansi-bright-blue"    },
-            { color: "255, 85, 255",   'class': "ansi-bright-magenta" },
-            { color: "85, 255, 255",   'class': "ansi-bright-cyan"    },
-            { color: "255, 255, 255",  'class': "ansi-bright-white"   }
-          ]
-        ],
-
-        // 256 Colors Palette
-        PALETTE_COLORS;
-
-    function Ansi_Up() {
-      this.fg = this.bg = this.fg_truecolor = this.bg_truecolor = null;
-      this.bright = 0;
+/*  ansi_up.js
+ *  version : 2.0.2
+ *  author : Dru Nelson
+ *  license : MIT
+ *  http://github.com/drudru/ansi_up
+ */
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module.
+        define(['exports'], factory);
+    } else if (typeof exports === 'object' && typeof exports.nodeName !== 'string') {
+        // CommonJS
+        factory(exports);
+    } else {
+        // Browser globals
+        var exp = {};
+        factory(exp);
+        root.AnsiUp = exp.default;
     }
-
-    Ansi_Up.prototype.setup_palette = function() {
-      PALETTE_COLORS = [];
-      // Index 0..15 : System color
-      (function() {
-        var i, j;
-        for (i = 0; i < 2; ++i) {
-          for (j = 0; j < 8; ++j) {
-            PALETTE_COLORS.push(ANSI_COLORS[i][j]['color']);
-          }
-        }
-      })();
-
-      // Index 16..231 : RGB 6x6x6
-      // https://gist.github.com/jasonm23/2868981#file-xterm-256color-yaml
-      (function() {
-        var levels = [0, 95, 135, 175, 215, 255];
-        var format = function (r, g, b) { return levels[r] + ', ' + levels[g] + ', ' + levels[b] };
-        var r, g, b;
-        for (r = 0; r < 6; ++r) {
-          for (g = 0; g < 6; ++g) {
-            for (b = 0; b < 6; ++b) {
-              PALETTE_COLORS.push(format.call(this, r, g, b));
-            }
-          }
-        }
-      })();
-
-      // Index 232..255 : Grayscale
-      (function() {
-        var level = 8;
-        var format = function(level) { return level + ', ' + level + ', ' + level };
-        var i;
-        for (i = 0; i < 24; ++i, level += 10) {
-          PALETTE_COLORS.push(format.call(this, level));
-        }
-      })();
-    };
-
-    Ansi_Up.prototype.escape_for_html = function (txt) {
-      return txt.replace(/[&<>]/gm, function(str) {
-        if (str == "&") return "&amp;";
-        if (str == "<") return "&lt;";
-        if (str == ">") return "&gt;";
-      });
-    };
-
-    Ansi_Up.prototype.linkify = function (txt) {
-      return txt.replace(/(https?:\/\/[^\s]+)/gm, function(str) {
-        return "<a href=\"" + str + "\">" + str + "</a>";
-      });
-    };
-
-    Ansi_Up.prototype.ansi_to_html = function (txt, options) {
-      return this.process(txt, options, true);
-    };
-
-    Ansi_Up.prototype.ansi_to_text = function (txt) {
-      var options = {};
-      return this.process(txt, options, false);
-    };
-
-    Ansi_Up.prototype.process = function (txt, options, markup) {
-      var self = this;
-      var raw_text_chunks = txt.split(/\033\[/);
-      var first_chunk = raw_text_chunks.shift(); // the first chunk is not the result of the split
-
-      var color_chunks = raw_text_chunks.map(function (chunk) {
-        return self.process_chunk(chunk, options, markup);
-      });
-
-      color_chunks.unshift(first_chunk);
-
-      return color_chunks.join('');
-    };
-
-    Ansi_Up.prototype.process_chunk = function (text, options, markup) {
-
-      // Are we using classes or styles?
-      options = typeof options == 'undefined' ? {} : options;
-      var use_classes = typeof options.use_classes != 'undefined' && options.use_classes;
-      var key = use_classes ? 'class' : 'color';
-
-      // Each 'chunk' is the text after the CSI (ESC + '[') and before the next CSI/EOF.
-      //
-      // This regex matches four groups within a chunk.
-      //
-      // The first and third groups match code type.
-      // We supported only SGR command. It has empty first group and 'm' in third.
-      //
-      // The second group matches all of the number+semicolon command sequences
-      // before the 'm' (or other trailing) character.
-      // These are the graphics or SGR commands.
-      //
-      // The last group is the text (including newlines) that is colored by
-      // the other group's commands.
-      var matches = text.match(/^([!\x3c-\x3f]*)([\d;]*)([\x20-\x2c]*[\x40-\x7e])([\s\S]*)/m);
-
-      if (!matches) return text;
-
-      var orig_txt = matches[4];
-      var nums = matches[2].split(';');
-
-      // We currently support only "SGR" (Select Graphic Rendition)
-      // Simply ignore if not a SGR command.
-      if (matches[1] !== '' || matches[3] !== 'm') {
-        return orig_txt;
-      }
-
-      if (!markup) {
-        return orig_txt;
-      }
-
-      var self = this;
-
-      while (nums.length > 0) {
-        var num_str = nums.shift();
-        var num = parseInt(num_str);
-
-        if (isNaN(num) || num === 0) {
-          self.fg = self.bg = null;
-          self.bright = 0;
-        } else if (num === 1) {
-          self.bright = 1;
-        } else if (num == 39) {
-          self.fg = null;
-        } else if (num == 49) {
-          self.bg = null;
-        } else if ((num >= 30) && (num < 38)) {
-          self.fg = ANSI_COLORS[self.bright][(num % 10)][key];
-        } else if ((num >= 90) && (num < 98)) {
-          self.fg = ANSI_COLORS[1][(num % 10)][key];
-        } else if ((num >= 40) && (num < 48)) {
-          self.bg = ANSI_COLORS[0][(num % 10)][key];
-        } else if ((num >= 100) && (num < 108)) {
-          self.bg = ANSI_COLORS[1][(num % 10)][key];
-        } else if (num === 38 || num === 48) { // extend color (38=fg, 48=bg)
-          (function() {
-            var is_foreground = (num === 38);
-            if (nums.length >= 1) {
-              var mode = nums.shift();
-              if (mode === '5' && nums.length >= 1) { // palette color
-                var palette_index = parseInt(nums.shift());
-                if (palette_index >= 0 && palette_index <= 255) {
-                  if (!use_classes) {
-                    if (!PALETTE_COLORS) {
-                      self.setup_palette.call(self);
-                    }
-                    if (is_foreground) {
-                      self.fg = PALETTE_COLORS[palette_index];
-                    } else {
-                      self.bg = PALETTE_COLORS[palette_index];
-                    }
-                  } else {
-                    var klass = (palette_index >= 16)
-                          ? ('ansi-palette-' + palette_index)
-                          : ANSI_COLORS[palette_index > 7 ? 1 : 0][palette_index % 8]['class'];
-                    if (is_foreground) {
-                      self.fg = klass;
-                    } else {
-                      self.bg = klass;
-                    }
-                  }
+}(this, function (exports) {
+"use strict";
+function rgx(tmplObj) {
+    var subst = [];
+    for (var _i = 1; _i < arguments.length; _i++) {
+        subst[_i - 1] = arguments[_i];
+    }
+    var regexText = tmplObj.raw[0];
+    var wsrgx = /^\s+|\s+\n|\s+#[\s\S]+?\n/gm;
+    var txt2 = regexText.replace(wsrgx, '');
+    return new RegExp(txt2, 'm');
+}
+var AnsiUp = (function () {
+    function AnsiUp() {
+        this.VERSION = "2.0.2";
+        this.ansi_colors = [
+            [
+                { rgb: [0, 0, 0], class_name: "ansi-black" },
+                { rgb: [187, 0, 0], class_name: "ansi-red" },
+                { rgb: [0, 187, 0], class_name: "ansi-green" },
+                { rgb: [187, 187, 0], class_name: "ansi-yellow" },
+                { rgb: [0, 0, 187], class_name: "ansi-blue" },
+                { rgb: [187, 0, 187], class_name: "ansi-magenta" },
+                { rgb: [0, 187, 187], class_name: "ansi-cyan" },
+                { rgb: [255, 255, 255], class_name: "ansi-white" }
+            ],
+            [
+                { rgb: [85, 85, 85], class_name: "ansi-bright-black" },
+                { rgb: [255, 85, 85], class_name: "ansi-bright-red" },
+                { rgb: [0, 255, 0], class_name: "ansi-bright-green" },
+                { rgb: [255, 255, 85], class_name: "ansi-bright-yellow" },
+                { rgb: [85, 85, 255], class_name: "ansi-bright-blue" },
+                { rgb: [255, 85, 255], class_name: "ansi-bright-magenta" },
+                { rgb: [85, 255, 255], class_name: "ansi-bright-cyan" },
+                { rgb: [255, 255, 255], class_name: "ansi-bright-white" }
+            ]
+        ];
+        this.htmlFormatter = {
+            transform: function (fragment, instance) {
+                var txt = fragment.text;
+                if (txt.length === 0)
+                    return txt;
+                if (instance._escape_for_html)
+                    txt = instance.old_escape_for_html(txt);
+                if (!fragment.bright && fragment.fg === null && fragment.bg === null)
+                    return txt;
+                var styles = [];
+                var classes = [];
+                var fg = fragment.fg;
+                var bg = fragment.bg;
+                if (fg === null && fragment.bright)
+                    fg = instance.ansi_colors[1][7];
+                if (!instance._use_classes) {
+                    if (fg)
+                        styles.push("color:rgb(" + fg.rgb.join(',') + ")");
+                    if (bg)
+                        styles.push("background-color:rgb(" + bg.rgb + ")");
                 }
-              } else if(mode === '2' && nums.length >= 3) { // true color
-                var r = parseInt(nums.shift());
-                var g = parseInt(nums.shift());
-                var b = parseInt(nums.shift());
-                if ((r >= 0 && r <= 255) && (g >= 0 && g <= 255) && (b >= 0 && b <= 255)) {
-                  var color = r + ', ' + g + ', ' + b;
-                  if (!use_classes) {
-                    if (is_foreground) {
-                      self.fg = color;
-                    } else {
-                      self.bg = color;
+                else {
+                    if (fg) {
+                        if (fg.class_name !== 'truecolor') {
+                            classes.push(fg.class_name + "-fg");
+                        }
+                        else {
+                            styles.push("color:rgb(" + fg.rgb.join(',') + ")");
+                        }
                     }
-                  } else {
-                    if (is_foreground) {
-                      self.fg = 'ansi-truecolor';
-                      self.fg_truecolor = color;
-                    } else {
-                      self.bg = 'ansi-truecolor';
-                      self.bg_truecolor = color;
+                    if (bg) {
+                        if (bg.class_name !== 'truecolor') {
+                            classes.push(bg.class_name + "-bg");
+                        }
+                        else {
+                            styles.push("background-color:rgb(" + bg.rgb.join(',') + ")");
+                        }
                     }
-                  }
                 }
-              }
+                var class_string = '';
+                var style_string = '';
+                if (classes.length)
+                    class_string = " class=\"" + classes.join(' ') + "\"";
+                if (styles.length)
+                    style_string = " style=\"" + styles.join(';') + "\"";
+                return "<span" + class_string + style_string + ">" + txt + "</span>";
+            },
+            compose: function (segments, instance) {
+                return segments.join("");
             }
-          })();
-        }
-      }
-
-      if ((self.fg === null) && (self.bg === null)) {
-        return orig_txt;
-      } else {
-        var styles = [];
-        var classes = [];
-        var data = {};
-        var render_data = function (data) {
-          var fragments = [];
-          var key;
-          for (key in data) {
-            if (data.hasOwnProperty(key)) {
-              fragments.push('data-' + key + '="' + this.escape_for_html(data[key]) + '"');
-            }
-          }
-          return fragments.length > 0 ? ' ' + fragments.join(' ') : '';
         };
-
-        if (self.fg) {
-          if (use_classes) {
-            classes.push(self.fg + "-fg");
-            if (self.fg_truecolor !== null) {
-              data['ansi-truecolor-fg'] = self.fg_truecolor;
-              self.fg_truecolor = null;
+        this.textFormatter = {
+            transform: function (fragment, instance) {
+                return fragment.text;
+            },
+            compose: function (segments, instance) {
+                return segments.join("");
             }
-          } else {
-            styles.push("color:rgb(" + self.fg + ")");
-          }
-        }
-        if (self.bg) {
-          if (use_classes) {
-            classes.push(self.bg + "-bg");
-            if (self.bg_truecolor !== null) {
-              data['ansi-truecolor-bg'] = self.bg_truecolor;
-              self.bg_truecolor = null;
-            }
-          } else {
-            styles.push("background-color:rgb(" + self.bg + ")");
-          }
-        }
-        if (use_classes) {
-          return '<span class="' + classes.join(' ') + '"' + render_data.call(self, data) + '>' + orig_txt + '</span>';
-        } else {
-          return '<span style="' + styles.join(';') + '"' + render_data.call(self, data) + '>' + orig_txt + '</span>';
-        }
-      }
-    };
-
-    // Module exports
-    ansi_up = {
-
-      escape_for_html: function (txt) {
-        var a2h = new Ansi_Up();
-        return a2h.escape_for_html(txt);
-      },
-
-      linkify: function (txt) {
-        var a2h = new Ansi_Up();
-        return a2h.linkify(txt);
-      },
-
-      ansi_to_html: function (txt, options) {
-        var a2h = new Ansi_Up();
-        return a2h.ansi_to_html(txt, options);
-      },
-
-      ansi_to_text: function (txt) {
-        var a2h = new Ansi_Up();
-        return a2h.ansi_to_text(txt);
-      },
-
-      ansi_to_html_obj: function () {
-        return new Ansi_Up();
-      }
-    };
-
-    // CommonJS module is defined
-    if (hasModule) {
-        module.exports = ansi_up;
+        };
+        this.setup_256_palette();
+        this._use_classes = false;
+        this._escape_for_html = true;
+        this.bright = false;
+        this.fg = this.bg = null;
+        this._buffer = '';
     }
-    /*global ender:false */
-    if (typeof window !== 'undefined' && typeof ender === 'undefined') {
-        window.ansi_up = ansi_up;
-    }
-    /*global define:false */
-    if (typeof define === "function" && define.amd) {
-        define("ansi_up", [], function () {
-            return ansi_up;
+    Object.defineProperty(AnsiUp.prototype, "use_classes", {
+        get: function () {
+            return this._use_classes;
+        },
+        set: function (arg) {
+            this._use_classes = arg;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(AnsiUp.prototype, "escape_for_html", {
+        get: function () {
+            return this._escape_for_html;
+        },
+        set: function (arg) {
+            this._escape_for_html = arg;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    AnsiUp.prototype.setup_256_palette = function () {
+        var _this = this;
+        this.palette_256 = [];
+        this.ansi_colors.forEach(function (palette) {
+            palette.forEach(function (rec) {
+                _this.palette_256.push(rec);
+            });
         });
-    }
-})(Date);
+        var levels = [0, 95, 135, 175, 215, 255];
+        for (var r = 0; r < 6; ++r) {
+            for (var g = 0; g < 6; ++g) {
+                for (var b = 0; b < 6; ++b) {
+                    var col = { rgb: [levels[r], levels[g], levels[b]], class_name: 'truecolor' };
+                    this.palette_256.push(col);
+                }
+            }
+        }
+        var grey_level = 8;
+        for (var i = 0; i < 24; ++i, grey_level += 10) {
+            var gry = { rgb: [grey_level, grey_level, grey_level], class_name: 'truecolor' };
+            this.palette_256.push(gry);
+        }
+    };
+    AnsiUp.prototype.old_escape_for_html = function (txt) {
+        return txt.replace(/[&<>]/gm, function (str) {
+            if (str === "&")
+                return "&amp;";
+            if (str === "<")
+                return "&lt;";
+            if (str === ">")
+                return "&gt;";
+        });
+    };
+    AnsiUp.prototype.old_linkify = function (txt) {
+        return txt.replace(/(https?:\/\/[^\s]+)/gm, function (str) {
+            return "<a href=\"" + str + "\">" + str + "</a>";
+        });
+    };
+    AnsiUp.prototype.detect_incomplete_ansi = function (txt) {
+        return !(/.*?[\x40-\x7e]/.test(txt));
+    };
+    AnsiUp.prototype.detect_incomplete_link = function (txt) {
+        var found = false;
+        for (var i = txt.length - 1; i > 0; i--) {
+            if (/\s|\x1B/.test(txt[i])) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            if (/(https?:\/\/[^\s]+)/.test(txt))
+                return 0;
+            else
+                return -1;
+        }
+        var prefix = txt.substr(i + 1, 4);
+        if (prefix.length === 0)
+            return -1;
+        if ("http".indexOf(prefix) === 0)
+            return (i + 1);
+    };
+    AnsiUp.prototype.ansi_to = function (txt, formatter) {
+        var pkt = this._buffer + txt;
+        this._buffer = '';
+        var raw_text_pkts = pkt.split(/\x1B\[/);
+        if (raw_text_pkts.length === 1)
+            raw_text_pkts.push('');
+        this.handle_incomplete_sequences(raw_text_pkts);
+        var first_chunk = this.with_state(raw_text_pkts.shift());
+        var blocks = new Array(raw_text_pkts.length);
+        for (var i = 0, len = raw_text_pkts.length; i < len; ++i) {
+            blocks[i] = (formatter.transform(this.process_ansi(raw_text_pkts[i]), this));
+        }
+        if (first_chunk.text.length > 0)
+            blocks.unshift(formatter.transform(first_chunk, this));
+        return formatter.compose(blocks, this);
+    };
+    AnsiUp.prototype.ansi_to_html = function (txt) {
+        return this.ansi_to(txt, this.htmlFormatter);
+    };
+    AnsiUp.prototype.ansi_to_text = function (txt) {
+        return this.ansi_to(txt, this.textFormatter);
+    };
+    AnsiUp.prototype.with_state = function (text) {
+        return { bright: this.bright, fg: this.fg, bg: this.bg, text: text };
+    };
+    AnsiUp.prototype.handle_incomplete_sequences = function (chunks) {
+        var last_chunk = chunks[chunks.length - 1];
+        if ((last_chunk.length > 0) && this.detect_incomplete_ansi(last_chunk)) {
+            this._buffer = "\x1B[" + last_chunk;
+            chunks.pop();
+            chunks.push('');
+        }
+        else {
+            if (last_chunk.slice(-1) === "\x1B") {
+                this._buffer = "\x1B";
+                console.log("raw", chunks);
+                chunks.pop();
+                chunks.push(last_chunk.substr(0, last_chunk.length - 1));
+                console.log(chunks);
+                console.log(last_chunk);
+            }
+            if (chunks.length === 2 &&
+                chunks[1] === "" &&
+                chunks[0].slice(-1) === "\x1B") {
+                this._buffer = "\x1B";
+                last_chunk = chunks.shift();
+                chunks.unshift(last_chunk.substr(0, last_chunk.length - 1));
+            }
+        }
+    };
+    AnsiUp.prototype.process_ansi = function (block) {
+        if (!this._sgr_regex) {
+            this._sgr_regex = (_a = ["\n            ^                           # beginning of line\n            ([!<-?]?)             # a private-mode char (!, <, =, >, ?)\n            ([d;]*)                    # any digits or semicolons\n            ([ -/]?               # an intermediate modifier\n            [@-~])                # the command\n            ([sS]*)                   # any text following this CSI sequence\n          "], _a.raw = ["\n            ^                           # beginning of line\n            ([!\\x3c-\\x3f]?)             # a private-mode char (!, <, =, >, ?)\n            ([\\d;]*)                    # any digits or semicolons\n            ([\\x20-\\x2f]?               # an intermediate modifier\n            [\\x40-\\x7e])                # the command\n            ([\\s\\S]*)                   # any text following this CSI sequence\n          "], rgx(_a));
+        }
+        var matches = block.match(this._sgr_regex);
+        if (!matches) {
+            return this.with_state(block);
+        }
+        var orig_txt = matches[4];
+        if (matches[1] !== '' || matches[3] !== 'm') {
+            return this.with_state(orig_txt);
+        }
+        var sgr_cmds = matches[2].split(';');
+        while (sgr_cmds.length > 0) {
+            var sgr_cmd_str = sgr_cmds.shift();
+            var num = parseInt(sgr_cmd_str, 10);
+            if (isNaN(num) || num === 0) {
+                this.fg = this.bg = null;
+                this.bright = false;
+            }
+            else if (num === 1) {
+                this.bright = true;
+            }
+            else if (num === 22) {
+                this.bright = false;
+            }
+            else if (num === 39) {
+                this.fg = null;
+            }
+            else if (num === 49) {
+                this.bg = null;
+            }
+            else if ((num >= 30) && (num < 38)) {
+                var bidx = this.bright ? 1 : 0;
+                this.fg = this.ansi_colors[bidx][(num - 30)];
+            }
+            else if ((num >= 90) && (num < 98)) {
+                this.fg = this.ansi_colors[1][(num - 90)];
+            }
+            else if ((num >= 40) && (num < 48)) {
+                this.bg = this.ansi_colors[0][(num - 40)];
+            }
+            else if ((num >= 100) && (num < 108)) {
+                this.bg = this.ansi_colors[1][(num - 100)];
+            }
+            else if (num === 38 || num === 48) {
+                if (sgr_cmds.length > 0) {
+                    var is_foreground = (num === 38);
+                    var mode_cmd = sgr_cmds.shift();
+                    if (mode_cmd === '5' && sgr_cmds.length > 0) {
+                        var palette_index = parseInt(sgr_cmds.shift(), 10);
+                        if (palette_index >= 0 && palette_index <= 255) {
+                            if (is_foreground)
+                                this.fg = this.palette_256[palette_index];
+                            else
+                                this.bg = this.palette_256[palette_index];
+                        }
+                    }
+                    if (mode_cmd === '2' && sgr_cmds.length > 2) {
+                        var r = parseInt(sgr_cmds.shift(), 10);
+                        var g = parseInt(sgr_cmds.shift(), 10);
+                        var b = parseInt(sgr_cmds.shift(), 10);
+                        if ((r >= 0 && r <= 255) && (g >= 0 && g <= 255) && (b >= 0 && b <= 255)) {
+                            var c = { rgb: [r, g, b], class_name: 'truecolor' };
+                            if (is_foreground)
+                                this.fg = c;
+                            else
+                                this.bg = c;
+                        }
+                    }
+                }
+            }
+        }
+        return this.with_state(orig_txt);
+        var _a;
+    };
+    return AnsiUp;
+}());
+//# sourceMappingURL=ansi_up.js.map
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.default = AnsiUp;
+}));

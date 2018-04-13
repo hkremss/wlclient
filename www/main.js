@@ -12,7 +12,8 @@ function parseQuery(qstr) {
 
 function writeToScreen(str) {
   var out = $('div#out');
-  out.append('<span class="out">' + str + '</span>');
+//  out.append('<span class="out">' + str + '</span>');
+  out.append(str);
   out.scrollTop(out.prop("scrollHeight"));
   while(out.children().length>5000) out.children().first().remove();
 }
@@ -37,6 +38,9 @@ var living_room_name = '';
 
 // Debug flags
 var debug_GMCP = false;
+
+// Since ansi_up API 2.0 we need an instance of AnsiUp!
+var ansi_up = new AnsiUp;
 
 function doGMCPReceive(sock, data) {
 
@@ -333,19 +337,22 @@ function doTelnetNegotions(sock, buf) {
 
 function writeServerData(buf) {
 
-  var lines = buf.split('\r\n');
+//  var lines = buf.split('\r\n');
 
-  for(var i=0; i<lines.length; i++) {
+//  for(var i=0; i<lines.length; i++) {
 
-    var line = lines[i];
+//    var line = lines[i];
 
-    line = ansi_up.escape_for_html(line);
-    line = ansi_up.ansi_to_html(line);
+//    line = ansi_up.escape_for_html(line);
+//    line = ansi_up.ansi_to_html(line);
+    line = ansi_up.ansi_to_html(buf);
 
-    if(i < lines.length-1) line += '<br/>';
+//    if (line.length>0) {
+//      if(i < lines.length-1) line += '<br/>';
 
-    writeToScreen(line);
-  }
+      writeToScreen(line);
+//    }
+//  }
 }
 
 function adjustLayout() {
