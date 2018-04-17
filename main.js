@@ -5,7 +5,7 @@
 var info = require('./package.json');
 
 var path = require('path'),
-    socketio = require('socket.io'),
+    socketio = require('socket.io')({ path: '/client/socket.io'}),
     express = require('express'),
     https = require('https'),
     http = require('http'),
@@ -49,7 +49,7 @@ conf.telnet.port = parseInt(args._[1], 10);
 if(args.h) conf.telnet.host = args.h;
 if(args.w) conf.www = path.resolve(args.w);
 
-var app = express().use(express.static(conf.www));
+var app = express().use('/client', express.static(conf.www));
 
 var httpserver = null;
 
