@@ -5,7 +5,6 @@ html{font-size:100%;} #in{width:898px;} #info{width:300px;display:inline;} #page
 @media(max-width:76em){html{font-size: 70%;} #in{width:598px;} #info{width:300px;display:inline;} #page{width:900px;left:50%;margin-left:-450px;}}
 
 /* landscape phone and portrait tablet */
-/*@media(max-width:56em){html{font-size: 45%;} #in{width:358px;} #info{width:280px;display:inline;} #page{width:640px;left:50%;margin-left:-350px;}}*/
 @media(max-width:56em){html{font-size: 45%;} #in{width:358px;} #info{width:280px;display:inline;} #page{width:640px;left:0;margin:0;}}
 
 /* portrait phone (< 480px) */
@@ -100,7 +99,7 @@ button.cmd {
   font-family: Fixed, monospace;
   width: 80px;
   padding: 5px;
-  margin: 0px 0px 0px 2px;
+  margin: 0px;
 }
 
 .rTbl        { display: table; }

@@ -29,7 +29,7 @@ function numberWithDots(x) {
 
 // New: GMCP support (Holger)
 function getGMCPHello(){
-  return 'Core.Hello { \"client\": \"WL@Web\", \"version\": \"1.0.0\" }';
+  return 'Core.Hello { \"client\": \"WL@Web\", \"version\": \"1.0.1\" }';
 }
 
 // remember these values, if player dies and becomes alive again
@@ -360,13 +360,13 @@ function adjustLayout() {
   var w = $('div#page').width(), h = $('div#page').height();
   var w0 = $('div#in').width();
   var w1 = $('button#send').outerWidth(true);
-  var w2 = $('button#clear').outerWidth(true);
+  var w2 = $('div#menu').outerWidth(true)+25;
   var w3 = $('div#info').width();
   $('div#in').css({
     width: (w-(w3+6)) + 'px',
   });
   $('input#cmd').css({
-    width: (w0 - (w1+w2+15+4)) + 'px',
+    width: ($('div#in').width() - (w1+w2+15+4)) + 'px',
   });
     
   //writeToScreen('w -> ' + w + 'px w0 -> '+w0+'px w1 -> '+w1+'px w2 -> '+w2+'px w3 -> '+w3+'\n');
@@ -515,13 +515,25 @@ $(document).ready(function(){
     }
   });
 
-  $('button#send').click(function(e) {
-    sendInput();
-  });
+  // 'Enter'
+  $('button#send').click(function(e) { sendInput(); });
 
-  $('button#clear').click(function(e) {
-    $('div#out').html('');
-  });
+  // some basic commands
+  $('button#who').click(function(e) { $('input#cmd').val('wer'); sendInput(); });
+  $('button#look').click(function(e) { $('input#cmd').val('schau'); sendInput(); });
+  $('button#inv').click(function(e) { $('input#cmd').val('inv'); sendInput(); });  
+  $('button#score').click(function(e) { $('input#cmd').val('info'); sendInput(); });
+  
+  // some basic move commands
+  $('button#up').click(function(e) { $('input#cmd').val('o'); sendInput(); });
+  $('button#north').click(function(e) { $('input#cmd').val('n'); sendInput(); });
+  $('button#east').click(function(e) { $('input#cmd').val('o'); sendInput(); });
+  $('button#south').click(function(e) { $('input#cmd').val('s'); sendInput(); });
+  $('button#west').click(function(e) { $('input#cmd').val('w'); sendInput(); });
+  $('button#down').click(function(e) { $('input#cmd').val('u'); sendInput(); });
+
+  // clear screen
+  $('button#clear').click(function(e) { $('div#out').html(''); });
 
   setTimeout(function(){
     adjustLayout();    
