@@ -1,4 +1,4 @@
-// Split the query-string into key-value pairs and return a map.
+/// Split the query-string into key-value pairs and return a map.
 // Stolen from: http://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
 function parseQuery(qstr) {
   var query = {};
@@ -366,7 +366,7 @@ function adjustLayout() {
     width: (w-(w3+6)) + 'px',
   });
   $('input#cmd').css({
-    width: ($('div#in').width() - (w1+w2+15+4)) + 'px',
+    width: ($('div#in').width() - (w1+w2)) + 'px',
   });
     
   //writeToScreen('w -> ' + w + 'px w0 -> '+w0+'px w1 -> '+w1+'px w2 -> '+w2+'px w3 -> '+w3+'\n');
@@ -420,7 +420,7 @@ $(document).ready(function(){
   processQueryParams();
 
   // show help text
-  jQuery.get('/help.txt', function(data) {
+  jQuery.get('help.txt', function(data) {
     var lines = data.split('\n');
     for(var i=0; i<lines.length; i++) {
       writeToScreen(lines[i] + '<br/>');
@@ -439,9 +439,11 @@ $(document).ready(function(){
   });
   sock.on('connected', function(){
     console.log('connected');
+    //connected();
   });
   sock.on('disconnect', function(){
     console.log('disconnected');
+    //disconnected();
   });
 
   var history_idx = -1; // current position in history array
@@ -516,7 +518,7 @@ $(document).ready(function(){
   });
 
   // 'Enter'
-  $('button#send').click(function(e) { sendInput(); });
+  $('button#send').click(function(e) { sendInput(); $('input#cmd').focus(); });
 
   // some basic commands
   $('button#who').click(function(e) { $('input#cmd').val('wer'); sendInput(); });
