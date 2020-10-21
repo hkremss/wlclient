@@ -46,7 +46,7 @@ function doGMCPReceive(sock, data) {
 
   // Modify this line, if you need a different base URL
   // or leave it blank to use a pure relative path.
-  var staticContentBase = 'http://wl.mud.de/webclient/';
+  var staticContentBase = '/webclient/';
 
   if(data.length>0) {
 
