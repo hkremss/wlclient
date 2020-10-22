@@ -42,6 +42,9 @@ var debug_GMCP = false;
 // Since ansi_up API 2.0 we need an instance of AnsiUp!
 var ansi_up = new AnsiUp;
 
+// `pending` stores partial telnet negotiations that cross message boundaries
+var pending = '';
+
 function doGMCPReceive(sock, data) {
 
   // Modify this line, if you need a different base URL
@@ -225,6 +228,8 @@ function doTelnetNegotions(sock, buf) {
   var TELOPT_GMCP     = '\xc9'; // 201 -> http://www.gammon.com.au/gmcp
 
   var strippedBuf = '';
+  buf = pending + buf;
+  pending = '';
   var len = buf.length;
 
   if(len>0){
@@ -235,8 +240,10 @@ function doTelnetNegotions(sock, buf) {
       // Copy first part of strippedBuf and skip IACs
       strippedBuf+=buf.substr(oldIacIdx, newIacIdx-oldIacIdx);
 
-      if(newIacIdx+2<len){
-
+      if(newIacIdx+2 >= len) {
+        pending = buf.substr(newIacIdx);
+        oldIacIdx = len;
+      } else {
         switch(buf[newIacIdx+1]){
           case DONT:
 //            strippedBuf+='[IAC DONT ('+buf.charCodeAt(newIacIdx+2)+')]';
@@ -309,7 +316,10 @@ function doTelnetNegotions(sock, buf) {
             break;
           case SB:
             var endSubNegIdx=buf.indexOf(SE, newIacIdx+2);
-            if(endSubNegIdx>0){
+            if(endSubNegIdx<0) {
+              pending = buf.substr(newIacIdx);
+              oldIacIdx = len;
+            } else {
               if (buf[newIacIdx+2]==TELOPT_GMCP){
                 // Received GMCP message!
                 doGMCPReceive(sock, buf.substr(newIacIdx+3, endSubNegIdx-(newIacIdx+4)));
