@@ -130,6 +130,13 @@ WebTelnetProxy.prototype = {
     var telnet = net.connect( proxy.port, proxy.host, function() {
       if(proxy.logTraffic) console.log('telnet connected');
       webSock.emit('status', 'Telnet connected.\n');
+
+      // Wunderland: notify MUD of remote IP address
+      var ip = (webSock.request.headers['x-forwarded-for'] ||
+                webSock.request.socket.remoteAddress).split(',')[0];
+      if (ip.match(/^\d+\.\d+\.\d+\.\d+$/))
+        ip = '::ffff:' + ip;
+      telnet.write(iconv.encode('+' + ip + '\r\n', proxy.charset));
     });
 
     telnet.peerSock = webSock;
