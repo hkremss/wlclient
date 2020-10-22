@@ -129,7 +129,7 @@ WebTelnetProxy.prototype = {
 
     var telnet = net.connect( proxy.port, proxy.host, function() {
       if(proxy.logTraffic) console.log('telnet connected');
-      webSock.emit('status', 'Telnet connected.\n');
+      webSock.emit('connected');
 
       // Wunderland: notify MUD of remote IP address
       var ip = (webSock.request.headers['x-forwarded-for'] ||
@@ -165,7 +165,7 @@ WebTelnetProxy.prototype = {
     });
     telnet.on('close', function(){
       if(proxy.logTraffic) console.log('telnet disconnected');
-      webSock.emit('status', 'Telnet disconnected.\n');
+      webSock.emit('disconnected');
     });
     telnet.on('end', function(){
       var peerSock = telnet.peerSock;
