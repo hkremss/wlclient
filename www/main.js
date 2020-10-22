@@ -241,6 +241,7 @@ function doTelnetNegotions(sock, buf) {
       strippedBuf+=buf.substr(oldIacIdx, newIacIdx-oldIacIdx);
 
       if(newIacIdx+2 >= len) {
+        // save incomplete telnet negotiation for later processing
         pending = buf.substr(newIacIdx);
         oldIacIdx = len;
       } else {
@@ -317,6 +318,7 @@ function doTelnetNegotions(sock, buf) {
           case SB:
             var endSubNegIdx=buf.indexOf(SE, newIacIdx+2);
             if(endSubNegIdx<0) {
+              // save incomplete telnet negotiation for later processing
               pending = buf.substr(newIacIdx);
               oldIacIdx = len;
             } else {
@@ -444,16 +446,13 @@ $(document).ready(function(){
     buf = doTelnetNegotions(sock, buf);
     writeServerData(buf);
   });
-  sock.on('status', function(str){
-    writeToScreen(str);
-  });
   sock.on('connected', function(){
-    console.log('connected');
-    //connected();
+    writeToScreen('Verbindung zum Wunderland hergestellt.\n');
+    connected();
   });
-  sock.on('disconnect', function(){
-    console.log('disconnected');
-    //disconnected();
+  sock.on('disconnected', function(){
+    writeToScreen('Verbindung zum Wunderland verloren.\n');
+    disconnected();
   });
 
   var history_idx = -1; // current position in history array
