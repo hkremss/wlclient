@@ -1,4 +1,4 @@
-// Split the query-string into key-value pairs and return a map.
+/// Split the query-string into key-value pairs and return a map.
 // Stolen from: http://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
 function parseQuery(qstr) {
   var query = {};
@@ -42,11 +42,14 @@ var debug_GMCP = false;
 // Since ansi_up API 2.0 we need an instance of AnsiUp!
 var ansi_up = new AnsiUp;
 
+// `pending` stores partial telnet negotiations that cross message boundaries
+var pending = '';
+
 function doGMCPReceive(sock, data) {
 
   // Modify this line, if you need a different base URL
   // or leave it blank to use a pure relative path.
-  var staticContentBase = 'http://wl.mud.de/webclient/';
+  var staticContentBase = '/webclient/';
 
   if(data.length>0) {
 
@@ -225,6 +228,8 @@ function doTelnetNegotions(sock, buf) {
   var TELOPT_GMCP     = '\xc9'; // 201 -> http://www.gammon.com.au/gmcp
 
   var strippedBuf = '';
+  buf = pending + buf;
+  pending = '';
   var len = buf.length;
 
   if(len>0){
@@ -235,8 +240,11 @@ function doTelnetNegotions(sock, buf) {
       // Copy first part of strippedBuf and skip IACs
       strippedBuf+=buf.substr(oldIacIdx, newIacIdx-oldIacIdx);
 
-      if(newIacIdx+2<len){
-
+      if(newIacIdx+2 >= len) {
+        // save incomplete telnet negotiation for later processing
+        pending = buf.substr(newIacIdx);
+        oldIacIdx = len;
+      } else {
         switch(buf[newIacIdx+1]){
           case DONT:
 //            strippedBuf+='[IAC DONT ('+buf.charCodeAt(newIacIdx+2)+')]';
@@ -309,7 +317,11 @@ function doTelnetNegotions(sock, buf) {
             break;
           case SB:
             var endSubNegIdx=buf.indexOf(SE, newIacIdx+2);
-            if(endSubNegIdx>0){
+            if(endSubNegIdx<0) {
+              // save incomplete telnet negotiation for later processing
+              pending = buf.substr(newIacIdx);
+              oldIacIdx = len;
+            } else {
               if (buf[newIacIdx+2]==TELOPT_GMCP){
                 // Received GMCP message!
                 doGMCPReceive(sock, buf.substr(newIacIdx+3, endSubNegIdx-(newIacIdx+4)));
@@ -366,7 +378,7 @@ function adjustLayout() {
     width: (w-(w3+6)) + 'px',
   });
   $('input#cmd').css({
-    width: ($('div#in').width() - (w1+w2+15+4)) + 'px',
+    width: ($('div#in').width() - (w1+w2)) + 'px',
   });
     
   //writeToScreen('w -> ' + w + 'px w0 -> '+w0+'px w1 -> '+w1+'px w2 -> '+w2+'px w3 -> '+w3+'\n');
@@ -420,7 +432,7 @@ $(document).ready(function(){
   processQueryParams();
 
   // show help text
-  jQuery.get('/help.txt', function(data) {
+  jQuery.get('help.txt', function(data) {
     var lines = data.split('\n');
     for(var i=0; i<lines.length; i++) {
       writeToScreen(lines[i] + '<br/>');
@@ -434,14 +446,13 @@ $(document).ready(function(){
     buf = doTelnetNegotions(sock, buf);
     writeServerData(buf);
   });
-  sock.on('status', function(str){
-    writeToScreen(str);
-  });
   sock.on('connected', function(){
-    console.log('connected');
+    writeToScreen('Verbindung zum Wunderland hergestellt.\n');
+    connected();
   });
-  sock.on('disconnect', function(){
-    console.log('disconnected');
+  sock.on('disconnected', function(){
+    writeToScreen('Verbindung zum Wunderland verloren.\n');
+    disconnected();
   });
 
   var history_idx = -1; // current position in history array
@@ -516,7 +527,7 @@ $(document).ready(function(){
   });
 
   // 'Enter'
-  $('button#send').click(function(e) { sendInput(); });
+  $('button#send').click(function(e) { sendInput(); $('input#cmd').focus(); });
 
   // some basic commands
   $('button#who').click(function(e) { $('input#cmd').val('wer'); sendInput(); });

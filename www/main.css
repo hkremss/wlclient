@@ -1,13 +1,16 @@
-/* full size desktop browsers */
-html{font-size:100%;} #in{width:898px;} #info{width:300px;display:inline;} #page{width:1200px;left:50%;margin-left:-600px;}
+/* max desktop browsers - bigger doesn't make much sense for this client */
+html{font-size:100%;} #in{width:1198px;} #info{width:300px;display:inline;} #page{width:1500px;left:50%;margin-left:-750px;}
 
-/* bigger desktop browsers */
+/* full size desktop browsers (<= 1536px) */
+@media(max-width:96em){html{font-size:100%;} #in{width:898px;} #info{width:300px;display:inline;} #page{width:1200px;left:50%;margin-left:-600px;}}
+
+/* bigger desktop browsers (<= 1216px) */
 @media(max-width:76em){html{font-size: 70%;} #in{width:598px;} #info{width:300px;display:inline;} #page{width:900px;left:50%;margin-left:-450px;}}
 
-/* landscape phone and portrait tablet */
+/* landscape phone and portrait tablet (<= 896px) */
 @media(max-width:56em){html{font-size: 45%;} #in{width:358px;} #info{width:280px;display:inline;} #page{width:640px;left:0;margin:0;}}
 
-/* portrait phone (< 480px) */
+/* portrait phone (<= 560px) */
 @media screen and (max-width:35em) {html{font-size: 45%;} #in{width:358px;} #info{width:0;display:none;} #page{width:360px;left:0;margin:0;}}
 
 body {
@@ -99,7 +102,7 @@ button.cmd {
   font-family: Fixed, monospace;
   width: 80px;
   padding: 5px;
-  margin: 0px;
+  margin: 0px 0px 0px 2px;
 }
 
 .rTbl        { display: table; }
