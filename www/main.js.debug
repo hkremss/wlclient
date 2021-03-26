@@ -27,13 +27,20 @@ function numberWithDots(x) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
+// New: GMCP support (Holger)
+function getGMCPHello(){
+  return 'Core.Hello { \"client\": \"WL@Web\", \"version\": \"1.0.1\" }';
+}
+
+// remember these values, if player dies and becomes alive again
+var living_room_image = '';
+var living_room_name = '';
+
+// Debug flags
+var debug_GMCP = false;
+
 // Since ansi_up API 2.0 we need an instance of AnsiUp!
 var ansi_up = new AnsiUp;
-
-// `pending` stores partial telnet negotiations that cross message boundaries
-var pending = '';
-<<<<<<< HEAD
-=======
 
 function doGMCPReceive(sock, data) {
 
@@ -194,7 +201,6 @@ function doGMCPReceive(sock, data) {
     }
   } 
 }
->>>>>>> af35d18ec383e4f91f50f36ab481d09c8146e417
 
 // New: Telnet negotiations (Holger).
 function doTelnetNegotions(sock, buf) {
@@ -219,8 +225,6 @@ function doTelnetNegotions(sock, buf) {
   var TELOPT_GMCP     = '\xc9'; // 201 -> http://www.gammon.com.au/gmcp
 
   var strippedBuf = '';
-  buf = pending + buf;
-  pending = '';
   var len = buf.length;
 
   if(len>0){
@@ -231,14 +235,11 @@ function doTelnetNegotions(sock, buf) {
       // Copy first part of strippedBuf and skip IACs
       strippedBuf+=buf.substr(oldIacIdx, newIacIdx-oldIacIdx);
 
-      if(newIacIdx+2 >= len) {
-        // save incomplete telnet negotiation for later processing
-        pending = buf.substr(newIacIdx);
-        oldIacIdx = len;
-      } else {
+      if(newIacIdx+2<len){
+
         switch(buf[newIacIdx+1]){
           case DONT:
-//            strippedBuf+='[IAC DONT ('+buf.charCodeAt(newIacIdx+2)+')]';
+            strippedBuf+='[IAC DONT ('+buf.charCodeAt(newIacIdx+2)+')]';
             oldIacIdx = newIacIdx+3;
             break;
           case DO:
@@ -249,9 +250,9 @@ function doTelnetNegotions(sock, buf) {
               case TELOPT_ENVIRON:
               default:
                 // we WONT do anything else. So just reply all DO by WONT
-//                strippedBuf+='[receive: IAC DO ('+buf.charCodeAt(newIacIdx+2)+')]\n';
+                strippedBuf+='[receive: IAC DO ('+buf.charCodeAt(newIacIdx+2)+')]\n';
                 if(sock) sock.emit('stream', IAC+WONT+buf.substr(newIacIdx+2,1));
-//                strippedBuf+='[respond: IAC WONT ('+buf.charCodeAt(newIacIdx+2)+'|'+buf[newIacIdx+2]+')]\n';
+                strippedBuf+='[respond: IAC WONT ('+buf.charCodeAt(newIacIdx+2)+'|'+buf[newIacIdx+2]+')]\n';
                 break;
             }
             oldIacIdx = newIacIdx+3;
@@ -260,16 +261,16 @@ function doTelnetNegotions(sock, buf) {
             switch(buf[newIacIdx+2]){
               case TELOPT_ECHO:
                 // enable local echo!
-//                strippedBuf+='[receive: IAC WONT ECHO]\n';
+                strippedBuf+='[receive: IAC WONT ECHO]\n';
                 $('input#cmd').get(0).type="text";
                 if(sock) sock.emit('stream', IAC+DONT+TELOPT_ECHO);
-//                strippedBuf+='[respond: IAC DONT ECHO]\n';
+                strippedBuf+='[respond: IAC DONT ECHO]\n';
                 break;
               default:
                 // if the server WONT to do something anymore, tell it, this is fine.
-//                strippedBuf+='[receive: IAC WONT ('+buf.charCodeAt(newIacIdx+2)+')]\n';
+                strippedBuf+='[receive: IAC WONT ('+buf.charCodeAt(newIacIdx+2)+')]\n';
                 if(sock) sock.emit('stream', IAC+DONT+buf.substr(newIacIdx+2,1));
-//                strippedBuf+='[respond: IAC DONT ('+buf.charCodeAt(newIacIdx+2)+')]\n';
+                strippedBuf+='[respond: IAC DONT ('+buf.charCodeAt(newIacIdx+2)+')]\n';
                 break;
             }
             oldIacIdx = newIacIdx+3;
@@ -278,53 +279,49 @@ function doTelnetNegotions(sock, buf) {
             switch(buf[newIacIdx+2]){
               case TELOPT_EOR:
                 // No EOR support!
-//                strippedBuf+='[receive IAC WILL EOR]\n';
+                strippedBuf+='[receive IAC WILL EOR]\n';
                 if(sock) sock.emit('stream', IAC+DONT+TELOPT_EOR);
-//                strippedBuf+='[respond: IAC DONT EOR]\n';
+                strippedBuf+='[respond: IAC DONT EOR]\n';
                 break;
               case TELOPT_ECHO:
                 // disable local echo!
-//                strippedBuf+='[receive: IAC WILL ECHO]\n';
+                strippedBuf+='[receive: IAC WILL ECHO]\n';
                 $('input#cmd').get(0).type='password';
                 if(sock) sock.emit('stream', IAC+DO+TELOPT_ECHO);
-//                strippedBuf+='[respond: IAC DO ECHO]\n';
+                strippedBuf+='[respond: IAC DO ECHO]\n';
                 break;
               case TELOPT_GMCP:
                 // use GMCP
-//                strippedBuf+='[receive: IAC WILL GMCP]\n';
+                strippedBuf+='[receive: IAC WILL GMCP]\n';
                 if(sock) sock.emit('stream', IAC+DO+TELOPT_GMCP);
-//                strippedBuf+='[respond: IAC DO GMCP]\n';
+                strippedBuf+='[respond: IAC DO GMCP]\n';
 		if(sock) sock.emit('stream', IAC+SB+TELOPT_GMCP+getGMCPHello()+IAC+SE);
-//                strippedBuf+='[respond: IAC SB GMCP \''+getGMCPHello()+'\' IAC SE]\n';
+                strippedBuf+='[respond: IAC SB GMCP \''+getGMCPHello()+'\' IAC SE]\n';
 		break;
               default:
                 // we DONT accept anything else. So just reply all WILL by DONT
-//                strippedBuf+='[receive: IAC WILL ('+buf.charCodeAt(newIacIdx+2)+')]\n';
+                strippedBuf+='[receive: IAC WILL ('+buf.charCodeAt(newIacIdx+2)+')]\n';
                 if(sock) sock.emit('stream', IAC+DONT+buf.substr(newIacIdx+2,1));
-//                strippedBuf+='[respond: IAC DONT ('+buf.charCodeAt(newIacIdx+2)+')]\n';
+                strippedBuf+='[respond: IAC DONT ('+buf.charCodeAt(newIacIdx+2)+')]\n';
                 break;
             }
             oldIacIdx = newIacIdx+3;
             break;
           case SB:
             var endSubNegIdx=buf.indexOf(SE, newIacIdx+2);
-            if(endSubNegIdx<0) {
-              // save incomplete telnet negotiation for later processing
-              pending = buf.substr(newIacIdx);
-              oldIacIdx = len;
-            } else {
+            if(endSubNegIdx>0){
               if (buf[newIacIdx+2]==TELOPT_GMCP){
                 // Received GMCP message!
                 doGMCPReceive(sock, buf.substr(newIacIdx+3, endSubNegIdx-(newIacIdx+4)));
               }
               else {
-//                strippedBuf+='[receive IAC SB ... SE]\n';
+                strippedBuf+='[receive IAC SB ... SE]\n';
               }
               oldIacIdx = endSubNegIdx+1;
             }
             break;
           default:
-//            strippedBuf+='[IAC ('+buf.charCodeAt(newIacIdx+1)+') ('+buf.charCodeAt(newIacIdx+2)+')]\n';
+            strippedBuf+='[IAC ('+buf.charCodeAt(newIacIdx+1)+') ('+buf.charCodeAt(newIacIdx+2)+')]\n';
             oldIacIdx = newIacIdx+3;
             break;
         }
@@ -432,18 +429,21 @@ $(document).ready(function(){
 
   // websocket
 //  var sock = io.connect();
-  var sock = io.connect('', {path:'/client-test/socket.io'});
+  var sock = io.connect('', {path:'/client/socket.io'});
   sock.on('stream', function(buf){
     buf = doTelnetNegotions(sock, buf);
     writeServerData(buf);
   });
-  sock.on('connected', function(){
-    writeToScreen('Verbindung zum Wunderland hergestellt.\n');
-    connected();
+  sock.on('status', function(str){
+    writeToScreen(str);
   });
-  sock.on('disconnected', function(){
-    writeToScreen('Verbindung zum Wunderland verloren.\n');
-    disconnected();
+  sock.on('connected', function(){
+    console.log('connected');
+    //connected();
+  });
+  sock.on('disconnect', function(){
+    console.log('disconnected');
+    //disconnected();
   });
 
   var history_idx = -1; // current position in history array

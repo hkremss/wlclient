@@ -27,18 +27,26 @@ function numberWithDots(x) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
+// New: GMCP support (Holger)
+function getGMCPHello(){
+  return 'Core.Hello { \"client\": \"WL@Web\", \"version\": \"1.0.1\" }';
+}
+
+// remember these values, if player dies and becomes alive again
+var living_room_image = '';
+var living_room_name = '';
+
+// Debug flags
+var debug_GMCP = false;
+
 // Since ansi_up API 2.0 we need an instance of AnsiUp!
 var ansi_up = new AnsiUp;
-
-// `pending` stores partial telnet negotiations that cross message boundaries
-var pending = '';
-<<<<<<< HEAD
-=======
 
 function doGMCPReceive(sock, data) {
 
   // Modify this line, if you need a different base URL
   // or leave it blank to use a pure relative path.
+  //var staticContentBase = 'http://wl.mud.de/webclient/';
   var staticContentBase = '/webclient/';
 
   if(data.length>0) {
@@ -194,7 +202,6 @@ function doGMCPReceive(sock, data) {
     }
   } 
 }
->>>>>>> af35d18ec383e4f91f50f36ab481d09c8146e417
 
 // New: Telnet negotiations (Holger).
 function doTelnetNegotions(sock, buf) {
@@ -219,8 +226,6 @@ function doTelnetNegotions(sock, buf) {
   var TELOPT_GMCP     = '\xc9'; // 201 -> http://www.gammon.com.au/gmcp
 
   var strippedBuf = '';
-  buf = pending + buf;
-  pending = '';
   var len = buf.length;
 
   if(len>0){
@@ -231,11 +236,8 @@ function doTelnetNegotions(sock, buf) {
       // Copy first part of strippedBuf and skip IACs
       strippedBuf+=buf.substr(oldIacIdx, newIacIdx-oldIacIdx);
 
-      if(newIacIdx+2 >= len) {
-        // save incomplete telnet negotiation for later processing
-        pending = buf.substr(newIacIdx);
-        oldIacIdx = len;
-      } else {
+      if(newIacIdx+2<len){
+
         switch(buf[newIacIdx+1]){
           case DONT:
 //            strippedBuf+='[IAC DONT ('+buf.charCodeAt(newIacIdx+2)+')]';
@@ -308,11 +310,7 @@ function doTelnetNegotions(sock, buf) {
             break;
           case SB:
             var endSubNegIdx=buf.indexOf(SE, newIacIdx+2);
-            if(endSubNegIdx<0) {
-              // save incomplete telnet negotiation for later processing
-              pending = buf.substr(newIacIdx);
-              oldIacIdx = len;
-            } else {
+            if(endSubNegIdx>0){
               if (buf[newIacIdx+2]==TELOPT_GMCP){
                 // Received GMCP message!
                 doGMCPReceive(sock, buf.substr(newIacIdx+3, endSubNegIdx-(newIacIdx+4)));
@@ -432,18 +430,21 @@ $(document).ready(function(){
 
   // websocket
 //  var sock = io.connect();
-  var sock = io.connect('', {path:'/client-test/socket.io'});
+  var sock = io.connect('', {path:'/client/socket.io'});
   sock.on('stream', function(buf){
     buf = doTelnetNegotions(sock, buf);
     writeServerData(buf);
   });
+  sock.on('status', function(str){
+    writeToScreen(str);
+  });
   sock.on('connected', function(){
-    writeToScreen('Verbindung zum Wunderland hergestellt.\n');
+    console.log('connected');
+
     connected();
   });
-  sock.on('disconnected', function(){
-    writeToScreen('Verbindung zum Wunderland verloren.\n');
-    disconnected();
+  sock.on('disconnect', function(){
+    console.log('disconnected');
   });
 
   var history_idx = -1; // current position in history array

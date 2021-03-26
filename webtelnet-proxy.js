@@ -133,7 +133,7 @@ WebTelnetProxy.prototype = {
 
       // Wunderland: notify MUD of remote IP address
       var ip = (webSock.request.headers['x-forwarded-for'] ||
-                webSock.request.socket.remoteAddress).split(',')[0];
+                webSock.request.socket.remoteAddress).split(',').pop().trim();
       if (ip.match(/^\d+\.\d+\.\d+\.\d+$/))
         ip = '::ffff:' + ip;
       telnet.write(iconv.encode('+' + ip + '\r\n', proxy.charset));
