@@ -269,7 +269,8 @@ $(document).ready(function(){
 
   // websocket
 //  var sock = io.connect();
-  var sock = io.connect('', {path:'/client/socket.io'});
+//  var sock = io.connect('', {path:'/client/socket.io'});
+  var sock = io.connect('', {path:location.pathname+'/socket.io'});
   sock.on('stream', function(buf){
     buf = doTelnetNegotions(sock, buf);
     writeServerData(buf);
