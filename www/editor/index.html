@@ -1,0 +1,44 @@
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>WL Magier Editor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="styles.css" rel="stylesheet">
+
+  <script src="../js/jquery-1.12.4.min.js"></script>
+  <script src="../js/jquery-ui.min.js"></script>
+  <link rel="stylesheet" href="../css/jquery-ui.min.css">
+  <style>
+  .resizer[data-direction="horizontal"] {
+      background-color: #cbd5e0;
+      cursor: ew-resize;
+      height: 100%;
+      width: 2px;
+  }
+  .resizer[data-direction="vertical"] {
+      background-color: #cbd5e0;
+      cursor: ns-resize;
+      height: 2px;
+      width: 100%;
+  }
+  </style>
+  <script src="js/filetree_refresh.js"></script>
+</head>
+<body class="font-sans w-full">
+  <div style="padding:.25rem">
+    <div class="border border-red-400 w-full flex" style="height: 32rem">
+      <div id="filetree" class="flex items-center justify-center" style="width: 12rem">Tree</div>
+      <div class="resizer" data-direction="horizontal"></div>
+      <div class="flex flex-col flex-1">
+        <div id="editor" class="flex items-center justify-center h-64">Content</div>
+        <div class="resizer" data-direction="vertical"></div>
+        <div id="messages" class="flex items-center justify-center flex-1">Messages</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/resizer.js"></script>
+  <script src="js/storage_event.js"></script>
+
+</body>
+</html>

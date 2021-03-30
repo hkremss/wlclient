@@ -30,7 +30,10 @@
 </script>
 
   <script src="socket.io/socket.io.js"></script>
-  <script src="js/jquery-1.12.0.min.js"></script>
+  <!--script src="js/jquery-1.12.0.min.js"></script-->
+  <script src="js/jquery-1.12.4.min.js"></script>
+  <script src="js/jquery-ui.min.js"></script>
+  <link rel="stylesheet" href="css/jquery-ui.min.css">
   <script src='js/underscore-min.js'></script>
   <script src="js/jquery.cookie.js"></script>
   <script src="js/ansi_up.js"></script>
@@ -76,6 +79,29 @@
     //alert('Disonnected!');
     //document.getElementById("cmd").innerHTML = "<span style='font-style: italic; color: #00FF00;'>Disconnected.</span><br>";
   }
+  </script>
+  <script>
+  $( function() {
+    $( "#infoDialog" ).dialog({
+      modal: true,
+      autoOpen: false,
+      buttons: {
+        Ok: function() {
+          $(this).dialog("close");
+        }
+      }
+
+//      autoOpen: false,
+//      show: {
+//        effect: "blind",
+//        duration: 1000
+//      },
+//      hide: {
+//        effect: "explode",
+//        duration: 1000
+//      }
+    });
+  });
   </script>
 </head>
 
@@ -148,5 +174,10 @@
       </div>
     </div>
   </div>
+
+  <div id="infoDialog" title="Information!" style="display:none;">
+    <p>Das ist ein Informationsdialog.</p>
+  </div>
+
 </body>
 </html>

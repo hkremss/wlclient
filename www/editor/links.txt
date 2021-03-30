@@ -1,0 +1,2 @@
+Methods / pros / cons to communicate between tabs/windows:
+https://stackoverflow.com/questions/28230845/communication-between-tabs-or-windows
