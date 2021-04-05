@@ -47,6 +47,9 @@ function doGMCPReceive(sock, data) {
       case 'WL.File.List':
         HandleGMCP_WL_File_List(module, payload);
         break;
+      case 'WL.File.Transfer':
+        HandleGMCP_WL_File_Transfer(module, payload);
+        break;
       default:
         console.log('Unknown GMCP module: ' + module + '.');
     }
@@ -226,6 +229,48 @@ function HandleGMCP_WL_File_List(module, payload) {
   // put path and list into local storage
   localStorage.setItem('WL.File.List path', path);
   localStorage.setItem('WL.File.List list', JSON.stringify(list));
+
+  // Try to bring editor to front
+  if (editorWindow && !editorWindow.closed) editorWindow.focus();
+
+  // Now let the user know, if there is an issue with the window
+  if (!editorWindow || editorWindow.closed) {
+     $( "#infoDialog" ).dialog( "option", "title", "Fehler" );
+     $( "#infoDialog" ).html( "Editor-Fenster konnte nicht ge&ouml;ffnet werden oder ist " +
+       "nicht sichtbar! Pr&uuml;fe Deinen Browser oder Popup-Blocker!" );
+     $( "#infoDialog" ).dialog( "open" );
+  }
+}
+
+// Handle GMCP WL.File.Transfer
+function HandleGMCP_WL_File_Transfer(module, payload) {
+  var values = JSON.parse(payload);
+
+  // try opening new window, if it does not exist (yet)
+  if (!editorWindow || editorWindow.closed) {
+    popupCenter({url: 'editor/', title: 'Editor', w: 900, h: 500});
+  }
+
+  // don't care, if the window has opened successfully for now!
+
+  // put tree list in local storage and inform tree view to refresh content
+  var path = '';
+  var content = '';
+
+  if (Array.isArray(values)) {
+    if (values.length > 0) {
+      // values[0] contains the file path
+      path = values[0];
+    }
+    if (values.length > 1) {
+      // values[1] contains the file content
+      content = values[1];
+    }
+  }
+
+  // put path and list into local storage
+  localStorage.setItem('WL.File.Transfer path', path);
+  localStorage.setItem('WL.File.Transfer content', content);
 
   // Try to bring editor to front
   if (editorWindow && !editorWindow.closed) editorWindow.focus();

@@ -270,7 +270,10 @@ $(document).ready(function(){
   // websocket
 //  var sock = io.connect();
 //  var sock = io.connect('', {path:'/client/socket.io'});
-  var sock = io.connect('', {path:location.pathname+'/socket.io'});
+//  var sock = io.connect('', {path:location.pathname+'/socket.io'});
+  // truncate tailing /index.html
+  var baseUri = location.pathname.substring(0, location.pathname.lastIndexOf("/"))
+  var sock = io.connect('', {path:baseUri+'/socket.io'});
   sock.on('stream', function(buf){
     buf = doTelnetNegotions(sock, buf);
     writeServerData(buf);
