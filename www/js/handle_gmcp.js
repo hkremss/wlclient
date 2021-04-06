@@ -28,27 +28,32 @@ function doGMCPReceive(sock, data) {
     // handle JSON data here and update UI!
     if(debug_GMCP) writeToScreen('GMCP: ' + data + '<br>');
 
+    // if editor is open (for wizards), update the used socket
+    if (editorWindow && !editorWindow.closed) {
+      editorWindow.useSocket(sock);
+    }
+
     var module = data.split(' ', 1)[0];
     var payload = data.substr(module.length);
 
     switch (module) {
       case 'Core.Ping':
-        HandleGMCP_Core_Ping(module, payload);
+        HandleGMCP_Core_Ping(sock, module, payload);
         break;
       case 'Core.Goodbye':
-        HandleGMCP_Core_Goodbye(module, payload);
+        HandleGMCP_Core_Goodbye(sock, module, payload);
         break;
       case 'Char.Vitals':
-        HandleGMCP_Char_Vitals(module, payload);
+        HandleGMCP_Char_Vitals(sock, module, payload);
         break;
       case 'Room.Info':
-        HandleGMCP_Room_Info(module, payload);
+        HandleGMCP_Room_Info(sock, module, payload);
         break;
       case 'WL.File.List':
-        HandleGMCP_WL_File_List(module, payload);
+        HandleGMCP_WL_File_List(sock, module, payload);
         break;
       case 'WL.File.Transfer':
-        HandleGMCP_WL_File_Transfer(module, payload);
+        HandleGMCP_WL_File_Transfer(sock, module, payload);
         break;
       default:
         console.log('Unknown GMCP module: ' + module + '.');
@@ -57,12 +62,12 @@ function doGMCPReceive(sock, data) {
 }
 
 // Handle GMCP Core.Ping
-function HandleGMCP_Core_Ping(module, payload) {
+function HandleGMCP_Core_Ping(sock, module, payload) {
   // This should be the response of our ping, so ignore it!
 }
 
 // Handle GMCP Core.Goodbye
-function HandleGMCP_Core_Goodbye(module, payload) {
+function HandleGMCP_Core_Goodbye(sock, module, payload) {
   // The server tells us, we will be disconnected now.
   var value = JSON.parse(payload);
 
@@ -78,7 +83,7 @@ function HandleGMCP_Core_Goodbye(module, payload) {
 }
 
 // Handle GMCP Char.Vitals
-function HandleGMCP_Char_Vitals(module, payload) {
+function HandleGMCP_Char_Vitals(sock, module, payload) {
   var values = JSON.parse(payload);
 
   // if dead
@@ -167,7 +172,7 @@ function HandleGMCP_Char_Vitals(module, payload) {
 }
 
 // Handle GMCP Room.Info
-function HandleGMCP_Room_Info(module, payload) {
+function HandleGMCP_Room_Info(sock, module, payload) {
   var values = JSON.parse(payload);
 
   // name
@@ -199,39 +204,33 @@ function HandleGMCP_Room_Info(module, payload) {
 }
 
 // Handle GMCP WL.File.List
-function HandleGMCP_WL_File_List(module, payload) {
+function HandleGMCP_WL_File_List(sock, module, payload) {
   var values = JSON.parse(payload);
 
   // try opening new window, if it does not exist (yet)
   if (!editorWindow || editorWindow.closed) {
-    popupCenter({url: 'editor/', title: 'Editor', w: 900, h: 500});
+    editorWindow = popupCenter({url: 'editor/', title: 'Editor', w: 900, h: 500});
   }
 
   // don't care, if the window has opened successfully for now!
 
   // put tree list in local storage and inform tree view to refresh content
-  var path = '';
-  var list = {};
+  var path = values['path'];
+  var list = values['list'];
 
-  if (Array.isArray(values)) {
-    if (values.length > 0) {
-      // values[0] contains the path
-      path = values[0];
-    }
-    if (values.length > 1) {
-      // values[1] contains an array list with the content of the path
-      // values[1][0] - entry name
-      // values[1][1] - entry size (or -2 for directory)
-      // values[1][2] - entry date (unix millis)
-      list = values[1];
-    }
-  }
   // put path and list into local storage
   localStorage.setItem('WL.File.List path', path);
   localStorage.setItem('WL.File.List list', JSON.stringify(list));
 
-  // Try to bring editor to front
-  if (editorWindow && !editorWindow.closed) editorWindow.focus();
+  // Tell the editor, what socket we use and try to bring it to front
+  if (editorWindow && !editorWindow.closed) {
+    editorWindow.addEventListener('load', function (){
+//      defer(function (){
+        editorWindow.useSocket(sock);
+        editorWindow.focus();
+//      });
+    });
+  }
 
   // Now let the user know, if there is an issue with the window
   if (!editorWindow || editorWindow.closed) {
@@ -243,37 +242,33 @@ function HandleGMCP_WL_File_List(module, payload) {
 }
 
 // Handle GMCP WL.File.Transfer
-function HandleGMCP_WL_File_Transfer(module, payload) {
+function HandleGMCP_WL_File_Transfer(sock, module, payload) {
   var values = JSON.parse(payload);
 
   // try opening new window, if it does not exist (yet)
   if (!editorWindow || editorWindow.closed) {
-    popupCenter({url: 'editor/', title: 'Editor', w: 900, h: 500});
+    editorWindow = popupCenter({url: 'editor/', title: 'Editor', w: 900, h: 500});
   }
 
   // don't care, if the window has opened successfully for now!
 
   // put tree list in local storage and inform tree view to refresh content
-  var path = '';
-  var content = '';
-
-  if (Array.isArray(values)) {
-    if (values.length > 0) {
-      // values[0] contains the file path
-      path = values[0];
-    }
-    if (values.length > 1) {
-      // values[1] contains the file content
-      content = values[1];
-    }
-  }
+  var path = values['path'];
+  var content = values['content'];
 
   // put path and list into local storage
   localStorage.setItem('WL.File.Transfer path', path);
   localStorage.setItem('WL.File.Transfer content', content);
 
-  // Try to bring editor to front
-  if (editorWindow && !editorWindow.closed) editorWindow.focus();
+  // Tell the editor, what socket we use and try to bring it to front
+  if (editorWindow && !editorWindow.closed) {
+    editorWindow.addEventListener('load', function (){
+//      defer(function (){
+        editorWindow.useSocket(sock);
+        editorWindow.focus();
+//      });
+    });
+  }
 
   // Now let the user know, if there is an issue with the window
   if (!editorWindow || editorWindow.closed) {
@@ -298,16 +293,16 @@ const popupCenter = ({url, title, w, h}) => {
     const left = (width - w) / 2 / systemZoom + dualScreenLeft
     const top = (height - h) / 2 / systemZoom + dualScreenTop
 
-    editorWindow = window.open(url, title, 
+    var windowHandle = window.open(url, title,
       `
       toolbar=no,
       scrollbars=yes,
-      width=${w / systemZoom}, 
-      height=${h / systemZoom}, 
-      top=${top}, 
+      width=${w / systemZoom},
+      height=${h / systemZoom},
+      top=${top},
       left=${left}
       `
     )
 
-    if (window.focus) editorWindow.focus();
+    return windowHandle;
 }

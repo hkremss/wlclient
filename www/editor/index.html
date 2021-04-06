@@ -3,40 +3,123 @@
   <meta charset="utf-8" />
   <title>WL Magier Editor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link href="styles.css" rel="stylesheet">
-
+  <link rel="stylesheet" href="css/jquery-ui.min.css">
+  <link rel="stylesheet" href="css/jquery-ui.theme.min.css">
+  <link rel="stylesheet" href="css/jquery-ui.structure.min.css">
   <script src="../js/jquery-1.12.4.min.js"></script>
   <script src="../js/jquery-ui.min.js"></script>
-  <link rel="stylesheet" href="../css/jquery-ui.min.css">
+  
+  <!-- resizer / area-->
   <style>
   .resizer[data-direction="horizontal"] {
-      background-color: #cbd5e0;
+      foreground-color: blue;
+      background-color: #cbcbe0;
       cursor: ew-resize;
-      height: 100%;
-      width: 2px;
+      height: 100hv;
+      width: 4px;
   }
   .resizer[data-direction="vertical"] {
-      background-color: #cbd5e0;
+      background-color: #ffffff;
       cursor: ns-resize;
-      height: 2px;
+      height: 4px;
       width: 100%;
   }
+  .flex-1 {
+   flex:1 1 0%
+  }
+  .flex {
+   display:flex
+  }
+  .flex-col {
+   flex-direction:column
+  }
+  .flex-col-reverse {
+   flex-direction:column-reverse
+  }
+  .flex-wrap {
+   flex-wrap:wrap
+  }
+  .flex-wrap-reverse {
+   flex-wrap:wrap-reverse
+  }
   </style>
-  <script src="js/filetree_refresh.js"></script>
-</head>
-<body class="font-sans w-full">
-  <div style="padding:.25rem">
-    <div class="border border-red-400 w-full flex" style="height: 32rem">
-      <div id="filetree" class="flex items-center justify-center" style="width: 12rem">Tree</div>
-      <div class="resizer" data-direction="horizontal"></div>
-      <div class="flex flex-col flex-1">
-        <div id="editor" class="flex items-center justify-center h-64">Content</div>
-        <div class="resizer" data-direction="vertical"></div>
-        <div id="messages" class="flex items-center justify-center flex-1">Messages</div>
-      </div>
-    </div>
-  </div>
 
+  <!-- filetree list-->
+  <link rel="stylesheet" href="css/prettytable.css">
+  <style> 
+  #feedback { font-size: 1.4em; }
+  #fileslist .ui-selecting { background: #FECA40; }
+  #fileslist .ui-selected { background: #F39814; color: white; }
+  #fileslist { list-style-type: none; margin: 0; padding: 0; width: 90%; }
+  #fileslist li { margin: 0px; padding: 0em; height: 18px; }
+  </style>
+
+  <script src="js/editor_gmcp.js"></script>
+  <script src="js/filelist.js"></script>
+  <script src="js/editpart.js"></script>
+  <script src="js/messagelist.js"></script>
+</head>
+<body style="margin:0">
+
+  <div id="page" style="display:flex;flex:1 1 100%;border-width:1px;height:100vh;">
+
+<!-- File list: -->
+    <!--div class="flex" id="filetree" style="width:12rem;min-width:6rem;overflow-x:auto;overflow-y:scroll">
+      <table id="filetable" style="ui-widget-content;white-space:nowrap">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Size</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="ui-widget-content>Cell 2</td><td>Cell 3</td><td>Cell 4</td></tr>
+          <tr><td>Cell 2</td><td>Cell 3</td><td>Cell 4</td></tr>
+          <tr><td>Cell 2</td><td>Cell 3</td><td>Cell 4</td></tr>
+        </tbody>
+      </table>
+    </div-->
+
+      <div id="filetree" class="ui-widget" style="width:120px;min-width:80px;overflow-x:hidden;white-space:nowrap;overflow-y:scroll;">
+        <ul id="fileslist">
+          <li class="ui-widget-content">If you see this</li>
+          <li class="ui-widget-content">something</li>
+          <li class="ui-widget-content">went wrong!</li>
+        </ul>
+      </div>
+
+    <div class="resizer" data-direction="horizontal"></div>
+
+    <div style="display:flex;flex: 1 1 0%;flex-direction:column;min-width:280px">
+
+<!-- Editor-Tabs: -->
+        <div id="tabs" style="height:90vh;min-height:10rem;border:0;margin:0;padding:0;">
+          <ul>
+             <li><a href="#fragment-1"><span>One</span></a></li>
+             <li><a href="#fragment-2"><span>Two</span></a></li>
+             <li><a href="#fragment-3"><span>Three</span></a></li>
+          </ul>
+          <div id="fragment-1" style="font-family:monospace;white-space:pre;overflow-x:auto;overflow-y:scroll;height:calc(100% - 55px);margin:0;">
+            1 Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
+          </div>
+          <div id="fragment-2" style="font-family:monospace;white-space:pre;overflow-x:auto;overflow-y:scroll;height:calc(100% - 55px);margin:0">
+            2 Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
+          </div>
+          <div id="fragment-3" style="font-family:monospace;white-space:pre;overflow-x:auto;overflow-y:scroll;height:calc(100% - 55px);margin:0">
+            3 Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
+          </div>
+        </div>
+
+        <div class="resizer" data-direction="vertical"></div>
+
+<!-- Messages: -->
+        <div id="messages" class="ui-widget" 
+	  style="flex: 1 1 0%;white-space:pre;overflow-x:auto;overflow-y:scroll;min-height:2rem"></div>
+    </div>
+  <!--/div-->
+
+  <script>$( "#tabs" ).tabs();</script>
   <script src="js/resizer.js"></script>
   <script src="js/storage_event.js"></script>
 

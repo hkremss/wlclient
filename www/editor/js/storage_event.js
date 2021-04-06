@@ -2,12 +2,14 @@
 var handle_storage = function (event) {
   console.log("STORAGE EVENT: " + event.key);
   refresh_filetree();
+  refresh_editpart();
 };
 
 // refresh after storage event
 window.addEventListener('storage', handle_storage, false);
 
 // refresh after page load
-$(document).ready(function(){ 
-  refresh_filetree(); 
+$(document).ready(function(){
+  refresh_filetree();
+  refresh_editpart();
 });
