@@ -26,7 +26,7 @@ Playing MUD with PC browser (e.g. Chrome):
 
 ![wlclient](https://github.com/hkremss/wlclient/raw/master/docs/wl.png) 
 
-Playing MUD with mobile broswer on Android: 
+Playing MUD with mobile browser on Android: 
 
 ![wlclient-mobile](https://github.com/hkremss/wlclient/raw/master/docs/wl-mobile.png)
 
