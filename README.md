@@ -1,78 +1,37 @@
-# WebTelnet
+# WL-Client
 
-WebTelnet is a proxy server to bridge websocket to telnet, enable visiting telnet servers with browsers.
+WL-Client is a client for the German MUD (multi-user dungeon) [Wunderland](https://wunderland.mud.de/). It's based on the great [WebTelnet by Raymond Xie](https://github.com/mudchina/webtelnet) as a proxy server to bridge websocket to telnet, enable visiting telnet servers with browsers. It has been adapted, partially bug-fixed and extended as a special purpose tool. So if you are looking for a more generic approach, visit: https://github.com/mudchina/webtelnet
 
 ## Purpose
 
-WebTelnet can be used to:
-
-* Visit telnet servers with browser.
-* Play MUD game with browser.
+WL-Client can be used, to play Wunderland or other MUDs based on Wunderland Mudlib. Although it should be usable for any MUD, it makes heavy use of the [GMCP protocol](https://www.gammon.com.au/gmcp) and special GMCP modules only used by Wunderland.
 
 ## Install
 
-## Usage programatically
+Make sure, [NodeJS](https://nodejs.org) v10.x or up is installed. Clone the repository into your web project, e.g. /home/www/client.app/. Make sure, a browser request will reached the document root in /home/www/client.app/www/ through your static web-server host configuration. Finally launch the client like: 
 
-In your project folder:
-
-```bash
-$ [sudo] npm install webtelnet --save
+```bash $ 
+node /home/www/client.app/main.js 4716 4711 -h localhost -c iso-8859-1
 ```
 
-```javascript
-var app = express().use(express.static(conf.www));
-var httpserver = http.createServer(app);
-httpserver.listen(conf.web.port, conf.web.host, function(){
-  console.log('listening on ' + conf.web.host + ':' + conf.web.port);
-});
-
-// create socket io
-var io = socketio.listen(httpserver);
-
-// create webtelnet proxy and bind to io
-var webtelnetd = webtelnet(io, conf.telnet.port, conf.telnet.host);
-
-// if you need charset conversion from gbk to utf8
-webtelnetd.setCharset('gbk');
-```
-
-## Usage as standalone proxy
-
-```bash
-$ [sudo] npm install -g webtelnet
-```
-
-```bash
-$ webtelnet <http-port> <telnet-port> [-h <telnet-host>] [-w <path/to/www>] ［－c <charset>]
-```
-
-* By default, telnet-host is 127.0.0.1. You can also proxy to other hosts.
-* By default, path/to/www point to WebTelnet web app. You can use customized web app, for example, a web app optimized for specific MUD.
-* By default, charset is utf8. You can try gbk or big5, if you need charset conversion.
-
-Example, if you have a MUD server listening on port 4000, to map to http port 8080:
-
-```bash
-$ webtelnet 8080 4000
-```
-
-Or run it with forever,
-```bash
-$ forever start `which webtelnet` 8080 4000 -w /home/liming/es2-mudlib/www
-```
-
-Then, use a browser to visit the web: http://your-host:8080/
+* This will launch the client as a web site on: http://your-host:4716/client/ 
+* Socket-connection will to the MUD will use port 4711 on localhost. 
+* If your MUD is running on a different local port, change 4711. 
+* You can configure https to make your client more secure. 
+* You can use a reverse-proxy configuration to avoid custom ports and use 80/443.
 
 ## Screenshot
 
-Playing MUD with PC broswer:
+Playing MUD with PC browser (e.g. Chrome): 
 
-![webmud-pc](https://github.com/mudchina/webtelnet/raw/master/docs/webmud-pc.jpg)
+![wlclient](https://github.com/hkremss/wlclient/raw/master/docs/wl.png) 
 
-Playing MUD with mobile broswer on iPhone6:
+Playing MUD with mobile broswer on Android: 
 
-![webmud-mobile](https://github.com/mudchina/webtelnet/raw/master/docs/webmud-ios.jpg)
+![wlclient-mobile](https://github.com/hkremss/wlclient/raw/master/docs/wl-mobile.png)
 
 ## Credits
 
-Created by Raymond Xie, published under MIT license.
+Created by Raymond Xie, published under MIT license. 
+
+Adapted, fixed and extended for Wunderland by Holger@Wunderland, Fuchur@Wunderland
