@@ -8,41 +8,32 @@
   <link rel="stylesheet" href="css/jquery-ui.structure.min.css">
   <script src="../js/jquery-1.12.4.min.js"></script>
   <script src="../js/jquery-ui.min.js"></script>
-  
-  <!-- resizer / area-->
+
+  <!-- GMCP handling -->
+  <script src="js/gmcp_editor.js"></script>
+
+  <!-- Toolbar -->
+  <script src="js/toolbar.js"></script>
+
+  <!-- Codemirror -->
+  <link rel="stylesheet" href="lib/codemirror.css">
+  <script src="lib/codemirror.js"></script>
+  <script src="addon/edit/matchbrackets.js"></script>
+  <link rel="stylesheet" href="addon/hint/show-hint.css">
+  <script src="addon/hint/show-hint.js"></script>
+  <script src="mode/clike/clike.js"></script>
+  <script src="mode/xml/xml.js"></script>
+  <script src="mode/css/css.js"></script>
+  <script src="mode/javascript/javascript.js"></script>
+  <script src="mode/htmlmixed/htmlmixed.js"></script>
   <style>
-  .resizer[data-direction="horizontal"] {
-      foreground-color: blue;
-      background-color: #cbcbe0;
-      cursor: ew-resize;
-      height: 100hv;
-      width: 4px;
-  }
-  .resizer[data-direction="vertical"] {
-      background-color: #ffffff;
-      cursor: ns-resize;
-      height: 4px;
-      width: 100%;
-  }
-  .flex-1 {
-   flex:1 1 0%
-  }
-  .flex {
-   display:flex
-  }
-  .flex-col {
-   flex-direction:column
-  }
-  .flex-col-reverse {
-   flex-direction:column-reverse
-  }
-  .flex-wrap {
-   flex-wrap:wrap
-  }
-  .flex-wrap-reverse {
-   flex-wrap:wrap-reverse
+  .CodeMirror {
+    height: auto;
   }
   </style>
+  
+  <!-- resizer / areas -->
+  <link rel="stylesheet" href="css/resizing.css">
 
   <!-- filetree list-->
   <link rel="stylesheet" href="css/prettytable.css">
@@ -54,14 +45,35 @@
   #fileslist li { margin: 0px; padding: 0em; height: 18px; }
   </style>
 
-  <script src="js/editor_gmcp.js"></script>
+  <script src="js/webtoolkit.md5.js"></script>
   <script src="js/filelist.js"></script>
   <script src="js/editpart.js"></script>
   <script src="js/messagelist.js"></script>
-</head>
-<body style="margin:0">
 
-  <div id="page" style="display:flex;flex:1 1 100%;border-width:1px;height:100vh;">
+</head>
+<body style="margin:0;padding:0">
+
+  <div class="toolbar ui-widget-header" style="width:100%;overflow-x:hidden;padding:3px 0 3px;border:0;margin:0">
+    <button id="connectionStatus">Status</button>
+    <button id="new" style="margin-left:5px;">Neu...</button>
+    <button id="open" style="margin-left:5px;">&Ouml;ffnen</button>
+    <button id="save" style="margin-left:5px;">Speichern</button>
+    <button id="saveas" style="margin-left:5px;">Speichern unter...</button>
+
+    <button id="undo">Undo</button>
+    <button id="redo">Redo</button>
+    <!--button id="print">Print</button>
+
+    <select id="zoom">
+      <option selected disabled>Zoom</option>
+      <option>50%</option>
+      <option>100%</option>
+      <option>150%</option>
+      <option>200%</option>
+    </select -->
+  </div>
+
+  <div id="page" style="display:flex;flex:1 1 100%;border-width:1px;position:absolute;top:33px;width:100%;height:calc(100% - 33px)">
 
 <!-- File list: -->
     <!--div class="flex" id="filetree" style="width:12rem;min-width:6rem;overflow-x:auto;overflow-y:scroll">
@@ -95,20 +107,24 @@
 
 <!-- Editor-Tabs: -->
         <div id="tabs" style="height:90vh;min-height:10rem;border:0;margin:0;padding:0;">
-          <ul>
-             <li><a href="#fragment-1"><span>One</span></a></li>
-             <li><a href="#fragment-2"><span>Two</span></a></li>
-             <li><a href="#fragment-3"><span>Three</span></a></li>
+          <ul style="margin:0;padding:1px;">
+             <!--
+               <li style="margin-top:0"><a id="editor-fname-1" href="#editor-tab-1">One</a><span class="ui-icon ui-icon-close" role="presentation">Close</span></li>
+               <li style="margin-top:0"><a id="editor-fname-2" href="#editor-tab-2">Two</a><span class="ui-icon ui-icon-close" role="presentation">Close</span></li>
+               <li style="margin-top:0"><a id="editor-fname-3" href="#editor-tab-3">Three</a><span class="ui-icon ui-icon-close" role="presentation">Close</span></li>
+             -->
           </ul>
-          <div id="fragment-1" style="font-family:monospace;white-space:pre;overflow-x:auto;overflow-y:scroll;height:calc(100% - 55px);margin:0;">
-            1 Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
-          </div>
-          <div id="fragment-2" style="font-family:monospace;white-space:pre;overflow-x:auto;overflow-y:scroll;height:calc(100% - 55px);margin:0">
-            2 Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
-          </div>
-          <div id="fragment-3" style="font-family:monospace;white-space:pre;overflow-x:auto;overflow-y:scroll;height:calc(100% - 55px);margin:0">
-            3 Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
-          </div>
+          <!--
+            <div id="editor-tab-1" style="padding:0 0 0 1px;height:calc(100% - 32px)">
+              1 Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
+            </div>
+            <div id="editor-tab-2" style="padding:0 0 0 1px;height:calc(100% - 32px)">
+              2 Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
+            </div>
+            <div id="editor-tab-3" style="padding:0 0 0 1px;height:calc(100% - 32px)">
+              3 Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
+            </div>
+          -->
         </div>
 
         <div class="resizer" data-direction="vertical"></div>
@@ -119,9 +135,31 @@
     </div>
   <!--/div-->
 
-  <script>$( "#tabs" ).tabs();</script>
-  <script src="js/resizer.js"></script>
+  <!-- Handle tabs interaction  -->
+  <script>
+    initialize_editpart();
+  </script>
+  <script src="js/resizing.js"></script>
   <script src="js/storage_event.js"></script>
+
+  <!-- dialogs -->
+  <script>
+  $( function() {
+    $( "#messageDialog" ).dialog({
+      modal: true,
+      autoOpen: false,
+	  position: { my: "center", at: "center", of: "#tabs" },
+      buttons: {
+        Ok: function() {
+          $(this).dialog("close");
+        }
+      }
+    });
+  });
+  </script>
+  <div id="messageDialog" title="Message..." style="display:none;">
+    <p>Not implemented yet!.</p>
+  </div>
 
 </body>
 </html>

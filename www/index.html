@@ -42,7 +42,7 @@
   <link rel="stylesheet" href="css/dropdown.css">
   <script src="js/dropdown.js"></script>
   <script src="js/client.js"></script>
-  <script src="js/handle_gmcp.js"></script>
+  <script src="js/gmcp_client.js"></script>
   <link rel="stylesheet" href="css/client.css"/>
   <title>WL@Web</title>
   <script>
@@ -151,7 +151,12 @@
       </div>
     </div>
     <div id="in">
-      <input id='cmd' type="text" value="" autofocus><button id='send' class='cmd I18N' i18n='send'>Senden</button>
+      <!-- The following text and password here are to prevent FF from auto filling 
+           login credentials because it ignores autocomplete="off"-->
+      <input type="text" style="display:none">
+      <input type="password" style="display:none">
+      <!-- See comment above -->
+      <input id='cmd' type="text" value="" autocomplete="off" autofocus><button id='send' class='cmd I18N' i18n='send'>Senden</button>
       <div id='menu' class="dropdown">
         <button onclick="dropDownFunction()" class="dropbtn">...</button>
         <div id="myDropdown" class="dropdown-content">

@@ -1,12 +1,9 @@
 // all the GMCP handling is done here!
 //
-// requires main.js
+// requires client.js
 //
 
-// New: GMCP support (Holger)
-function getGMCPHello(){
-  return 'Core.Hello { \"client\": \"WL@Web\", \"version\": \"1.0.1\" }';
-}
+"use strict";
 
 // remember these values, if player dies and becomes alive again
 var living_room_image = '';
@@ -15,12 +12,14 @@ var living_room_name = '';
 // Debug flags
 var debug_GMCP = false;
 
-// We need to know the editor window globally.
-var editorWindow = null;
-
 // Modify this line, if you need a different base URL
 // or leave it blank to use a pure relative path.
 var staticContentBase = '/webclient/';
+
+// New: GMCP support (Holger)
+function getGMCPHello(){
+  return 'Core.Hello { \"client\": \"WL@Web\", \"version\": \"1.1.0\" }';
+}
 
 function doGMCPReceive(sock, data) {
   if(data.length>0) {
@@ -28,15 +27,17 @@ function doGMCPReceive(sock, data) {
     // handle JSON data here and update UI!
     if(debug_GMCP) writeToScreen('GMCP: ' + data + '<br>');
 
-    // if editor is open (for wizards), update the used socket
+    // if editor is open (for wizards), update the client/socket
     if (editorWindow && !editorWindow.closed) {
-      editorWindow.useSocket(sock);
+      editorWindow.updateClient(window, sock);
     }
 
     var module = data.split(' ', 1)[0];
     var payload = data.substr(module.length);
 
     switch (module) {
+      //////////////////////////////////////////////
+      // Game modules for all players.
       case 'Core.Ping':
         HandleGMCP_Core_Ping(sock, module, payload);
         break;
@@ -49,12 +50,16 @@ function doGMCPReceive(sock, data) {
       case 'Room.Info':
         HandleGMCP_Room_Info(sock, module, payload);
         break;
+      //////////////////////////////////////////////
+      // Editor modules, for creators only.
       case 'WL.File.List':
         HandleGMCP_WL_File_List(sock, module, payload);
         break;
       case 'WL.File.Transfer':
         HandleGMCP_WL_File_Transfer(sock, module, payload);
         break;
+      //////////////////////////////////////////////
+      // Everything else.
       default:
         console.log('Unknown GMCP module: ' + module + '.');
     }
@@ -80,6 +85,10 @@ function HandleGMCP_Core_Goodbye(sock, module, payload) {
   $('a#room_image_a').attr('href', staticContentBase + 'img/aaa_no_signal.jpg');
   $('a#room_image_a').attr('data-title', 'Bildstoerung');
 
+  // if editor is open (for wizards), update the client window/socket
+  if (editorWindow && !editorWindow.closed) {
+    editorWindow.updateClient(window, null);
+  }
 }
 
 // Handle GMCP Char.Vitals
@@ -203,6 +212,50 @@ function HandleGMCP_Room_Info(sock, module, payload) {
   }
 }
 
+/****************************************************************************
+* Editor/Creator relevant code below                                        *
+****************************************************************************/
+
+// We need to know the editor window globally.
+var editorWindow = null;
+
+// Receive buffer for WL.File.List and WL.File.Transfer.
+// Format is: {"file/dir": { "type": (file/list), "lastUpdate": (millis), "chunks": {(offset): {"content":(list/string), "eof":(true/false)}}}}
+// - file/dir: a fqn of a file or directory list being transferred
+//   - type: either "file" or "list" (see content below)
+//   - lastUpdate: a timestamp in milliseconds of the last update (for cleanup)
+//   - chunks: contains partial messages, of the following format:
+//     - offset: the offset of the list, which defines the order of the chunks
+//       - content: either a data block string (for file) or a (json encoded) part of a list
+//       - eof: either true or false for the final message
+var WLFileReceiveBuffer = {};
+
+// anonymous self-executing function
+(function() {
+  window.onunload = function(event) { 
+    // if editor is open (for wizards), update the client/socket
+    if (editorWindow && !editorWindow.closed) {
+      editorWindow.updateClient(null, null);
+    }
+  };
+
+  //WLFileReceiveBuffer["foo.c"] = { "type": "file", "lastUpdate": Date.now(), "chunks": {0: {"content":"das ist der inhalt", "eof":false}}};
+
+  var cleanupWLFileReceiveBufferTimer = 
+    setInterval( CleanupWLFileReceiveBuffer, 10000);
+})();
+
+function CleanupWLFileReceiveBuffer() {
+  var allEntries = Object.keys(WLFileReceiveBuffer);
+
+  for (var i = 0; i < allEntries.length; i++) {
+    if (WLFileReceiveBuffer[allEntries[i]]["lastUpdate"] + 30000 < Date.now()) {
+      delete WLFileReceiveBuffer[allEntries[i]];
+      console.log('Timeout reached for reception of: ' + allEntries[i]);
+    }
+  }
+}
+
 // Handle GMCP WL.File.List
 function HandleGMCP_WL_File_List(sock, module, payload) {
   var values = JSON.parse(payload);
@@ -225,10 +278,8 @@ function HandleGMCP_WL_File_List(sock, module, payload) {
   // Tell the editor, what socket we use and try to bring it to front
   if (editorWindow && !editorWindow.closed) {
     editorWindow.addEventListener('load', function (){
-//      defer(function (){
-        editorWindow.useSocket(sock);
-        editorWindow.focus();
-//      });
+      editorWindow.updateClient(window, sock);
+      editorWindow.focus();
     });
   }
 
@@ -252,21 +303,75 @@ function HandleGMCP_WL_File_Transfer(sock, module, payload) {
 
   // don't care, if the window has opened successfully for now!
 
+  // The mud cannot handle messages bigger 5000, because this is the 
+  // maximum array size. Because we do not know about the used encoding
+  // all files or directory lists longer than 2048 chars are chopped into 
+  // 2000 char slices while sending. We need to re-assemble them here, 
+  // when eof:true is received.
+
   // put tree list in local storage and inform tree view to refresh content
   var path = values['path'];
+  var offset = values['offset'];
+  var eof = values['eof'];
   var content = values['content'];
+ 
+  if (!path) {
+    console.log("Received invalid WL.File.Transfer without 'path'.")
+    return;
+  }
 
-  // put path and list into local storage
-  localStorage.setItem('WL.File.Transfer path', path);
-  localStorage.setItem('WL.File.Transfer content', content);
+  // WLFileReceiveBuffer["foo.c"] = { "type": "file", "lastUpdate": Date.now(), "chunks": {0: {"content":"das ist der inhalt", "eof":false}}};
+  if (!WLFileReceiveBuffer[path]) {
+    // first (create entry)
+    WLFileReceiveBuffer[path] = { "type": "file", "lastUpdate": Date.now(), "chunks": {}};
+    console.log('WL.File.Transfer first chunk: ' + path + ' with ' + content.length + ' chars');
+ } else {
+    // next (update lastUpdate)
+    WLFileReceiveBuffer[path]["lastUpdate"] = Date.now();
+    console.log('WL.File.Transfer next chunk: ' + path + ' with ' + content.length + ' chars');
+  }
+
+  WLFileReceiveBuffer[path]["chunks"][offset] = {"content":content, "eof":eof};
+
+  // EOF reached?
+  if (eof) {
+          
+    // now re-assemble the chunks to a single file!   
+    var allOffsets = Object.keys(WLFileReceiveBuffer[path]["chunks"]);
+    // sort offsets in correct order
+    allOffsets.sort(function(a, b){return a-b});
+    // reset content
+    content='';
+
+    for (var i = 0; i < allOffsets.length; i++) {
+      var offset = allOffsets[i];
+
+      // sanity check (no offset/chunk lost?!)
+      if (content.length != offset) {
+        console.log('WL.File.Transfer chunk lost for: ' + path + '. Transfer failed/incomplete!');
+        alert('WL.File.Transfer chunk lost for: ' + path + '. Transfer failed/incomplete!');
+        delete WLFileReceiveBuffer[path];
+        return;
+      }
+
+      content += WLFileReceiveBuffer[path]["chunks"][offset]["content"];
+    }
+         
+    // put path and list into local storage
+    localStorage.setItem('WL.File.Transfer path', path);
+    localStorage.setItem('WL.File.Transfer content', content);
+
+    console.log('WL.File.Transfer reception complete: ' + path);
+    
+    // clear entry from buffer
+    delete WLFileReceiveBuffer[path];
+  }
 
   // Tell the editor, what socket we use and try to bring it to front
   if (editorWindow && !editorWindow.closed) {
     editorWindow.addEventListener('load', function (){
-//      defer(function (){
-        editorWindow.useSocket(sock);
-        editorWindow.focus();
-//      });
+      editorWindow.updateClient(window, sock);
+      editorWindow.focus();
     });
   }
 

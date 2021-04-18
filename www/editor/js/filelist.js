@@ -25,6 +25,9 @@
     $("table#filetable").styleTable();
 })(jQuery);
 
+var currentPath = '';
+var selectedEntry = '';
+
 // list
 $( function() {
   $( "ul#fileslist" ).selectable({
@@ -36,18 +39,31 @@ $( function() {
           index++;
           // from messagelist.js
           var path = $( "ul#fileslist" ).find('li:nth-child('+index+')').text();
-          SendGMCP_WL_File_List(currentPath + "/" + path + "/*");
-          log_message( "file '" + path + "' selected.");
+		  if (path == selectedEntry) {
+            // if selected 'again', do something (kind of double click behavior)
+			if (path.lastIndexOf('/') == -1) {
+              // double click on a file
+              SendGMCP_WL_File_Transfer(currentPath + "/" + path, 0); // it's a request
+              log_message( "Open file: " + currentPath + "/" + path);
+			} else {
+              SendGMCP_WL_File_List(currentPath + "/" + path + "*");
+              log_message( "Get file list for: " + currentPath + "/" + path);
+			}
+			selectedEntry = '';
+		  } 
+          else {
+            // first selection
+            selectedEntry = path;
+            log_message( "Element '" + path + "' selected.");
+          }
         }
       });
     }
   });
 } );
 
-var currentPath = '';
-
 function refresh_filetree() {
-
+	
   var path = localStorage.getItem('WL.File.List path');
   var list = localStorage.getItem('WL.File.List list');
 
@@ -68,9 +84,15 @@ function refresh_filetree() {
     if (fileList.length > 0) {
       for (var i = 0; i < fileList.length; i++)
       {
+        if (fileList[i][0] == '.') continue;
+		if (fileList[i][0] == '..' && currentPath == "") continue;
         var il = document.createElement('li');
         il.class='ui-widget-content';
-        il.appendChild(document.createTextNode(fileList[i][0]));
+		if (fileList[i][1] >= 0) {
+          il.appendChild(document.createTextNode(fileList[i][0]));
+		} else {
+          il.appendChild(document.createTextNode(fileList[i][0] + '/'));
+		}
         $('ul#fileslist').append(il);
       }
     }
