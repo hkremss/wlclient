@@ -48,12 +48,18 @@ function doTelnetNegotions(sock, buf) {
   // TELNET options (WL relevant)
   var TELOPT_ECHO     = '\x01'; //  1
   var TELOPT_STATUS   = '\x05'; //  5
+  var TELOPT_TTYPE    = '\x18'; // 24
   var TELOPT_EOR      = '\x19'; // 25
   var TELOPT_TSPEED   = '\x20'; // 32
   var TELOPT_LINEMODE = '\x22'; // 34
   var TELOPT_XDISPLOC = '\x23'; // 35
   var TELOPT_ENVIRON  = '\x24'; // 36
+  var TELOPT_CHARSET  = '\x2a'; // 42
   var TELOPT_GMCP     = '\xc9'; // 201 -> http://www.gammon.com.au/gmcp
+
+  // sub-option qualifiers
+  var TELQUAL_IS      = '\x00'; // IS option
+  var TELQUAL_SEND    = '\x01'; // SEND option
 
   var strippedBuf = '';
   buf = pending + buf;
@@ -75,20 +81,25 @@ function doTelnetNegotions(sock, buf) {
       } else {
         switch(buf[newIacIdx+1]){
           case DONT:
-//            strippedBuf+='[IAC DONT ('+buf.charCodeAt(newIacIdx+2)+')]';
             oldIacIdx = newIacIdx+3;
             break;
           case DO:
             switch(buf[newIacIdx+2]){
+              // we are 'xterm' and will use this (see SB below)
+              case TELOPT_TTYPE:
+                if(sock) sock.emit('stream', IAC+WILL+TELOPT_TTYPE);
+                break;
+              // not yet
+              //case TELOPT_CHARSET:
+              //  if(sock) sock.emit('stream', IAC+WILL+TELOPT_CHARSET);
+              //  break;
               case TELOPT_TSPEED:
               case TELOPT_LINEMODE:
               case TELOPT_XDISPLOC:
               case TELOPT_ENVIRON:
               default:
                 // we WONT do anything else. So just reply all DO by WONT
-//                strippedBuf+='[receive: IAC DO ('+buf.charCodeAt(newIacIdx+2)+')]\n';
                 if(sock) sock.emit('stream', IAC+WONT+buf.substr(newIacIdx+2,1));
-//                strippedBuf+='[respond: IAC WONT ('+buf.charCodeAt(newIacIdx+2)+'|'+buf[newIacIdx+2]+')]\n';
                 break;
             }
             oldIacIdx = newIacIdx+3;
@@ -97,16 +108,12 @@ function doTelnetNegotions(sock, buf) {
             switch(buf[newIacIdx+2]){
               case TELOPT_ECHO:
                 // enable local echo!
-//                strippedBuf+='[receive: IAC WONT ECHO]\n';
                 $('input#cmd').get(0).type="text";
                 if(sock) sock.emit('stream', IAC+DONT+TELOPT_ECHO);
-//                strippedBuf+='[respond: IAC DONT ECHO]\n';
                 break;
               default:
                 // if the server WONT to do something anymore, tell it, this is fine.
-//                strippedBuf+='[receive: IAC WONT ('+buf.charCodeAt(newIacIdx+2)+')]\n';
                 if(sock) sock.emit('stream', IAC+DONT+buf.substr(newIacIdx+2,1));
-//                strippedBuf+='[respond: IAC DONT ('+buf.charCodeAt(newIacIdx+2)+')]\n';
                 break;
             }
             oldIacIdx = newIacIdx+3;
@@ -115,30 +122,22 @@ function doTelnetNegotions(sock, buf) {
             switch(buf[newIacIdx+2]){
               case TELOPT_EOR:
                 // No EOR support!
-//                strippedBuf+='[receive IAC WILL EOR]\n';
                 if(sock) sock.emit('stream', IAC+DONT+TELOPT_EOR);
-//                strippedBuf+='[respond: IAC DONT EOR]\n';
                 break;
               case TELOPT_ECHO:
                 // disable local echo!
-//                strippedBuf+='[receive: IAC WILL ECHO]\n';
                 $('input#cmd').get(0).type='password';
                 if(sock) sock.emit('stream', IAC+DO+TELOPT_ECHO);
-//                strippedBuf+='[respond: IAC DO ECHO]\n';
                 break;
               case TELOPT_GMCP:
                 // use GMCP
-//                strippedBuf+='[receive: IAC WILL GMCP]\n';
                 if(sock) sock.emit('stream', IAC+DO+TELOPT_GMCP);
-//                strippedBuf+='[respond: IAC DO GMCP]\n';
+                // send Hello immediately
 		if(sock) sock.emit('stream', IAC+SB+TELOPT_GMCP+getGMCPHello()+IAC+SE);
-//                strippedBuf+='[respond: IAC SB GMCP \''+getGMCPHello()+'\' IAC SE]\n';
 		break;
               default:
                 // we DONT accept anything else. So just reply all WILL by DONT
-//                strippedBuf+='[receive: IAC WILL ('+buf.charCodeAt(newIacIdx+2)+')]\n';
                 if(sock) sock.emit('stream', IAC+DONT+buf.substr(newIacIdx+2,1));
-//                strippedBuf+='[respond: IAC DONT ('+buf.charCodeAt(newIacIdx+2)+')]\n';
                 break;
             }
             oldIacIdx = newIacIdx+3;
@@ -154,14 +153,18 @@ function doTelnetNegotions(sock, buf) {
                 // Received GMCP message!
                 doGMCPReceive(sock, buf.substr(newIacIdx+3, endSubNegIdx-(newIacIdx+4)));
               }
+              else if (buf[newIacIdx+2]==TELOPT_TTYPE && buf[newIacIdx+3]==TELQUAL_SEND){
+                // Server wants us to send TTYPE, we say: xterm
+                if(sock) sock.emit('stream', IAC+SB+TELOPT_TTYPE+TELQUAL_IS+'xterm'+IAC+SE);
+              }
               else {
-//                strippedBuf+='[receive IAC SB ... SE]\n';
+                console.log('Don\'t understand: [IAC+SB+('+buf.charCodeAt(newIacIdx+2)+')...]');
               }
               oldIacIdx = endSubNegIdx+1;
             }
             break;
           default:
-//            strippedBuf+='[IAC ('+buf.charCodeAt(newIacIdx+1)+') ('+buf.charCodeAt(newIacIdx+2)+')]\n';
+            console.log('Don\'t understand: [IAC+('+buf.charCodeAt(newIacIdx+1)+')+('+buf.charCodeAt(newIacIdx+2)+')...]\n');
             oldIacIdx = newIacIdx+3;
             break;
         }
@@ -256,7 +259,10 @@ $(window).resize(adjustLayout);
 
 $(document).ready(function(){
 
-  // adjust colors, etc.
+  // enable ANSI classes
+  //ansi_up.use_classes = true;
+
+  // adjust layout colors, etc.
   processQueryParams();
 
   // show help text
