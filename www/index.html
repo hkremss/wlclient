@@ -104,9 +104,42 @@
     });
   });
   </script>
-</head>
+  <script type="text/javascript">
+  function bodyKeyDown(event) {
+    var k = event.which;
 
-<body onclick="document.getElementById('cmd').focus();">
+    if (k == 67 && (event.ctrlKey || event.metaKey)) {
+      /* Don't intercept Ctrl/Cmd + C  for copy */
+	  return true;
+    }
+
+    if ($.inArray(k, [
+      20, /* Caps lock */
+      16, /* Shift */
+       9, /* Tab */
+      27, /* Escape Key */
+      17, /* Control Key */
+      91, /* Windows Command Key */
+      19, /* Pause Break */
+      18, /* Alt Key */
+      93, /* Right Click Point Key */
+      33, 34, /*Page Down, Page Up */
+      35,36,37,38,39,40, /* Home, End, Arrow Keys */
+      45, /* Insert Key */
+      112,113,114,115,116,117,118,119,120,121,122,123, /* F1 - F12 */
+      144,145 /* Num Lock, Scroll Lock */
+      ]) != -1) {
+      /* Don't intercept control keys */
+      return true;
+    }
+
+    /* Everything else is supposed to be a keyboard-input, which should got to the cmd element. */
+    document.getElementById('cmd').focus();
+    return true;
+  }
+  </script>
+</head>
+<body onKeyDown="bodyKeyDown(event);">
   <div id="page">
     <div id="out"></div>
     <div id="info">
