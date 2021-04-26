@@ -115,6 +115,7 @@ function doTelnetNegotions(sock, buf) {
                 pwMode = false;
                 $("#pwd").hide();
                 $("#cmd").show();
+                $("#cmd").focus();
                 if(sock) sock.emit('stream', IAC+DONT+TELOPT_ECHO);
                 break;
               default:
@@ -135,6 +136,7 @@ function doTelnetNegotions(sock, buf) {
                 pwMode = true;
                 $("#cmd").hide();
                 $("#pwd").show();
+                $("#pwd").focus();
                 if(sock) sock.emit('stream', IAC+DO+TELOPT_ECHO);
                 break;
               case TELOPT_GMCP:
@@ -324,7 +326,7 @@ $(document).ready(function(){
 
   var sendInput = function() {
     var elem = (pwMode === true ? $('#pwd') : $('#cmd'));
-    var trim_cmd = elem.val().trim();
+    var trim_cmd = elem.val(); //.trim(); // sometimes, we need leadinf spaces (e.g. editing news)
     if(trim_cmd.length>0 && history.indexOf(trim_cmd)!=0) {
       // add trim_cmd to history, if it's not a password
       if(!pwMode) history.unshift(trim_cmd);
@@ -335,6 +337,9 @@ $(document).ready(function(){
     send(trim_cmd + '\n', pwMode);
     elem.val('').change();
   }
+
+  // Initially it's always #cmd
+  $("#cmd").focus();
 
   // UI events
   $('#cmd, #pwd').keypress(function(e) {
