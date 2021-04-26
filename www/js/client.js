@@ -33,6 +33,10 @@ var ansi_up = new AnsiUp;
 // `pending` stores partial telnet negotiations that cross message boundaries
 var pending = '';
 
+// pwMode + pw store local input, if cmd is in 'password' mode
+var pwMode = false;
+
+
 // New: Telnet negotiations (Holger).
 function doTelnetNegotions(sock, buf) {
 
@@ -108,7 +112,9 @@ function doTelnetNegotions(sock, buf) {
             switch(buf[newIacIdx+2]){
               case TELOPT_ECHO:
                 // enable local echo!
-                $('input#cmd').get(0).type="text";
+                pwMode = false;
+                $("#pwd").hide();
+                $("#cmd").show();
                 if(sock) sock.emit('stream', IAC+DONT+TELOPT_ECHO);
                 break;
               default:
@@ -126,7 +132,9 @@ function doTelnetNegotions(sock, buf) {
                 break;
               case TELOPT_ECHO:
                 // disable local echo!
-                $('input#cmd').get(0).type='password';
+                pwMode = true;
+                $("#cmd").hide();
+                $("#pwd").show();
                 if(sock) sock.emit('stream', IAC+DO+TELOPT_ECHO);
                 break;
               case TELOPT_GMCP:
@@ -200,26 +208,30 @@ function writeServerData(buf) {
 
 function adjustLayout() {
 
-  var w = $('div#page').width(), h = $('div#page').height();
-  var w0 = $('div#in').width();
+  var page_elem = $('div#page');
+  var out_elem = $('div#out');
+  var in_elem = $('div#in');
+
+  var w = page_elem.width(), h = page_elem.height();
+  var w0 = in_elem.width();
   var w1 = $('button#send').outerWidth(true);
   var w2 = $('div#menu').outerWidth(true)+25;
   var w3 = $('div#info').width();
-  $('div#in').css({
+
+  /* update input div width */
+  in_elem.css({
     width: (w-(w3+6)) + 'px',
   });
-  $('input#cmd').css({
-    width: ($('div#in').width() - (w1+w2)) + 'px',
-  });
-    
-  //writeToScreen('w -> ' + w + 'px w0 -> '+w0+'px w1 -> '+w1+'px w2 -> '+w2+'px w3 -> '+w3+'\n');
-  
-  var h0 = $('div#in').outerHeight(true);
-  $('div#out').css({
+
+  /* update output div size */
+  var h0 = in_elem.outerHeight(true);
+  out_elem.css({
     width: (w-(w3+6)) + 'px',
     height: (h - h0 -2) + 'px',
   });
 
+  /* scroll to bottom, important for mobile and virtual keyboard */
+  out_elem.scrollTop(out_elem.prop("scrollHeight"));
 }
 
 function processQueryParams() {
@@ -293,11 +305,6 @@ $(document).ready(function(){
     disconnected();
   });
 
-  var history_idx = -1; // current position in history array
-  var history_max = 20; // max size of history
-  var history_tmp = ''; // remember current input
-  var history = [];     // the history array
-
   // send
   var send = function(str, isPassword) {
     var viewStr;
@@ -310,48 +317,57 @@ $(document).ready(function(){
     if(sock) sock.emit('stream', str);
   }
 
+  var history_idx = -1; // current position in history array
+  var history_max = 20; // max size of history
+  var history_tmp = ''; // remember current input
+  var history = [];     // the history array
+
   var sendInput = function() {
-    var cmd = $('input#cmd');
-    var trim_cmd = cmd.val().trim();
+    var elem = (pwMode === true ? $('#pwd') : $('#cmd'));
+    var trim_cmd = elem.val().trim();
     if(trim_cmd.length>0 && history.indexOf(trim_cmd)!=0) {
       // add trim_cmd to history, if it's not a password
-      if(cmd.get(0).type!='password') history.unshift(trim_cmd);
+      if(!pwMode) history.unshift(trim_cmd);
       // limit length of history
       if (history.length > history_max) history.pop();
     }
     history_idx=-1;
-    send(trim_cmd + '\n', cmd.get(0).type=='password');
-    cmd.val('');
+    send(trim_cmd + '\n', pwMode);
+    elem.val('').change();
   }
 
   // UI events
-  $('input#cmd').keypress(function(e) {
-    if(e.keyCode == 13) sendInput();
+  $('#cmd, #pwd').keypress(function(e) {
+    if(e.key == 'Enter') {
+      e.preventDefault();
+      sendInput();
+    }
   });
 
-  $('input#cmd').keydown(function(e) {
+  $('#cmd, #pwd').keydown(function(e) {
+
     // cursor up/down history
     // keypress event does not work in IE/Edge!
-    switch (e.keyCode) {
-      case 37:
-        //alert('left');
+    switch (e.key) {
+      case 'ArrowLeft':
+        // Do nothing
         break;
-      case 38:
-        //alert('up');
+      case 'ArrowUp':
+        // Go back in history
         if(history.length>=0 && (history_idx+1)<history.length) {
           if(history_idx<0) { history_tmp = $(this).val().trim(); }
           history_idx++;
           $(this).val(history[history_idx]);
         }
         break;
-      case 39:
-        //alert('right');
+      case 'ArrowRight':
+        // Do nothing
         break;
-      case 40:
-        //alert('down');
+      case 'ArrowDown':
+        // Fo forward in history
         if(history_idx>=0) {
           history_idx--;
-          if(history_idx<0) { 
+          if(history_idx<0) {
             $(this).val(history_tmp);
           }
           else {
@@ -365,21 +381,21 @@ $(document).ready(function(){
   });
 
   // 'Enter'
-  $('button#send').click(function(e) { sendInput(); $('input#cmd').focus(); });
+  $('button#send').click(function(e) { sendInput(); (pwMode ? $('#pwd') : $("#cmd")).focus(); });
 
   // some basic commands
-  $('button#who').click(function(e) { $('input#cmd').val('wer'); sendInput(); });
-  $('button#look').click(function(e) { $('input#cmd').val('schau'); sendInput(); });
-  $('button#inv').click(function(e) { $('input#cmd').val('inv'); sendInput(); });  
-  $('button#score').click(function(e) { $('input#cmd').val('info'); sendInput(); });
-  
+  $('button#who').click(function(e) { $('#cmd').val('wer'); sendInput(); });
+  $('button#look').click(function(e) { $('#cmd').val('schau'); sendInput(); });
+  $('button#inv').click(function(e) { $('#cmd').val('inv'); sendInput(); });
+  $('button#score').click(function(e) { $('#cmd').val('info'); sendInput(); });
+
   // some basic move commands
-  $('button#up').click(function(e) { $('input#cmd').val('o'); sendInput(); });
-  $('button#north').click(function(e) { $('input#cmd').val('n'); sendInput(); });
-  $('button#east').click(function(e) { $('input#cmd').val('o'); sendInput(); });
-  $('button#south').click(function(e) { $('input#cmd').val('s'); sendInput(); });
-  $('button#west').click(function(e) { $('input#cmd').val('w'); sendInput(); });
-  $('button#down').click(function(e) { $('input#cmd').val('u'); sendInput(); });
+  $('button#up').click(function(e) { $('#cmd').val('o'); sendInput(); });
+  $('button#north').click(function(e) { $('#cmd').val('n'); sendInput(); });
+  $('button#east').click(function(e) { $('#cmd').val('o'); sendInput(); });
+  $('button#south').click(function(e) { $('#cmd').val('s'); sendInput(); });
+  $('button#west').click(function(e) { $('#cmd').val('w'); sendInput(); });
+  $('button#down').click(function(e) { $('#cmd').val('u'); sendInput(); });
 
   // clear screen
   $('button#clear').click(function(e) { $('div#out').html(''); });
