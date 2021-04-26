@@ -272,7 +272,7 @@ $(window).resize(adjustLayout);
 $(document).ready(function(){
 
   // enable ANSI classes
-  //ansi_up.use_classes = true;
+  ansi_up.use_classes = true;
 
   // adjust layout colors, etc.
   processQueryParams();
