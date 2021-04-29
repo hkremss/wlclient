@@ -1,17 +1,17 @@
 /* max desktop browsers - bigger doesn't make much sense for this client */
-html{font-size:100%;} #in{width:1198px;} #info{width:300px;display:inline;} #page{width:1500px;left:50%;margin-left:-750px;}
+html{font-size:12pt;} #in{width:1198px;} #info{width:300px;display:inline;} #page{width:1500px;left:50%;margin-left:-750px;}
 
 /* full size desktop browsers (<= 1536px) */
-@media(max-width:96em){html{font-size:100%;} #in{width:898px;} #info{width:300px;display:inline;} #page{width:1200px;left:50%;margin-left:-600px;}}
+@media(max-width:96em){html{font-size:12pt;} #in{width:898px;} #info{width:300px;display:inline;} #page{width:1200px;left:50%;margin-left:-600px;}}
 
 /* bigger desktop browsers (<= 1216px) */
-@media(max-width:76em){html{font-size: 70%;} #in{width:598px;} #info{width:300px;display:inline;} #page{width:900px;left:50%;margin-left:-450px;}}
+@media(max-width:76em){html{font-size: 8.4pt;} #in{width:598px;} #info{width:300px;display:inline;} #page{width:900px;left:50%;margin-left:-450px;}}
 
 /* landscape phone and portrait tablet (<= 896px) */
-@media(max-width:56em){html{font-size: 45%;} #in{width:358px;} #info{width:280px;display:inline;} #page{width:640px;left:30%;margin-left:-170px;}}
+@media(max-width:56em){html{font-size: 5.4pt;} #in{width:358px;} #info{width:280px;display:inline;} #page{width:640px;left:30%;margin-left:-170px;}}
 
 /* portrait phone (<= 560px) */
-@media screen and (max-width:35em) {html{font-size: 45%;} #in{width:358px;} #info{width:0;display:none;} #page{width:360px;left:0;margin:0;}}
+@media screen and (max-width:35em) {html{font-size: 5.4pt;} #in{width:358px;} #info{width:0;display:none;} #page{width:360px;left:0;margin:0;}}
 
 body {
   margin: 0px;
@@ -32,24 +32,23 @@ div#page {
   padding: 0px;
 /*  width: 800px;
   height: 100%; */
-  font-family: Fixed, monospace;
 }
 
 div#out {
   margin: 0px;
   padding: 0px;
   float:left;
+  overflow-x: hidden;
   overflow-y: scroll;
  /* overflow-x: scroll; */
   border: 0px solid gray; 
-  white-space:pre;
+  white-space:pre-wrap;
 }
 
 span.out {
   white-space:pre;
   word-wrap: break-word;
   line-height:100%;
-  font-family: Fixed, monospace;
 }
 
 div#info {
@@ -70,7 +69,7 @@ div#info {
   background-color:#ddb;
   border-color: #ddb;
   border-style: solid;
-  border-width: 2px;
+  border-width: 1px;
   font-family:Tahoma, Geneva, sans-serif;
 }
 
@@ -85,65 +84,73 @@ span.info {
 }
 
 div#in {
+  font-size:inherit;
   position: fixed;
   bottom: 0px;
-  /*width: 100%;*/
-  padding: 0px;
-  margin-top: 1px;margin-left: 0px;margin-right: 0px;margin-bottom: 2px;
+  border-top-width: 1px;
+  border-top-style: dashed;
+  padding: 0.2em 0px 0px 0px;
+  margin: 1px 0px 2px 0px;
+}
+
+div#prompt {
+  width:auto;
+  padding:5px 0px 5px 0px;
+  margin:0px;
+  float:left;
+  border: solid 0px transparent;
+  color:inherit;
+  background-color:transparent;
+  white-space: pre;
+}
+
+textarea#cmd {
+  overflow:hidden;
+  resize:none;
+  border: none;
+  width:100%;
+  font-size:inherit;
+  padding: 5px 5px 5px 0px;
+  margin: 0px;
+  color:inherit;
+  background-color:transparent;
 }
 
 input#pwd {
-  font-family: Fixed, monospace;
-  line-height: 1;
-  width:100%;
+  overflow:hidden;
   border: none;
-  height:1.2em;
-  padding: 5px;
+  width:100%;
+  font-size:inherit;
+  padding: 5px 5px 5px 0px;
+  padding-bottom:4.6px;
   margin: 0px;
+  color:inherit;
+  background-color:transparent;
 }
 
 .cmdwrapper
 {
-  border: solid 1px;
+  border: none;
   width:auto;
   height:auto;
-  overflow:hidden;
+  font-size:inherit;
+  line-height:inherit;
   margin:0;
   padding:0;
 }
 
-textarea#cmd {
-  resize:none;
-  font-family: Fixed, monospace;
-  line-height: 1; 
-  border: none;
-  width:100%;
-  height:1em;
-  padding: 5px;
-  margin: 0px;
-}
-
 button.cmd {
-  font-family: Fixed, monospace;
+  font-family:inherit;
+  font-size:inherit;
   width: 80px;
   border: none;
-  height:1.95em;
+  height: auto;
   padding: 5px;
   margin: 0px 0px 0px 2px;
   float: right;
 }
 
-button.drp {
-  font-family: Fixed, monospace;
-  width: 80px;
-  border: none;
-  height:1.95em;
-  padding: 5px;
-  margin: 0px 0px 2px 0px;
-  /*float: right;*/
-}
-
-button:hover {background-color: #CCEEFF}
+button:hover {background-color: #CEF}
 
 .rTbl        { display: table; }
 .rTblRow     { display: table-row; }

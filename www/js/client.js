@@ -1,3 +1,7 @@
+// The WL client main code.
+
+"use strict";
+
 /// Split the query-string into key-value pairs and return a map.
 // Stolen from: http://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
 function parseQuery(qstr) {
@@ -36,7 +40,6 @@ var pending = '';
 // pwMode + pw store local input, if cmd is in 'password' mode
 var pwMode = false;
 
-
 // New: Telnet negotiations (Holger).
 function doTelnetNegotions(sock, buf) {
 
@@ -48,6 +51,7 @@ function doTelnetNegotions(sock, buf) {
   var WILL = '\xfb'; // 251
   var SB   = '\xfa'; // 250 sub negotiation
   var SE   = '\xf0'; // 240 end sub negotiation
+  var EOR  = '\xef'; // 239 End Of Record
 
   // TELNET options (WL relevant)
   var TELOPT_ECHO     = '\x01'; //  1
@@ -78,11 +82,28 @@ function doTelnetNegotions(sock, buf) {
       // Copy first part of strippedBuf and skip IACs
       strippedBuf+=buf.substr(oldIacIdx, newIacIdx-oldIacIdx);
 
-      if(newIacIdx+2 >= len) {
+      // IAC+EOR is only 2 bytes 
+      if (newIacIdx < len && buf[newIacIdx + 1] == EOR) {
+        var startOfPrompt = strippedBuf.lastIndexOf('\n', len);
+        var prmpt = strippedBuf.substr(startOfPrompt+1);
+        if (prmpt.length > 0) {
+          // truncate strippedBuf
+          if (startOfPrompt<0) strippedBuf = '';
+          else strippedBuf = strippedBuf.substr(0, startOfPrompt+1);
+          //console.log('PRMPT [' + prmpt+']\n');
+          $('#prompt').html(ansi_up.ansi_to_html(prmpt));
+        }
+        // Skip the IAC+EOR in the buffer
+        oldIacIdx = newIacIdx+2;
+      } 
+      // Everything should be (at least) 3 bytes long.
+      else if(newIacIdx+2 >= len) {
         // save incomplete telnet negotiation for later processing
         pending = buf.substr(newIacIdx);
         oldIacIdx = len;
-      } else {
+      }
+      // do all complete messages
+      else {
         switch(buf[newIacIdx+1]){
           case DONT:
             oldIacIdx = newIacIdx+3;
@@ -114,6 +135,7 @@ function doTelnetNegotions(sock, buf) {
                 // enable local echo!
                 pwMode = false;
                 $("#pwd").hide();
+                $(".dropbtn").show();
                 $("#cmd").show();
                 $("#cmd").focus();
                 if(sock) sock.emit('stream', IAC+DONT+TELOPT_ECHO);
@@ -129,12 +151,15 @@ function doTelnetNegotions(sock, buf) {
             switch(buf[newIacIdx+2]){
               case TELOPT_EOR:
                 // No EOR support!
-                if(sock) sock.emit('stream', IAC+DONT+TELOPT_EOR);
+                //if(sock) sock.emit('stream', IAC+DONT+TELOPT_EOR);
+                if(sock) sock.emit('stream', IAC+DO+TELOPT_EOR);
                 break;
               case TELOPT_ECHO:
                 // disable local echo!
                 pwMode = true;
                 $("#cmd").hide();
+                document.getElementById("myDropdown").classList.remove("dropshow");
+                $(".dropbtn").hide();
                 $("#pwd").show();
                 $("#pwd").focus();
                 if(sock) sock.emit('stream', IAC+DO+TELOPT_ECHO);
@@ -143,8 +168,8 @@ function doTelnetNegotions(sock, buf) {
                 // use GMCP
                 if(sock) sock.emit('stream', IAC+DO+TELOPT_GMCP);
                 // send Hello immediately
-		if(sock) sock.emit('stream', IAC+SB+TELOPT_GMCP+getGMCPHello()+IAC+SE);
-		break;
+                if(sock) sock.emit('stream', IAC+SB+TELOPT_GMCP+getGMCPHello()+IAC+SE);
+                break;
               default:
                 // we DONT accept anything else. So just reply all WILL by DONT
                 if(sock) sock.emit('stream', IAC+DONT+buf.substr(newIacIdx+2,1));
@@ -189,23 +214,8 @@ function doTelnetNegotions(sock, buf) {
 }
 
 function writeServerData(buf) {
-
-//  var lines = buf.split('\r\n');
-
-//  for(var i=0; i<lines.length; i++) {
-
-//    var line = lines[i];
-
-//    line = ansi_up.escape_for_html(line);
-//    line = ansi_up.ansi_to_html(line);
-    line = ansi_up.ansi_to_html(buf);
-
-//    if (line.length>0) {
-//      if(i < lines.length-1) line += '<br/>';
-
-      writeToScreen(line);
-//    }
-//  }
+  var line = ansi_up.ansi_to_html(buf);
+  writeToScreen(line);
 }
 
 function adjustLayout() {
@@ -304,6 +314,7 @@ $(document).ready(function(){
   });
   sock.on('disconnected', function(){
     writeToScreen('Verbindung zum Wunderland verloren.\n');
+	$('#prompt').html('&gt; ');
     disconnected();
   });
 
@@ -389,21 +400,22 @@ $(document).ready(function(){
   $('button#send').click(function(e) { sendInput(); (pwMode ? $('#pwd') : $("#cmd")).focus(); });
 
   // some basic commands
-  $('button#who').click(function(e) { $('#cmd').val('wer'); sendInput(); });
-  $('button#look').click(function(e) { $('#cmd').val('schau'); sendInput(); });
-  $('button#inv').click(function(e) { $('#cmd').val('inv'); sendInput(); });
-  $('button#score').click(function(e) { $('#cmd').val('info'); sendInput(); });
+  $('button#channel').click(function(e) { $('#cmd').val('- '); $("#cmd").focus(); });
+  $('button#who').click(function(e) { $('#cmd').val('wer'); sendInput(); $("#cmd").focus(); });
+  $('button#look').click(function(e) { $('#cmd').val('schau'); sendInput(); $("#cmd").focus(); });
+  $('button#inv').click(function(e) { $('#cmd').val('inv'); sendInput(); $("#cmd").focus(); });
+  $('button#score').click(function(e) { $('#cmd').val('info'); sendInput(); $("#cmd").focus(); });
 
   // some basic move commands
-  $('button#up').click(function(e) { $('#cmd').val('o'); sendInput(); });
-  $('button#north').click(function(e) { $('#cmd').val('n'); sendInput(); });
-  $('button#east').click(function(e) { $('#cmd').val('o'); sendInput(); });
-  $('button#south').click(function(e) { $('#cmd').val('s'); sendInput(); });
-  $('button#west').click(function(e) { $('#cmd').val('w'); sendInput(); });
-  $('button#down').click(function(e) { $('#cmd').val('u'); sendInput(); });
+  $('button#up').click(function(e) { $('#cmd').val('o'); sendInput(); $("#cmd").focus(); });
+  $('button#north').click(function(e) { $('#cmd').val('n'); sendInput(); $("#cmd").focus(); });
+  $('button#east').click(function(e) { $('#cmd').val('o'); sendInput(); $("#cmd").focus(); });
+  $('button#south').click(function(e) { $('#cmd').val('s'); sendInput(); $("#cmd").focus(); });
+  $('button#west').click(function(e) { $('#cmd').val('w'); sendInput(); $("#cmd").focus(); });
+  $('button#down').click(function(e) { $('#cmd').val('u'); sendInput(); $("#cmd").focus(); });
 
   // clear screen
-  $('button#clear').click(function(e) { $('div#out').html(''); });
+  $('button#clear').click(function(e) { $('div#out').html(''); $("#cmd").focus(); });
 
   setTimeout(function(){
     adjustLayout();    

@@ -1,21 +1,34 @@
 /* Modified dropdown (or drop-up) menu CSS - see https://www.w3schools.com/howto/howto_js_dropdown.asp */
 .dropbtn {
-  font-family: Fixed, monospace;
-  border:0;
+  font-family: inherit;
+  font-size: inherit;
+  border:none;
   width: 40px;
-  height: 1.95em;
+  height: auto;
   margin: 0px 0px 0px 2px;
   padding: 5px;
   cursor: pointer;
 }
 
-/*
-.dropbtn:hover, .dropbtn:focus {
-    background-color: #2980B9;
+button.drp {
+  font-family:inherit;
+  /*font-size:inherit;*/
+  width: 100px;
+  border: none;
+  background-color: #ddd7;
+  color: #0007;
+  height:1.95em;
+  padding: 5px;
+  margin: 0px 0px 2px 0px;
 }
-*/
+
+.drp:hover {background-color: #CEF7;}
+
+.nohover:hover {background-color: transparent;}
 
 .dropdown {
+  font-family:inherit;
+  font-size:inherit;
   position: relative;
   display: inline-block;
   margin: 0px;
@@ -29,10 +42,10 @@
   margin: 0px 0px 0px 0px;
   padding: 0px;
   min-width: auto;
-  width: 80px;
+  width: 100px;
   z-index: 1;
-  right:0%; /* pop-left */
-  bottom:100%; /* pop-up */
+  right:2ch; /* pop-left */
+  bottom:130%; /* pop-up */
 }
 
 .dropdown-content a {

@@ -3,6 +3,7 @@
 /* When the user clicks on the button, toggle between hiding and showing the dropdown content */
 function dropDownFunction() {
     document.getElementById("myDropdown").classList.toggle("dropshow");
+    document.getElementById("cmd").focus();
 }
 
 // Close the dropdown if the user clicks outside of it

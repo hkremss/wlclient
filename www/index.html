@@ -144,7 +144,7 @@
     <div id="info">
       <p><span class="info_heading" id="room_name">--== Bildstoerung ==--</span></p>
       <a id="room_image_a" href="img/aaa_no_signal.jpg" data-lightbox="Images" data-title="--== Bildstoerung ==--">
-        <img id="room_image" src="img/aaa_no_signal.jpg" onerror="bildstoerung();" alt="Bildstoerung" style="width:99%;height:auto;border-width:2px;border-color:#fff;border-style:inset;">
+        <img id="room_image" src="img/aaa_no_signal.jpg" onerror="bildstoerung();" alt="Bildstoerung" style="width:calc(100% - 4px);height:auto;border-width:2px;border-color:#fff;border-style:inset;">
       </a>
       <p>
       <div class="rTbl" style="margin:0 auto;">
@@ -184,32 +184,35 @@
       </div>
     </div>
     <div id="in">
-      <div id='menu' class="dropdown">
-        <button onclick="dropDownFunction()" class="dropbtn">...</button>
-        <div id="myDropdown" class="dropdown-content">
-          <button id='who' class='drp I18N' i18n='who'>wer</button>
-          <button id='look' class='drp I18N' i18n='look'>schau</button>
-          <button id='inv' class='drp I18N' i18n='inv'>inventar</button>
-          <button id='score' class='drp I18N' i18n='score'>info</button>
-          <div>
-            <button id='up' class='drp I18N' i18n='up'>oben</button>
-            <div class='drp' style='white-space: nowrap;overflow:hidden;'>
-              <button id='north' class='drp I18N' i18n='n' style='float: left;width:19px;padding:0px;margin-left:0px;'>n</button>
-              <button id='south' class='drp I18N' i18n='s' style='float: left;width:18px;padding:0px;margin-left:2px;'>s</button>
-              <button id='east' class='drp I18N' i18n='e' style='float: left;width:18px;padding:0px;margin-left:2px;'>o</button>
-              <button id='west' class='drp I18N' i18n='w' style='float: left;width:19px;padding:0px;margin-left:2px;'>w</button>
+      <div id="prompt">&gt;&nbsp;</div>
+      <div class="cmdwrapper">
+        <div id="menu" class="dropdown">
+          <button onclick="dropDownFunction()" class="dropbtn">...</button>
+          <div id="myDropdown" class="dropdown-content">
+            <button id="who" class="drp I18N" i18n="who">wer</button>
+            <button id="look" class="drp I18N" i18n="look">schau</button>
+            <button id="inv" class="drp I18N" i18n="inv">inventar</button>
+            <button id="score" class="drp I18N" i18n="score">info</button>
+            <button id="channel" class="drp I18N" i18n="who">- ...</button>
+            <div>
+              <button id="up" class="drp I18N" i18n="up">oben</button>
+              <div class="drp nohover" style="white-space: nowrap;overflow:hidden;">
+                <button id="north" class="drp I18N" i18n="n" style="float: left;width:24px;padding:0px;margin-left:0px;">n</button>
+                <button id="south" class="drp I18N" i18n="s" style="float: left;width:23px;padding:0px;margin-left:2px;">s</button>
+                <button id="east" class="drp I18N" i18n="e" style="float: left;width:23px;padding:0px;margin-left:2px;">o</button>
+                <button id="west" class="drp I18N" i18n="w" style="float: left;width:24px;padding:0px;margin-left:2px;">w</button>
+              </div>
+              <button id="down" class="drp I18N" i18n="down">unten</button>          
             </div>
-            <button id='down' class='drp I18N' i18n='down'>unten</button>          
+            <button id="clear" class="drp I18N" i18n="clear">[Clear]</button>
           </div>
-          <button id='clear' class='drp I18N' i18n='clear'>[Clear]</button>
+        </div>
+        <!--button id="send" class="cmd I18N" i18n="send">Senden</button-->
+        <div class="cmdwrapper" style="overflow:hidden">
+          <textarea id="cmd" rows="1"></textarea>
+          <input id="pwd" type="password" style="display:none;">
         </div>
       </div>
-      <button id='send' class='cmd I18N' i18n='send'>Senden</button>
-      <div class='cmdwrapper'>
-        <textarea id='cmd' style='resize:none' rows='1'></textarea>
-        <input id='pwd' type='password' style='display:none'/>
-      </div>
-    </div>
   </div>
 
   <div id="infoDialog" title="Information!" style="display:none;">
