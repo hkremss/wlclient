@@ -27,11 +27,7 @@ div#page {
   position:absolute;
   top:0;
   bottom:0;
-/*  margin-left:-25%;*/
-/*  left:50%;*/
   padding: 0px;
-/*  width: 800px;
-  height: 100%; */
 }
 
 div#out {
@@ -56,16 +52,10 @@ div#info {
   top:0;
   bottom:0px;
   right:0;
-/*  width:300px;*/
   padding: 0;
   color: black;
-/*  white-space:pre; */
   font-size:small;
   line-height: 1.0;
-/*  background-color:white;
-  border-color: black;
-  border-style: dashed;
-  border-width: 2px; */
   background-color:#ddb;
   border-color: #ddb;
   border-style: solid;
@@ -90,7 +80,7 @@ div#in {
   border-top-width: 1px;
   border-top-style: dashed;
   padding: 0.2em 0px 0px 0px;
-  margin: 1px 0px 2px 0px;
+  margin: 5px 0px 2px 0px;
 }
 
 div#prompt {

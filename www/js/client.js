@@ -314,7 +314,7 @@ $(document).ready(function(){
   });
   sock.on('disconnected', function(){
     writeToScreen('Verbindung zum Wunderland verloren.\n');
-	$('#prompt').html('&gt; ');
+    $('#prompt').html('&gt; ');
     disconnected();
   });
 
