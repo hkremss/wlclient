@@ -148,3 +148,95 @@ button:hover {background-color: #CEF}
 .rTblBody    { display: table-row-group; }
 .rTblFoot    { display: table-footer-group; }
 .rTblCell, .rTblHead  { display: table-cell; }
+
+
+/* cookie bar stuff below, see: https://codepen.io/natewiley/pen/uGtcD */
+.cookie-bar {
+  position: fixed;
+  width: 100%;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 30px;
+  text-align: center;
+  line-height: 30px;
+  background: linear-gradient(#ff3333, #cc0000);
+  color: white;
+  font-size: 14px;
+  font-family: "Lato", sans-serif;
+  font-weight: 100;
+  transition: 0.8s;
+  -webkit-animation: slideIn 0.8s;
+          animation: slideIn 0.8s;
+  -webkit-animation-delay: 0.8s;
+          animation-delay: 0.8s;
+}
+.cookie-bar .message {
+  white-space: nowrap;
+  text-shadow: 0 1px 0 #cc0000;
+}
+@media (max-width: 767px) {
+  .cookie-bar .message {
+    display: none;
+  }
+}
+.cookie-bar .mobile {
+  display: none;
+}
+@media (max-width: 767px) {
+  .cookie-bar .mobile {
+    display: inline-block;
+  }
+}
+.cookie-bar .message a {
+  color: #5cf2ff;
+}
+.cookie-bar .mobile a {
+  color: #5cf2ff;
+}
+
+@-webkit-keyframes slideIn {
+  0% {
+    transform: translateY(-50px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  0% {
+    transform: translateY(-50px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+.close-cb {
+  border: none;
+  color: white;
+  background: #990000;
+  position: absolute;
+  display: inline-block;
+  right: 10px;
+  top: 0;
+  cursor: pointer;
+  border-radius: 3px;
+  box-shadow: inset 0 0 3px 0 rgba(0, 0, 0, 0.2);
+  line-height: 30px;
+  height: 30px;
+  width: 30px;
+  font-size: 16px;
+  font-weight: bold;
+}
+.close-cb:hover {
+  background: #cc0000;
+}
+
+.checkbox-cb {
+  display: none;
+}
+.checkbox-cb:checked + .cookie-bar {
+  transform: translateY(-50px);
+}
+

@@ -279,6 +279,18 @@ function processQueryParams() {
   
 }
 
+function doCookiePopup() {
+  if (!document.cookie.split('; ').find(row => row.startsWith('didAcceptCookies'))) {
+    $(".cookie-bar").css("display", "inline-block");
+  }
+}
+
+function doCookieAccept() {
+  var cookieDate = new Date();
+  cookieDate.setTime(new Date().getTime() + 2592000000); // 30 days in ms
+  document.cookie = "didAcceptCookies=true; path=/; expires=" + cookieDate.toUTCString();
+}
+
 $(window).resize(adjustLayout);
 
 $(document).ready(function(){
@@ -348,6 +360,9 @@ $(document).ready(function(){
     send(trim_cmd + '\n', pwMode);
     elem.val('').change();
   }
+
+  // Show cookie popup
+  doCookiePopup();
 
   // Initially it's always #cmd
   $("#cmd").focus();
