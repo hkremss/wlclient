@@ -1,5 +1,4 @@
 /*  ansi_up.js
- *  version : 2.0.2
  *  author : Dru Nelson
  *  license : MIT
  *  http://github.com/drudru/ansi_up

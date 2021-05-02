@@ -37,11 +37,14 @@ var ansi_up = new AnsiUp;
 // `pending` stores partial telnet negotiations that cross message boundaries
 var pending = '';
 
+// reset to 0 on each WO/WILL TELOPT_TTYPE, see tty_neg_types below
+var tty_neg_index = 0;
+
 // pwMode + pw store local input, if cmd is in 'password' mode
 var pwMode = false;
 
 // New: Telnet negotiations (Holger).
-function doTelnetNegotions(sock, buf) {
+ function doTelnetNegotions(sock, buf) {
 
   // TELNET protocol
   var IAC  = '\xff'; // 255
@@ -69,6 +72,10 @@ function doTelnetNegotions(sock, buf) {
   var TELQUAL_IS      = '\x00'; // IS option
   var TELQUAL_SEND    = '\x01'; // SEND option
 
+  // TTYPE negotiaion
+  var tty_neg_types = ['dumb','ansi','xterm','xterm-256color','xterm-direct'];
+
+  // receive buffer
   var strippedBuf = '';
   buf = pending + buf;
   pending = '';
@@ -113,6 +120,7 @@ function doTelnetNegotions(sock, buf) {
               // we are 'xterm' and will use this (see SB below)
               case TELOPT_TTYPE:
                 if(sock) sock.emit('stream', IAC+WILL+TELOPT_TTYPE);
+                tty_neg_index = 0; // reset
                 break;
               // not yet
               //case TELOPT_CHARSET:
@@ -189,8 +197,9 @@ function doTelnetNegotions(sock, buf) {
                 doGMCPReceive(sock, buf.substr(newIacIdx+3, endSubNegIdx-(newIacIdx+4)));
               }
               else if (buf[newIacIdx+2]==TELOPT_TTYPE && buf[newIacIdx+3]==TELQUAL_SEND){
-                // Server wants us to send TTYPE, we say: xterm
-                if(sock) sock.emit('stream', IAC+SB+TELOPT_TTYPE+TELQUAL_IS+'xterm'+IAC+SE);
+                // Server wants us to send TTYPE, we count up tty_neg_index until it's end
+                if(sock) sock.emit('stream', IAC+SB+TELOPT_TTYPE+TELQUAL_IS+tty_neg_types[tty_neg_index]+IAC+SE);
+                if (tty_neg_index+1 < tty_neg_types.length) tty_neg_index = tty_neg_index + 1;
               }
               else {
                 console.log('Don\'t understand: [IAC+SB+('+buf.charCodeAt(newIacIdx+2)+')...]');
