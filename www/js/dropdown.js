@@ -3,11 +3,12 @@
 /* When the user clicks on the button, toggle between hiding and showing the dropdown content */
 function dropDownFunction() {
     document.getElementById("myDropdown").classList.toggle("dropshow");
+    document.getElementById("cmd").focus();
 }
 
 // Close the dropdown if the user clicks outside of it
 window.onclick = function(event) {
-  if (!event.target.matches('.dropbtn')) {
+/*  if (!event.target.matches('.dropbtn')) {
 
     var dropdowns = document.getElementsByClassName("dropdown-content");
     var i;
@@ -17,5 +18,5 @@ window.onclick = function(event) {
         openDropdown.classList.remove('dropshow');
       }
     }
-  }
+  }*/
 }

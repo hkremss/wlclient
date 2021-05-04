@@ -36,7 +36,8 @@
   <link rel="stylesheet" href="css/jquery-ui.min.css">
   <script src='js/underscore-min.js'></script>
   <script src="js/jquery.cookie.js"></script>
-  <script src="js/ansi_up.js"></script>
+  <script src="js/ansi_up-2.0.2.js"></script>
+  <!--script src="js/ansi_up-5.0.1.js"></script-->
   <link rel="stylesheet" href="css/lightbox.css">
   <script src="js/lightbox.js"></script>
   <link rel="stylesheet" href="css/dropdown.css">
@@ -44,6 +45,7 @@
   <script src="js/client.js"></script>
   <script src="js/gmcp_client.js"></script>
   <link rel="stylesheet" href="css/client.css"/>
+  <link rel="stylesheet" href="css/tty-schemes.css"/>
   <title>WL@Web</title>
   <script>
   // Handle image loading errors here!
@@ -103,15 +105,47 @@
     });
   });
   </script>
-</head>
+  <script type="text/javascript">
+  function bodyKeyDown(event) {
+    var k = event.which;
 
-<body onclick="document.getElementById('cmd').focus();">
+    if (event.key == 'c' && (event.ctrlKey || event.metaKey)) {
+      /* Don't intercept Ctrl/Cmd + C  for copy */
+	  return true;
+    }
+
+    if ($.inArray(event.key, [
+      'CapsLock', /* Caps lock */
+      'Shift',    /* Shift */
+      'Tab',      /* Tab */
+      'Escape',   /* Escape Key */
+      'Control',  /* Control Key */
+      'Meta',     /* Windows Command Key */
+      'Pause',    /* Pause Break */
+      'Alt',      /* Alt Key */
+      'PageUp', 'PageDown', /*Page Down, Page Up */
+      'Home','End','ArrowDown','ArrowLeft','ArrowRight','ArrowUp', /* Home, End, Arrow Keys */
+      'Insert',   /* Insert Key */
+      'F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12', /* F1 - F12 */
+      'NumLock','ScrollLock' /* Num Lock, Scroll Lock */
+      ]) != -1) {
+      /* Don't intercept control keys */
+      return true;
+    }
+
+    /* Everything else is supposed to be a keyboard-input, which should got to the cmd element. */
+    (pwMode ? $("#pwd") : $("#cmd")).focus();
+    return true;
+  }
+  </script>
+</head>
+<body onKeyDown="bodyKeyDown(event);">
   <div id="page">
-    <div id="out"></div>
+    <div id="out" class="putty-scheme"></div>
     <div id="info">
       <p><span class="info_heading" id="room_name">--== Bildstoerung ==--</span></p>
       <a id="room_image_a" href="img/aaa_no_signal.jpg" data-lightbox="Images" data-title="--== Bildstoerung ==--">
-        <img id="room_image" src="img/aaa_no_signal.jpg" onerror="bildstoerung();" alt="Bildstoerung" style="width:100%;height:auto;">
+        <img id="room_image" src="img/aaa_no_signal.jpg" onerror="bildstoerung();" alt="Bildstoerung" style="width:calc(100% - 4px);height:auto;border-width:2px;border-color:#fff;border-style:inset;">
       </a>
       <p>
       <div class="rTbl" style="margin:0 auto;">
@@ -151,37 +185,47 @@
       </div>
     </div>
     <div id="in">
-      <!-- The following text and password here are to prevent FF from auto filling 
-           login credentials because it ignores autocomplete="off"-->
-      <input type="text" style="display:none">
-      <input type="password" style="display:none">
-      <!-- See comment above -->
-      <input id='cmd' type="text" value="" autocomplete="off" autofocus><button id='send' class='cmd I18N' i18n='send'>Senden</button>
-      <div id='menu' class="dropdown">
-        <button onclick="dropDownFunction()" class="dropbtn">...</button>
-        <div id="myDropdown" class="dropdown-content">
-          <button id='who' class='cmd I18N' i18n='who'>wer</button>
-          <button id='look' class='cmd I18N' i18n='look'>schau</button>
-          <button id='inv' class='cmd I18N' i18n='inv'>inventar</button>
-          <button id='score' class='cmd I18N' i18n='score'>info</button>
-          <div>
-            <button id='up' class='cmd I18N' i18n='up'>oben</button>
-            <div style='position:relative;height:25px'>
-              <button id='north' class='cmd I18N' i18n='n' style='position:absolute;left:0%;top:0%;width:23%;padding:0px;'>n</button>
-              <button id='south' class='cmd I18N' i18n='s' style='position:absolute;left:25%;top:0%;width:23%;padding:0px;'>s</button>
-              <button id='east' class='cmd I18N' i18n='e' style='position:absolute;left:50%;top:0%;width:23%;padding:0px;'>o</button>
-              <button id='west' class='cmd I18N' i18n='w' style='position:absolute;left:75%;top:0%;width:23%;padding:0px;'>w</button>
+      <div id="prompt">&gt;&nbsp;</div>
+      <div class="cmdwrapper">
+        <div id="menu" class="dropdown">
+          <button onclick="dropDownFunction()" class="dropbtn">...</button>
+          <div id="myDropdown" class="dropdown-content">
+            <button id="who" class="drp I18N" i18n="who">wer</button>
+            <button id="look" class="drp I18N" i18n="look">schau</button>
+            <button id="inv" class="drp I18N" i18n="inv">inventar</button>
+            <button id="score" class="drp I18N" i18n="score">info</button>
+            <button id="channel" class="drp I18N" i18n="who">- ...</button>
+            <div>
+              <button id="up" class="drp I18N" i18n="up">oben</button>
+              <div class="drp nohover" style="white-space: nowrap;overflow:hidden;">
+                <button id="north" class="drp I18N" i18n="n" style="float: left;width:24px;padding:0px;margin-left:0px;">n</button>
+                <button id="south" class="drp I18N" i18n="s" style="float: left;width:23px;padding:0px;margin-left:2px;">s</button>
+                <button id="east" class="drp I18N" i18n="e" style="float: left;width:23px;padding:0px;margin-left:2px;">o</button>
+                <button id="west" class="drp I18N" i18n="w" style="float: left;width:24px;padding:0px;margin-left:2px;">w</button>
+              </div>
+              <button id="down" class="drp I18N" i18n="down">unten</button>          
             </div>
-            <button id='down' class='cmd I18N' i18n='down'>unten</button>          
+            <button id="clear" class="drp I18N" i18n="clear">[Clear]</button>
           </div>
-          <button id='clear' class='cmd I18N' i18n='clear'>[Anzeige löschen]</button>
+        </div>
+        <!--button id="send" class="cmd I18N" i18n="send">Senden</button-->
+        <div class="cmdwrapper" style="overflow:hidden">
+          <textarea id="cmd" rows="1"></textarea>
+          <input id="pwd" type="password" style="display:none;">
         </div>
       </div>
-    </div>
   </div>
 
   <div id="infoDialog" title="Information!" style="display:none;">
     <p>Das ist ein Informationsdialog.</p>
+  </div>
+
+  <input class="checkbox-cb" id="checkbox-cb" type="checkbox" onclick="doCookieAccept()"/>
+  <div class="cookie-bar" style="display:none">
+    <span class="message">Diese Seite ben&ouml;tigt zwingend Cookies. Wenn Du diese Seite verwendest, 
+      stimmst Du den <a href="/mud/datenschutz.html" target="_blank">Bedingungen</a> zu.</span>
+    <span class="mobile">Diese Seite ben&ouml;tigt Cookies! <a href="/mud/datenschutz.html" target="_blank">Mehr</a> erfahren.</span>
+    <label for="checkbox-cb" class="close-cb">x</label>
   </div>
 
 </body>
