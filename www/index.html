@@ -1,7 +1,6 @@
 <!doctype html>
-<html>
+<html lang="de">
 <head>
-  <meta charset="utf-8" />
   <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -30,7 +29,6 @@
 </script>
 
   <script src="socket.io/socket.io.js"></script>
-  <!--script src="js/jquery-1.12.0.min.js"></script-->
   <script src="js/jquery-1.12.4.min.js"></script>
   <script src="js/jquery-ui.min.js"></script>
   <link rel="stylesheet" href="css/jquery-ui.min.css">
@@ -56,8 +54,7 @@
       <a id="room_image_a" href="img/aaa_no_signal.jpg" data-lightbox="Images" data-title="--== Bildstoerung ==--">
         <img id="room_image" src="img/aaa_no_signal.jpg" onerror="bildstoerung();" alt="Bildstoerung" style="width:calc(100% - 4px);height:auto;border-width:2px;border-color:#fff;border-style:inset;">
       </a>
-      <p>
-      <div class="rTbl" style="margin:0 auto;">
+      <div class="rTbl" style="margin:13px auto;">
         <div class="rTblRow">
           <div class="rTblCell" style="width:10em;text-align:right;">Erfahrung:</div>
           <div class="rTblCell" style="width:10em;"><span class="info" id="xp">?</span></div>
@@ -83,7 +80,6 @@
           <div class="rTblCell"><span class="info" id="wimpy_dir">?</span></div>
         </div>
       </div>
-      </p>
       <div class="rTbl" style="margin:0 auto;">
         <div class="rTblRow">
           <div class="rTblCell" style="width:5em;text-align:center;">I: <span class="info" id="int">?</span></div>
@@ -123,19 +119,20 @@
           <input id="pwd" type="password" style="display:none;">
         </div>
       </div>
-  </div>
+    </div>
 
-  <div id="infoDialog" title="Information!" style="display:none;">
-    <p>Das ist ein Informationsdialog.</p>
-  </div>
+    <div id="infoDialog" title="Information!" style="display:none;">
+      <p>Das ist ein Informationsdialog.</p>
+    </div>
 
-  <input class="checkbox-cb" id="checkbox-cb" type="checkbox" onclick="doCookieAccept()"/>
-  <div class="cookie-bar" style="display:none">
-    <span class="message">Diese Seite ben&ouml;tigt zwingend Cookies. Wenn Du diese Seite verwendest, 
-      stimmst Du den <a href="/mud/datenschutz.html" target="_blank">Bedingungen</a> zu.</span>
-    <span class="mobile">Diese Seite ben&ouml;tigt Cookies! <a href="/mud/datenschutz.html" target="_blank">Mehr</a> erfahren.</span>
-    <label for="checkbox-cb" class="close-cb">x</label>
-  </div>
+    <input class="checkbox-cb" id="checkbox-cb" type="checkbox" onclick="doCookieAccept()"/>
+    <div class="cookie-bar" style="display:none">
+      <span class="message">Diese Seite ben&ouml;tigt zwingend Cookies. Wenn Du diese Seite verwendest,
+        stimmst Du den <a href="/mud/datenschutz.html" target="_blank">Bedingungen</a> zu.</span>
+      <span class="mobile">Diese Seite ben&ouml;tigt Cookies! <a href="/mud/datenschutz.html" target="_blank">Mehr</a> erfahren.</span>
+      <label for="checkbox-cb" class="close-cb">x</label>
+    </div>
 
+  </div>
 </body>
 </html>
