@@ -131,12 +131,14 @@ WebTelnetProxy.prototype = {
       if(proxy.logTraffic) console.log('telnet connected');
       webSock.emit('connected');
 
-      // Wunderland: notify MUD of remote IP address
-      var ip = (webSock.request.headers['x-forwarded-for'] ||
-                webSock.request.socket.remoteAddress).split(',').pop().trim();
-      if (ip.match(/^\d+\.\d+\.\d+\.\d+$/))
-        ip = '::ffff:' + ip;
-      telnet.write(iconv.encode('+' + ip + '\r\n', proxy.charset));
+      if (proxy.host == 'localhost' || proxy.host == '127.0.0.1') {
+        // Wunderland: notify MUD of remote IP address
+        var ip = (webSock.request.headers['x-forwarded-for'] ||
+                  webSock.request.socket.remoteAddress).split(',').pop().trim();
+        if (ip.match(/^\d+\.\d+\.\d+\.\d+$/))
+          ip = '::ffff:' + ip;
+        telnet.write(iconv.encode('+' + ip + '\r\n', proxy.charset));
+      }
     });
 
     telnet.peerSock = webSock;

@@ -2,6 +2,9 @@
 
 "use strict";
 
+// Local echo setting.
+var localEcho = false;
+
 // Handle window close
 var isConnected = false;
 
@@ -310,6 +313,23 @@ function adjustLayout() {
   out_elem.scrollTop(out_elem.prop("scrollHeight"));
 }
 
+// Save settings to localStorage.
+function saveSettings() {
+  localStorage.setItem('Client.Setting.LocalEcho', JSON.stringify(localEcho));
+}
+
+// Load settings from localStorage.
+function loadSettings() {
+  var localEchoSetting = localStorage.getItem('Client.Setting.LocalEcho');
+  if (localEchoSetting) {
+    localEcho = JSON.parse(localEchoSetting);
+  } else {
+    localEcho = false;
+  }
+  // refresh UI
+  $('button#localecho').html('[Echo: ' + (localEcho==true ? 'an' : 'aus') + ']');
+}
+
 // Maybe the user wants other colors? Here we go.
 function processQueryParams() {
   var queryParams=parseQuery(document.location.search);
@@ -341,7 +361,6 @@ function processQueryParams() {
   else
     $('div#info').get(0).style.visibility = 'hidden'
   console.log('infoPanel = ' + infoPanel);
-  
 }
 
 // Popup the cookie warning.
@@ -377,6 +396,9 @@ $(document).ready(function(){
   // enable ANSI classes
   ansi_up.use_classes = true;
 
+  // load settings from localStorage
+  loadSettings();
+
   // adjust layout colors, etc.
   processQueryParams();
 
@@ -408,13 +430,15 @@ $(document).ready(function(){
 
   // send
   var send = function(str, isPassword) {
-    var viewStr;
-    // if password, print stars into the console
-    if(str.length>0 && isPassword)
-      viewStr=new Array(str.length+1).join('*');
-    else
-      viewStr=str;
-    writeToScreen(viewStr);
+    if (localEcho === true) {
+      var viewStr;
+      // if password, print stars into the console
+      if(str.length>0 && isPassword)
+        viewStr=new Array(str.length+1).join('*');
+      else
+        viewStr=str;
+      writeToScreen(viewStr);
+    }
     if(sock) sock.emit('stream', str);
   }
 
@@ -504,6 +528,14 @@ $(document).ready(function(){
   $('button#south').click(function(e) { $('#cmd').val('s'); sendInput(); $("#cmd").focus(); });
   $('button#west').click(function(e) { $('#cmd').val('w'); sendInput(); $("#cmd").focus(); });
   $('button#down').click(function(e) { $('#cmd').val('u'); sendInput(); $("#cmd").focus(); });
+
+  // toggle local echo
+  $('button#localecho').click(function(e) {
+    localEcho = !localEcho;
+    saveSettings();
+    $('button#localecho').html('[Echo: ' + (localEcho==true ? 'an' : 'aus') + ']');
+    $("#cmd").focus(); 
+  });
 
   // clear screen
   $('button#clear').click(function(e) { $('div#out').html(''); $("#cmd").focus(); });
