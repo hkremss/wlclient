@@ -2,33 +2,18 @@
 
 "use strict";
 
-/// Split the query-string into key-value pairs and return a map.
-// Stolen from: http://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
-function parseQuery(qstr) {
-  var query = {};
-  var a = qstr.substr(1).split('&');
-  for (var i = 0; i < a.length; i++) {
-     var b = a[i].split('=');
-     query[decodeURIComponent(b[0])] = decodeURIComponent(b[1] || '');
-  }
-  return query;
+// Handle window close
+var isConnected = false;
+
+// Called on connection
+function connected() {
+  isConnected = true; 
+  console.log('Connected.');
 }
 
-function writeToScreen(str) {
-  var out = $('div#out');
-//  out.append('<span class="out">' + str + '</span>');
-  out.append(str);
-  out.scrollTop(out.prop("scrollHeight"));
-  while(out.children().length>5000) out.children().first().remove();
-}
-
-function pad(str, pad_str, max) {
-  str = str.toString();
-  return str.length < max ? pad(pad_str.toString() + str, pad_str, max) : str;
-}
-
-function numberWithDots(x) {
-    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+function disconnected() {
+  isConnected = false;
+  console.log('Disconnected.');
 }
 
 // Since ansi_up API 2.0 we need an instance of AnsiUp!
@@ -43,8 +28,77 @@ var tty_neg_index = 0;
 // pwMode + pw store local input, if cmd is in 'password' mode
 var pwMode = false;
 
-// New: Telnet negotiations (Holger).
- function doTelnetNegotions(sock, buf) {
+/// Split the query-string into key-value pairs and return a map.
+// Stolen from: http://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
+function parseQuery(qstr) {
+  var query = {};
+  var a = qstr.substr(1).split('&');
+  for (var i = 0; i < a.length; i++) {
+     var b = a[i].split('=');
+     query[decodeURIComponent(b[0])] = decodeURIComponent(b[1] || '');
+  }
+  return query;
+}
+
+// Handle image loading errors here!
+function bildstoerung(){
+  var img_a = $('a#room_image_a');
+  var img = $('img#room_image');
+  var brokenPath = img.attr('src');
+  if(brokenPath!='img/aaa_no_signal.jpg') {
+    img.attr('src', 'img/aaa_no_signal.jpg');
+    img.attr('alt', 'Bildstoerung: ' + brokenPath + ' is broken!');
+    img_a.attr('href', 'img/aaa_no_signal.jpg');
+    img_a.attr('data-title', 'Bildstoerung: ' + brokenPath + ' is broken!');
+  }
+}
+
+// Called, whenever a key is pressed in the body area. We'd like to treat
+// everything as input to the client, but this would prevent copy&paste 
+// shortcuts or other special keys from working. So we try to skip these
+// and only care about the rest.
+function bodyKeyDown(event) {
+  var k = event.which;
+
+  if (event.key == 'c' && (event.ctrlKey || event.metaKey)) {
+    /* Don't intercept Ctrl/Cmd + C  for copy */
+    return true;
+  }
+
+  if ($.inArray(event.key, [
+    'CapsLock', /* Caps lock */
+    'Shift',    /* Shift */
+    'Tab',      /* Tab */
+    'Escape',   /* Escape Key */
+    'Control',  /* Control Key */
+    'Meta',     /* Windows Command Key */
+    'Pause',    /* Pause Break */
+    'Alt',      /* Alt Key */
+    'PageUp', 'PageDown', /*Page Down, Page Up */
+    'Home','End','ArrowDown','ArrowLeft','ArrowRight','ArrowUp', /* Home, End, Arrow Keys */
+    'Insert',   /* Insert Key */
+    'F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12', /* F1 - F12 */
+    'NumLock','ScrollLock' /* Num Lock, Scroll Lock */
+    ]) != -1) {
+    /* Don't intercept control keys */
+    return true;
+  }
+
+  /* Everything else is supposed to be a keyboard-input, which should got to the cmd element. */
+  (pwMode ? $("#pwd") : $("#cmd")).focus();
+  return true;
+}
+
+// Write something to the screen, scroll to bottom and limit number of rows.
+function writeToScreen(str) {
+  var out = $('div#out');
+  out.append(str);
+  out.scrollTop(out.prop("scrollHeight"));
+  while(out.children().length>5000) out.children().first().remove();
+}
+
+// Do telnet negotiations for 'buf' and return the plain text only.
+function doTelnetNegotions(sock, buf) {
 
   // TELNET protocol
   var IAC  = '\xff'; // 255
@@ -222,13 +276,14 @@ var pwMode = false;
   return strippedBuf;
 }
 
+// Do ANSI conversion, before writing to screen.
 function writeServerData(buf) {
   var line = ansi_up.ansi_to_html(buf);
   writeToScreen(line);
 }
 
+// Adjust the UI layout.
 function adjustLayout() {
-
   var page_elem = $('div#page');
   var out_elem = $('div#out');
   var in_elem = $('div#in');
@@ -255,6 +310,7 @@ function adjustLayout() {
   out_elem.scrollTop(out_elem.prop("scrollHeight"));
 }
 
+// Maybe the user wants other colors? Here we go.
 function processQueryParams() {
   var queryParams=parseQuery(document.location.search);
 
@@ -288,21 +344,35 @@ function processQueryParams() {
   
 }
 
+// Popup the cookie warning.
 function doCookiePopup() {
   if (!document.cookie.split('; ').find(row => row.startsWith('didAcceptCookies'))) {
     $(".cookie-bar").css("display", "inline-block");
   }
 }
 
+// Called whenever the user closes the cookie warning.
 function doCookieAccept() {
   var cookieDate = new Date();
   cookieDate.setTime(new Date().getTime() + 2592000000); // 30 days in ms
   document.cookie = "didAcceptCookies=true; path=/; expires=" + cookieDate.toUTCString();
 }
 
-$(window).resize(adjustLayout);
-
+// Called once, when UI is loaded and ready to go.
 $(document).ready(function(){
+
+  // need to adjust layout after resize
+  window.addEventListener('resize', adjustLayout);
+
+  // don't close immediately, if connected
+  window.addEventListener("beforeunload", function (e) {
+    if (isConnected) {
+      // Cancel the event
+      e.preventDefault(); // If you prevent default behavior in Mozilla Firefox prompt will always be shown
+      // Chrome requires returnValue to be set
+      e.returnValue = '';
+    }
+  });
 
   // enable ANSI classes
   ansi_up.use_classes = true;
@@ -319,10 +389,7 @@ $(document).ready(function(){
   });
 
   // websocket
-//  var sock = io.connect();
-//  var sock = io.connect('', {path:'/client/socket.io'});
-//  var sock = io.connect('', {path:location.pathname+'/socket.io'});
-  // truncate tailing /index.html
+  // use page location and truncate off tailing /index.html
   var baseUri = location.pathname.substring(0, location.pathname.lastIndexOf("/"))
   var sock = io.connect('', {path:baseUri+'/socket.io'});
   sock.on('stream', function(buf){
@@ -440,6 +507,16 @@ $(document).ready(function(){
 
   // clear screen
   $('button#clear').click(function(e) { $('div#out').html(''); $("#cmd").focus(); });
+
+  $( "#infoDialog" ).dialog({
+      modal: true,
+      autoOpen: false,
+      buttons: {
+        Ok: function() {
+          $(this).dialog("close");
+        }
+      }
+    });
 
   setTimeout(function(){
     adjustLayout();    
