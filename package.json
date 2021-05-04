@@ -1,7 +1,7 @@
 {
-  "name": "webtelnet",
-  "version": "1.1.1",
-  "description": "WebTelnet is a proxy server to bridge websocket to telnet, enable visiting telnet servers with browsers",
+  "name": "wlclient",
+  "version": "1.1.0",
+  "description": "WLCLient is a proxy server to bridge websocket to telnet, enable visiting MUD Wunderland with browsers",
   "main": "./webtelnet-proxy.js",
   "bin": {
     "webtelnet": "./main.js"
@@ -11,30 +11,31 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mudchina/webtelnet.git"
+    "url": "git+https://github.com/hkremss/wlclient"
   },
   "keywords": [
-    "telnet",
-    "webtelnet",
+    "webclient",
     "proxy",
     "mud",
-    "webmud"
+    "webmud",
+    "wunderland",
+    "wlclient"
   ],
   "author": {
-    "name": "Raymond Xie",
-    "email": "rjfun.mobile@gmail.com"
+    "name": "Holger@Wunderland",
+    "email": "hkremss@gmail.com"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/mudchina/webtelnet/issues"
+    "url": "https://github.com/hkremss/wlclient/issues"
   },
-  "homepage": "https://github.com/mudchina/webtelnet#README.md",
+  "homepage": "https://github.com/hkremss/wlclient#README.md",
   "dependencies": {
     "codemirror": "^5.60.0",
-    "express": "^4.13.4",
+    "express": "^4.17.1",
     "iconv-lite": "^0.4.13",
-    "minimist": "^1.2.0",
-    "socket.io": "^1.4.4",
+    "minimist": "^1.2.5",
+    "socket.io": "^4.0.1",
     "text-encoding": "^0.5.5"
   }
 }
