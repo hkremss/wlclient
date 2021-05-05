@@ -146,9 +146,9 @@ var MacroProcessor = /** @class */ (function () {
                         }
                         else {
                             userMessage =
-                                'Tiny Macro Processor help\n' +
-                                    '=========================\n' +
-                                    'The macro processor provides tools to define and excutes macros. These macros ' +
+                                'Tiny Macro Processor\n' +
+                                    '====================\n' +
+                                    'The macro processor provides tools to define and excute macros. These macros ' +
                                     'may define scripts to do complex or repetetive tasks. One typical use case is ' +
                                     'the definition of long routes to walk through the MUD. Because this Macro Processor ' +
                                     'is experimental the number of commands per macro is limited. Any feature may change ' +
