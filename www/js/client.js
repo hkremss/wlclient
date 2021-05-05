@@ -1,6 +1,6 @@
 // The WL client main code.
 
-"use strict";
+'use strict';
 
 // Local echo setting.
 var localEcho = false;
@@ -428,8 +428,10 @@ $(document).ready(function(){
     disconnected();
   });
 
-  // send
-  var send = function(str, isPassword) {
+  // Send a string to the remote server, echos it locally, if
+  // localEcho is true. If isPassword is true, the string will
+  // be masked as **** for local echo.
+  function send(str, isPassword) {
     if (localEcho === true) {
       var viewStr;
       // if password, print stars into the console
@@ -447,17 +449,40 @@ $(document).ready(function(){
   var history_tmp = ''; // remember current input
   var history = [];     // the history array
 
-  var sendInput = function() {
+  // Init macro processor
+  var macros = new MacroProcessor;
+
+  // Get user input from UI elements (either cmd or pwd),
+  // add it to the history and call send(). See above.
+  function sendInput() {
     var elem = (pwMode === true ? $('#pwd') : $('#cmd'));
-    var trim_cmd = elem.val(); //.trim(); // sometimes, we need leadinf spaces (e.g. editing news)
-    if(trim_cmd.length>0 && history.indexOf(trim_cmd)!=0) {
-      // add trim_cmd to history, if it's not a password
-      if(!pwMode) history.unshift(trim_cmd);
+    var cmd = elem.val();
+
+    // Push this line to the history, if it's not a pwd
+    if(cmd.length>0 && history.indexOf(cmd)!=0) {
+      // add cmd to history, if it's not a password
+      if(!pwMode) history.unshift(cmd);
       // limit length of history
       if (history.length > history_max) history.pop();
     }
     history_idx=-1;
-    send(trim_cmd + '\n', pwMode);
+
+    // The MacroProcessor may not send anything.
+    var doSend = true;
+
+    // Macro handling
+    if (!pwMode) {
+      var resolvedMacro = macros.resolve(cmd);
+      doSend = resolvedMacro[0];
+      cmd = resolvedMacro[1];
+      var msg = resolvedMacro[2];
+      if (msg.length > 0) writeToScreen(msg);
+    }
+
+    // Now send, if noone opted out.
+    if (doSend) send(cmd + '\n', pwMode);
+
+    // Clear input element
     elem.val('').change();
   }
 
