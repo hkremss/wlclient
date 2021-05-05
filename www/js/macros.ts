@@ -112,7 +112,7 @@ class MacroProcessor {
             userMessage = 
               'Help on: /def\n'+
               '\n'+
-              'Usage: /def <name> = <body>\n'+
+              'Usage: /def &lt;name&gt; = &lt;body&gt;\n'+
               '\n'+
               'Defines a named macro. No options provided. The <name> can be anything, but must not '+
               'contain whitespaces. The <body> is the text to be executed as a user command. Multiple '+
@@ -166,7 +166,7 @@ class MacroProcessor {
               ' /def   - define a named macro\n'+
               ' /undef - undefine a named macro\n'+
               ' /list  - display a list of macros\n'+
-              ' /help [command] - help for any command (without \'/\')\n'+
+              ' /help &lt;command&gt; - help for any command (without \'/\')\n'+
               '\n'+
               'No macro is saved permanently right now, so try copy&paste of /list for now!\n';
           }
