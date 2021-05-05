@@ -112,18 +112,18 @@ var MacroProcessor = /** @class */ (function () {
                                     '\n' +
                                     '  /def time_warp = :jumps to the left!%;:steps to the right!\n' +
                                     '\n' +
-                                    'and call it by typing' +
+                                    'and call it by typing\n' +
                                     '\n' +
-                                    '/time_warp' +
+                                    '  /time_warp\n' +
                                     '\n' +
-                                    'you will execute the commands' +
+                                    'you will execute the commands\n' +
                                     '\n' +
-                                    ':jumps to the left!' +
-                                    ':steps to the right!' +
+                                    ':jumps to the left!\n' +
+                                    ':steps to the right!\n' +
                                     '\n' +
                                     'You can execute a macro by typing \'/\' followed by the name of the macro. At the moment ' +
                                     'macros cannot call other macros. You can define as much commands as you want, but at the ' +
-                                    'moment, the number of executed steps is arbitrary limited. Sorry.';
+                                    'moment, the number of executed steps is arbitrary limited. Sorry.\n';
                         }
                         else if (topic === 'undef' || topic === '/undef') {
                             userMessage =
@@ -132,7 +132,7 @@ var MacroProcessor = /** @class */ (function () {
                                     'Usage: /undef <name>\n' +
                                     '\n' +
                                     'Undefines a named macro. No options provided. It is the counterpart to /def. I have no ' +
-                                    'idea, why you would ever need it, but it exists. For you.';
+                                    'idea, why you would ever need it, but it exists. For you.\n';
                         }
                         else if (topic === 'list' || topic === '/list') {
                             userMessage =
@@ -152,7 +152,7 @@ var MacroProcessor = /** @class */ (function () {
                                     'may define scripts to do complex or repetetive tasks. One typical use case is ' +
                                     'the definition of long routes to walk through the MUD. Because this Macro Processor ' +
                                     'is experimental the number of commands per macro is limited. Any feature may change ' +
-                                    'anytime and the whole processore may disappear completely in the future.\n' +
+                                    'anytime and the whole processor may disappear completely in the future.\n' +
                                     '\n' +
                                     'Commands:\n' +
                                     ' /def   - define a named macro\n' +
