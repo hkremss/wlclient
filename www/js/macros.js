@@ -1,6 +1,8 @@
 /*
  * The tiny macro processor of Wunderland Client.
  *
+ * Written in TypeScript and compiled to ECMAScript.
+ *
  * Build: tsc --sourceMap macros.ts
  */
 var MacroProcessor = /** @class */ (function () {
@@ -102,12 +104,13 @@ var MacroProcessor = /** @class */ (function () {
                         var topic = cmd.substr(5).trim().toLowerCase();
                         if (topic === 'def' || topic === '/def') {
                             userMessage =
-                                'Help on: /def\n' +
+                                '\n' +
+                                    'Help on: /def\n' +
                                     '\n' +
                                     'Usage: /def &lt;name&gt; = &lt;body&gt;\n' +
                                     '\n' +
-                                    'Defines a named macro. No options provided. The <name> can be anything, but must not ' +
-                                    'contain whitespaces. The <body> is the text to be executed as a user command. Multiple ' +
+                                    'Defines a named macro. No options provided. The &lt;name&gt; can be anything, but must not ' +
+                                    'contain whitespaces. The &lt;body&gt; is the text to be executed as a user command. Multiple ' +
                                     'commands can be separated by token \'%;\'. For example, if you define a macro like:\n' +
                                     '\n' +
                                     '  /def time_warp = :jumps to the left!%;:steps to the right!\n' +
@@ -127,7 +130,8 @@ var MacroProcessor = /** @class */ (function () {
                         }
                         else if (topic === 'undef' || topic === '/undef') {
                             userMessage =
-                                'Help on: /undef\n' +
+                                '\n' +
+                                    'Help on: /undef\n' +
                                     '\n' +
                                     'Usage: /undef <name>\n' +
                                     '\n' +
@@ -136,7 +140,8 @@ var MacroProcessor = /** @class */ (function () {
                         }
                         else if (topic === 'list' || topic === '/list') {
                             userMessage =
-                                'Help on: /list\n' +
+                                '\n' +
+                                    'Help on: /list\n' +
                                     '\n' +
                                     'Usage: /list\n' +
                                     '\n' +
@@ -146,11 +151,12 @@ var MacroProcessor = /** @class */ (function () {
                         }
                         else {
                             userMessage =
-                                'Tiny Macro Processor\n' +
-                                    '====================\n' +
+                                '\n' +
+                                    'Tiny Macro Processor\n' +
+                                    '~~~~~~~~~~~~~~~~~~~~\n' +
                                     'The macro processor provides tools to define and excute macros. These macros ' +
                                     'may define scripts to do complex or repetetive tasks. One typical use case is ' +
-                                    'the definition of long routes to walk through the MUD. Because this Macro Processor ' +
+                                    'the definition of long routes to walk through the MUD. Because this macro processor ' +
                                     'is experimental the number of commands per macro is limited. Any feature may change ' +
                                     'anytime and the whole processor may disappear completely in the future.\n' +
                                     '\n' +
@@ -160,7 +166,7 @@ var MacroProcessor = /** @class */ (function () {
                                     ' /list  - display a list of macros\n' +
                                     ' /help &lt;command&gt; - help for any command (without \'/\')\n' +
                                     '\n' +
-                                    'No macro is saved permanently right now, so try copy&paste of /list for now!\n';
+                                    'Nothing is saved permanently, yet! So try copy&paste of /list for now!\n';
                         }
                         break;
                     }
