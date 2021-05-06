@@ -6,14 +6,15 @@
  * Build: tsc --sourceMap macros.ts
  */
 var MacroProcessor = /** @class */ (function () {
+    //constructor 
     function MacroProcessor() {
         // fields
         this.customMacros = {};
+        var storedMacros = localStorage.getItem(MacroProcessor.STORAGE_KEY);
+        if (storedMacros) {
+            this.customMacros = JSON.parse(storedMacros);
+        }
     }
-    //constructor 
-    //constructor(engine:string) { 
-    //  this.engine = engine 
-    //}
     // Get Macro name or null, if there is none.
     MacroProcessor.prototype.getFirstWord = function (cmd) {
         var name = null;
@@ -50,7 +51,7 @@ var MacroProcessor = /** @class */ (function () {
         var doSend = false;
         var newCmd = '';
         var userMessage = '';
-        if (cmd && cmd.length > 0 && cmd.charAt(0) == MacroProcessor.KEY) {
+        if (cmd && cmd.length > 0 && cmd.charAt(0) == MacroProcessor.MACRO_KEY) {
             cmd = cmd.substr(1);
             console.log('MacroProcessor resolve: ' + cmd);
             var firstWord = this.getFirstWord(cmd);
@@ -67,13 +68,20 @@ var MacroProcessor = /** @class */ (function () {
                                     userMessage = '% ' + firstWord + ': Redefined macro ' + mName + '\n';
                                 }
                                 this.customMacros[mName] = mBody;
+                                localStorage.setItem(MacroProcessor.STORAGE_KEY, JSON.stringify(this.customMacros));
+                            }
+                            else if (mName.length == 0) {
+                                userMessage = '% ' + firstWord + ': &lt;name&gt; must not be empty\n';
                             }
                             else {
-                                userMessage = '% ' + firstWord + ': macro name or body missing\n';
+                                userMessage = '% ' + firstWord + ': &lt;body&gt; must not be empty\n';
                             }
                         }
+                        else if (eqSign == 0) {
+                            userMessage = '% ' + firstWord + ': &lt;name&gt; missing, try: /def &lt;name&gt; = &lt;body&gt;\n';
+                        }
                         else {
-                            userMessage = '% ' + firstWord + ': syntax error\n';
+                            userMessage = '% ' + firstWord + ': \'=\' missing, try: /def &lt;name&gt; = &lt;body&gt;\n';
                         }
                         break;
                     }
@@ -88,6 +96,7 @@ var MacroProcessor = /** @class */ (function () {
                                 }
                                 else {
                                     delete this.customMacros[mNames[i]];
+                                    localStorage.setItem(MacroProcessor.STORAGE_KEY, JSON.stringify(this.customMacros));
                                 }
                             }
                         }
@@ -196,7 +205,8 @@ var MacroProcessor = /** @class */ (function () {
         return [doSend, newCmd, userMessage];
     };
     // constants
-    MacroProcessor.KEY = '/';
+    MacroProcessor.MACRO_KEY = '/';
+    MacroProcessor.STORAGE_KEY = 'Macros.List';
     return MacroProcessor;
 }());
 //# sourceMappingURL=macros.js.map
