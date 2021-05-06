@@ -226,7 +226,7 @@ function doTelnetNegotions(sock, buf) {
                 // disable local echo!
                 pwMode = true;
                 $("#cmd").hide();
-                document.getElementById("myDropdown").classList.remove("dropshow");
+                closeAllDropDowns();
                 $(".dropbtn").hide();
                 $("#pwd").show();
                 $("#pwd").focus();

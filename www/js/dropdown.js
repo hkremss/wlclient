@@ -6,14 +6,7 @@ function mainDropDownFunction() {
 
   // if the main dropdown is going to be closed, close ALL dropdowns
   if (mainDropdown.classList.contains('dropshow')) {
-    var dropdowns = document.getElementsByClassName("dropdown-content");
-    var i;
-    for (i = 0; i < dropdowns.length; i++) {
-      var openDropdown = dropdowns[i];
-      if (openDropdown.classList.contains('dropshow')) {
-        openDropdown.classList.remove('dropshow');
-      }
-    }
+    closeAllDropDowns();
   }
   // otherwise just toggle the main dropdown visibility
   else {
@@ -27,6 +20,18 @@ function mainDropDownFunction() {
 function settingsDropDownFunction() {
   document.getElementById('settingsDropdown').classList.toggle('dropshow');
   document.getElementById('cmd').focus();
+}
+
+/* When called, all open dropdowns are closed immediately */
+function closeAllDropDowns() {
+  var dropdowns = document.getElementsByClassName('dropdown-content');
+  var i;
+  for (i = 0; i < dropdowns.length; i++) {
+    var openDropdown = dropdowns[i];
+    if (openDropdown.classList.contains('dropshow')) {
+      openDropdown.classList.remove('dropshow');
+    }
+  }
 }
 
 // Close the dropdown if the user clicks outside of it
