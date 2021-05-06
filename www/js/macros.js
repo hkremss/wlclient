@@ -15,6 +15,10 @@ var MacroProcessor = /** @class */ (function () {
             this.customMacros = JSON.parse(storedMacros);
         }
     }
+    // Return version number
+    MacroProcessor.prototype.getVersion = function () {
+        return MacroProcessor.VERSION;
+    };
     // Get Macro name or null, if there is none.
     MacroProcessor.prototype.getFirstWord = function (cmd) {
         var name = null;
@@ -161,13 +165,14 @@ var MacroProcessor = /** @class */ (function () {
                         else {
                             userMessage =
                                 '\n' +
-                                    'Tiny Macro Processor\n' +
-                                    '~~~~~~~~~~~~~~~~~~~~\n' +
-                                    'The macro processor provides tools to define and excute macros. These macros ' +
+                                    'Tiny Macro Processor V' + MacroProcessor.VERSION + '\n' +
+                                    '~~~~~~~~~~~~~~~~~~~~~~~~~~\n' +
+                                    'The macro processor is an optional and experimental component of the Wunderland ' +
+                                    'web-client and provides tools to define and excute macros. These macros ' +
                                     'may define scripts to do complex or repetetive tasks. One typical use case is ' +
-                                    'the definition of long routes to walk through the MUD. Because this macro processor ' +
-                                    'is experimental the number of commands per macro is limited. Any feature may change ' +
-                                    'anytime and the whole processor may disappear completely in the future.\n' +
+                                    'the definition of long routes to walk through the MUD. The number of commands per ' +
+                                    'macro is limited. Any feature may change anytime and the whole processor may ' +
+                                    'disappear completely in the future, without further notice.\n' +
                                     '\n' +
                                     'Commands:\n' +
                                     ' /def   - define a named macro\n' +
@@ -175,7 +180,8 @@ var MacroProcessor = /** @class */ (function () {
                                     ' /list  - display a list of macros\n' +
                                     ' /help &lt;command&gt; - help for any command (without \'/\')\n' +
                                     '\n' +
-                                    'Nothing is saved permanently, yet! So try copy&paste of /list for now!\n';
+                                    'The macros are stored in your browsers localStorage only and not saved permanently, ' +
+                                    'yet! So try copy&paste of /list for now!\n';
                         }
                         break;
                     }
@@ -205,6 +211,7 @@ var MacroProcessor = /** @class */ (function () {
         return [doSend, newCmd, userMessage];
     };
     // constants
+    MacroProcessor.VERSION = '0.1';
     MacroProcessor.MACRO_KEY = '/';
     MacroProcessor.STORAGE_KEY = 'Macros.List';
     return MacroProcessor;
