@@ -1,14 +1,38 @@
 /* Modified dropdown (or drop-up) menu JS - see https://www.w3schools.com/howto/howto_js_dropdown.asp */
 
-/* When the user clicks on the button, toggle between hiding and showing the dropdown content */
-function dropDownFunction() {
-    document.getElementById("myDropdown").classList.toggle("dropshow");
-    document.getElementById("cmd").focus();
+/* When called, toggle between hiding and showing the main dropdown */
+function mainDropDownFunction() {
+  var mainDropdown = document.getElementById('mainDropdown');
+
+  // if the main dropdown is going to be closed, close ALL dropdowns
+  if (mainDropdown.classList.contains('dropshow')) {
+    var dropdowns = document.getElementsByClassName("dropdown-content");
+    var i;
+    for (i = 0; i < dropdowns.length; i++) {
+      var openDropdown = dropdowns[i];
+      if (openDropdown.classList.contains('dropshow')) {
+        openDropdown.classList.remove('dropshow');
+      }
+    }
+  }
+  // otherwise just toggle the main dropdown visibility
+  else {
+    mainDropdown.classList.toggle('dropshow');
+  }
+
+  document.getElementById('cmd').focus();
+}
+
+/* When called, toggle between hiding and showing the settings dropdown */
+function settingsDropDownFunction() {
+  document.getElementById('settingsDropdown').classList.toggle('dropshow');
+  document.getElementById('cmd').focus();
 }
 
 // Close the dropdown if the user clicks outside of it
+/*
 window.onclick = function(event) {
-/*  if (!event.target.matches('.dropbtn')) {
+  if (!event.target.matches('.dropbtn')) {
 
     var dropdowns = document.getElementsByClassName("dropdown-content");
     var i;
@@ -18,5 +42,6 @@ window.onclick = function(event) {
         openDropdown.classList.remove('dropshow');
       }
     }
-  }*/
+  }
 }
+*/

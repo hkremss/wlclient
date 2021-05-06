@@ -22,6 +22,9 @@ function disconnected() {
 // Since ansi_up API 2.0 we need an instance of AnsiUp!
 var ansi_up = new AnsiUp;
 
+// Init macro processor
+var macros = new MacroProcessor;
+
 // `pending` stores partial telnet negotiations that cross message boundaries
 var pending = '';
 
@@ -318,16 +321,21 @@ function saveSettings() {
   localStorage.setItem('Client.Setting.LocalEcho', JSON.stringify(localEcho));
 }
 
-// Load settings from localStorage.
+// Re-/Load settings from localStorage.
 function loadSettings() {
+  // Macro Processor re-/load
+  macros.ReloadSettings();
+
+  // Re-/load other client settings.
   var localEchoSetting = localStorage.getItem('Client.Setting.LocalEcho');
   if (localEchoSetting) {
     localEcho = JSON.parse(localEchoSetting);
   } else {
     localEcho = false;
   }
-  // refresh UI
-  $('button#localecho').html('[Echo: ' + (localEcho==true ? 'an' : 'aus') + ']');
+
+  // Refresh UI
+  $('button#localecho').html('Local Echo: ' + (localEcho==true ? 'an' : 'aus') + '');
 }
 
 // Maybe the user wants other colors? Here we go.
@@ -375,6 +383,82 @@ function doCookieAccept() {
   var cookieDate = new Date();
   cookieDate.setTime(new Date().getTime() + 2592000000); // 30 days in ms
   document.cookie = "didAcceptCookies=true; path=/; expires=" + cookieDate.toUTCString();
+}
+
+// Import settings from local file
+function importSettings(event) {
+  // Some tricks required here, to open local files. Most of it comes from here:
+  // https://stackoverflow.com/questions/3582671/how-to-open-a-local-disk-file-with-javascript
+  // What happens: We have an invisible input element in the document (importButtonHiddenInput),
+  // which we must use as tool to open a file selection dialog. So we attach a file read handler
+  // on this element and emit a 'click' event. 
+  var hiddenInputElement = document.getElementById('importButtonHiddenInput');
+  hiddenInputElement.onchange=uploadSettingsFile;
+  hiddenInputElement.click();
+}
+
+// Helper for importSettings()
+function uploadSettingsFile(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var settingsStr = e.target.result;
+    if (settingsStr && settingsStr.length > 0) {
+      var settings;
+      try {
+        settings = JSON.parse(settingsStr);
+      } catch (e) {
+        writeToScreen('' + e.name + ': ' + e.message + '\n');
+      }
+      if (settings && Object.keys(settings).length>0) {
+        if (settings['#VERSION'] == 1) {
+          var keys = Object.keys(settings);
+          for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            if (key!='#VERSION') {
+              localStorage.setItem(key, settings[key]);
+            }
+          }
+          writeToScreen('Einstellungen (V' + settings['#VERSION'] + ', #' + (keys.length - 1) + ') importiert.\n');
+          loadSettings(); // to refresh UI
+        }
+        else {
+          writeToScreen('Einstellungen haben falsche Version.\n');
+        }
+      }
+      else {
+        writeToScreen('Einstellungen leer.\n');
+      }
+    }
+    else {
+      writeToScreen('Einstellungen konnten nicht importiert werden.\n');
+    }
+    $("#cmd").focus();
+  }
+  reader.readAsText(file)
+}
+
+// Export settings to local file
+function exportSettings(event) {
+  // Some tricks required here, to open local files. Most of it comes from here:
+  // https://ourcodeworld.com/articles/read/189/how-to-create-a-file-and-generate-a-download-with-javascript-in-the-browser-without-a-server
+  // What happens: We have an invisible anchor element in the dockument (exportButtonHiddenAnchor),
+  // which we must use as tool to open a file download dialog. So we attach our file data on this 
+  // element and emit a 'click' event. 
+  var hiddenAnchorElement = document.getElementById('exportButtonHiddenAnchor');
+  var settings = { '#VERSION' : 1 };
+  for (var i = 0; i < localStorage.length; i++){
+    var key = localStorage.key(i);
+    if (key.substr(0,7)=='Client.' || key.substr(0,7)=='Macros.') {
+      settings[key] = localStorage.getItem(key);
+    }
+  }
+  var settingsStr = JSON.stringify(settings);
+  hiddenAnchorElement.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(settingsStr));
+  hiddenAnchorElement.click();
+  writeToScreen('Einstellungen (V' + settings['#VERSION'] + ', #' + localStorage.length + ') exportiert.\n');
+  $("#cmd").focus();
 }
 
 // Called once, when UI is loaded and ready to go.
@@ -448,9 +532,6 @@ $(document).ready(function(){
   var history_max = 20; // max size of history
   var history_tmp = ''; // remember current input
   var history = [];     // the history array
-
-  // Init macro processor
-  var macros = new MacroProcessor;
 
   // Get user input from UI elements (either cmd or pwd),
   // add it to the history and call send(). See above.
@@ -554,11 +635,17 @@ $(document).ready(function(){
   $('button#west').click(function(e) { $('#cmd').val('w'); sendInput(); $("#cmd").focus(); });
   $('button#down').click(function(e) { $('#cmd').val('u'); sendInput(); $("#cmd").focus(); });
 
+  // Settings
+
+  // import settings
+  document.querySelector('button#importButton').addEventListener('click', importSettings);
+  document.querySelector('button#exportButton').addEventListener('click', exportSettings);
+
   // toggle local echo
   $('button#localecho').click(function(e) {
     localEcho = !localEcho;
     saveSettings();
-    $('button#localecho').html('[Echo: ' + (localEcho==true ? 'an' : 'aus') + ']');
+    $('button#localecho').html('Local Echo: ' + (localEcho==true ? 'an' : 'aus') + '');
     $("#cmd").focus(); 
   });
 

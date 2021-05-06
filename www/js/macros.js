@@ -6,18 +6,27 @@
  * Build: tsc --sourceMap macros.ts
  */
 var MacroProcessor = /** @class */ (function () {
-    //constructor 
+    // Constructor loads settings from localStorage
     function MacroProcessor() {
         // fields
         this.customMacros = {};
-        var storedMacros = localStorage.getItem(MacroProcessor.STORAGE_KEY);
-        if (storedMacros) {
-            this.customMacros = JSON.parse(storedMacros);
-        }
+        this.ReloadSettings();
     }
     // Return version number
     MacroProcessor.prototype.getVersion = function () {
         return MacroProcessor.VERSION;
+    };
+    // Try to reload settings from localStorage
+    MacroProcessor.prototype.ReloadSettings = function () {
+        var storedMacros = localStorage.getItem(MacroProcessor.STORAGE_KEY);
+        if (storedMacros) {
+            try {
+                this.customMacros = JSON.parse(storedMacros);
+            }
+            catch (e) {
+                console.log('Macro processor: ' + e.name + ': ' + e.message);
+            }
+        }
     };
     // Get Macro name or null, if there is none.
     MacroProcessor.prototype.getFirstWord = function (cmd) {

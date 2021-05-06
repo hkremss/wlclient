@@ -16,17 +16,26 @@ class MacroProcessor {
   // fields
   private customMacros: { [key: string]: string } = {};
 
-  //constructor 
+  // Constructor loads settings from localStorage
   constructor() { 
-    let storedMacros = localStorage.getItem(MacroProcessor.STORAGE_KEY);  
-    if (storedMacros) {
-      this.customMacros = JSON.parse(storedMacros);
-    }
+    this.ReloadSettings();
   }
 
   // Return version number
   public getVersion() : string {
     return MacroProcessor.VERSION;
+  }
+
+  // Try to reload settings from localStorage
+  public ReloadSettings() {
+    let storedMacros = localStorage.getItem(MacroProcessor.STORAGE_KEY);  
+    if (storedMacros) {
+      try {
+        this.customMacros = JSON.parse(storedMacros);
+      } catch (e) {
+        console.log('Macro processor: ' + e.name + ': ' + e.message);
+      }
+    }
   }
 
   // Get Macro name or null, if there is none.

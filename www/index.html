@@ -94,8 +94,8 @@
       <div id="prompt">&gt;&nbsp;</div>
       <div class="cmdwrapper">
         <div id="menu" class="dropdown">
-          <button onclick="dropDownFunction()" class="dropbtn">...</button>
-          <div id="myDropdown" class="dropdown-content">
+          <button onclick="mainDropDownFunction()" class="dropbtn">...</button>
+          <div id="mainDropdown" class="dropdown-content">
             <button id="who" class="drp I18N" i18n="who">wer</button>
             <button id="look" class="drp I18N" i18n="look">schau</button>
             <button id="inv" class="drp I18N" i18n="inv">inventar</button>
@@ -111,8 +111,15 @@
               </div>
               <button id="down" class="drp I18N" i18n="down">unten</button>          
             </div>
-            <button id="localecho" class="drp tooltip I18N" i18n="localecho">[Echo: ?]</button>
-            <button id="clear" class="drp I18N" i18n="clear">[Löschen]</button>
+            <button id="settings" onclick="settingsDropDownFunction()" class="drp I18N" i18n="settings">&lt; Optionen</button>
+          </div>
+          <div id="settingsDropdown" class="dropdown-content">
+            <button id="importButton" class="drp I18N" i18n="import">Import Einst.</button>
+              <input id="importButtonHiddenInput" type='file' style="display: none;" />
+            <button id="exportButton" class="drp I18N" i18n="export">Export Einst.</button>
+              <a id="exportButtonHiddenAnchor" href="data:text/plain;charset=utf-8,gna" download="wlclient-settings.txt" style="display: none;"></a>
+            <button id="localecho" class="drp I18N" i18n="localecho">Lokales Echo: ?</button>
+            <button id="clear" class="drp I18N" i18n="clear">Fenster leeren</button>
           </div>
         </div>
         <!--button id="send" class="cmd I18N" i18n="send">Senden</button-->

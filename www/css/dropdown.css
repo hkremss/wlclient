@@ -15,7 +15,7 @@ button.drp {
   /*font-size:inherit;*/
   width: 100px;
   border: none;
-  background-color: #ddd7;
+  background-color: #fff7;
   color: #0007;
   height:1.95em;
   padding: 5px;
@@ -44,8 +44,20 @@ button.drp {
   min-width: auto;
   width: 100px;
   z-index: 1;
-  right:2ch; /* pop-left */
+}
+
+div#mainDropdown.dropdown-content {
+  right:2ch;   /* pop-left */
   bottom:130%; /* pop-up */
+}
+
+div#settingsDropdown.dropdown-content {
+  right:calc(102px + 2ch); /* pop-left */
+  bottom:130%;             /* pop-up */
+  width: 140px;
+}
+div#settingsDropdown.dropdown-content button.drp {
+  width: 140px;
 }
 
 .dropdown-content a {
