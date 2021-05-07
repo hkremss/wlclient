@@ -91,16 +91,19 @@ function bodyKeyDown(event) {
   }
 
   /* Everything else is supposed to be a keyboard-input, which should got to the cmd element. */
-  (pwMode ? $("#pwd") : $("#cmd")).focus();
+  setFocusToInput();
+
   return true;
 }
 
 // Write something to the screen, scroll to bottom and limit number of rows.
 function writeToScreen(str) {
-  var out = $('div#out');
-  out.append(str);
-  out.scrollTop(out.prop("scrollHeight"));
-  while(out.children().length>5000) out.children().first().remove();
+  if (str && str.length > 0) {
+    var out = document.getElementById('out');
+    out.insertAdjacentHTML('beforeend', str);
+    out.scrollTop = out.scrollHeight;
+    while(out.childNodes.length > 1000) out.childNodes[0].remove();
+  }
 }
 
 // Do telnet negotiations for 'buf' and return the plain text only.
@@ -659,7 +662,7 @@ $(document).ready(function(){
   });
 
   // 'Enter'
-  $('button#send').click(function(e) { sendInput(); (pwMode ? $('#pwd') : $("#cmd")).focus(); });
+  $('button#send').click(function(e) { sendInput(); setFocusToInput(); });
 
   // some basic commands
   $('button#channel').click(function(e) { $('#cmd').val('- '); $("#cmd").focus(); });
