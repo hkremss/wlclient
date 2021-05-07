@@ -273,8 +273,22 @@ function doTelnetNegotions(sock, buf) {
   return strippedBuf;
 }
 
+// Remove all backspaces and chars 'in front', called recursively.
+// Will destroy ANSI-Codes in front, if there are more '\b' than real
+// chars. But this is something, which cannot be avoided effectively.
+// We must trust the responsibility of the creators.
+function handleBackspace(str) {
+  var bs = str.indexOf('\b');
+  if (bs>=0) {
+    var newstr = str.substr(0, (bs-1)) + str.substr(bs+1);
+    return handleBackspace(newstr);
+  }
+  return str;
+}
+
 // Do ANSI conversion, before writing to screen.
 function writeServerData(buf) {
+  buf=handleBackspace(buf);
   var line = ansi_up.ansi_to_html(buf);
   writeToScreen(line);
 }
