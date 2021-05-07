@@ -669,7 +669,7 @@ $(document).ready(function(){
   document.querySelector('button#exportButton').addEventListener('click', exportSettings);
 
   // colors dialog
-  $('button#colors').click(function(e) { writeToScreen('Farbeinstellumgen: (geht noch nicht)\n'); $("#cmd").focus(); });
+  $('button#colors').click(function(e) { writeToScreen('Farbeinstellungen: (geht noch nicht)\n'); $("#cmd").focus(); });
 
   // toggle local echo
   $('button#localecho').click(function(e) {
