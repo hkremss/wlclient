@@ -22,6 +22,46 @@ button.drp {
   margin: 0px 0px 2px 0px;
 }
 
+button.drp span.iconsettings {
+    background: url(../images/settings-12.png) no-repeat;
+    float: left;
+    margin-left: 5px;
+    width: 12px;
+    height: 12px;
+}
+
+button.drp span.iconexport {
+    background: url(../images/download-12.png) no-repeat;
+    float: left;
+    margin-left: 5px;
+    width: 12px;
+    height: 12px;
+}
+
+button.drp span.iconimport {
+    background: url(../images/upload-12.png) no-repeat;
+    float: left;
+    margin-left: 5px;
+    width: 12px;
+    height: 12px;
+}
+
+button.drp span.iconscreen {
+    background: url(../images/screen-12.png) no-repeat;
+    float: left;
+    margin-left: 5px;
+    width: 12px;
+    height: 12px;
+}
+
+button.drp span.iconpalette {
+    background: url(../images/palette-12.png) no-repeat;
+    float: left;
+    margin-left: 5px;
+    width: 12px;
+    height: 12px;
+}
+
 .drp:hover {background-color: #CEF7;}
 
 .nohover:hover {background-color: transparent;}

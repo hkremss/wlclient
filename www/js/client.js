@@ -201,11 +201,7 @@ function doTelnetNegotions(sock, buf) {
             switch(buf[newIacIdx+2]){
               case TELOPT_ECHO:
                 // enable local echo!
-                pwMode = false;
-                $("#pwd").hide();
-                $(".dropbtn").show();
-                $("#cmd").show();
-                $("#cmd").focus();
+                leavePWMode();
                 if(sock) sock.emit('stream', IAC+DONT+TELOPT_ECHO);
                 break;
               default:
@@ -224,12 +220,7 @@ function doTelnetNegotions(sock, buf) {
                 break;
               case TELOPT_ECHO:
                 // disable local echo!
-                pwMode = true;
-                $("#cmd").hide();
-                closeAllDropDowns();
-                $(".dropbtn").hide();
-                $("#pwd").show();
-                $("#pwd").focus();
+                enterPWMode();
                 if(sock) sock.emit('stream', IAC+DO+TELOPT_ECHO);
                 break;
               case TELOPT_GMCP:
@@ -461,6 +452,33 @@ function exportSettings(event) {
   $("#cmd").focus();
 }
 
+// Call to enter into pw mode.
+function enterPWMode() {
+  pwMode = true;
+  $("#cmd").hide();
+  closeAllDropDowns();
+  $(".dropbtn").hide();
+  $("#pwd").show();
+  $("#pwd").focus();
+}
+
+// Call to leave pw mode.
+function leavePWMode() {
+  pwMode = false;
+  $("#pwd").hide();
+  $(".dropbtn").show();
+  $("#cmd").show();
+  $("#cmd").focus();
+}
+
+// Give the focus to the input field.
+function setFocusToInput() {
+  if (pwMode)
+    document.getElementById('pwd').focus();
+  else 
+    document.getElementById('cmd').focus();
+}
+
 // Called once, when UI is loaded and ready to go.
 $(document).ready(function(){
 
@@ -474,6 +492,14 @@ $(document).ready(function(){
       e.preventDefault(); // If you prevent default behavior in Mozilla Firefox prompt will always be shown
       // Chrome requires returnValue to be set
       e.returnValue = '';
+    }
+  });
+
+  // if mouse is released and nothing is marked, set 
+  // the focus to the input element(s)
+  window.addEventListener('mouseup', function (e) {
+    if (!window.getSelection() || window.getSelection().toString().length == 0) {
+      setFocusToInput();
     }
   });
 
@@ -507,7 +533,8 @@ $(document).ready(function(){
     connected();
   });
   sock.on('disconnected', function(){
-    writeToScreen('Verbindung zum Wunderland verloren.\n');
+    writeToScreen('Verbindung zum Wunderland verloren. (Enter: neu verbinden)\n');
+    leavePWMode();
     $('#prompt').html('&gt; ');
     disconnected();
   });
@@ -641,10 +668,14 @@ $(document).ready(function(){
   document.querySelector('button#importButton').addEventListener('click', importSettings);
   document.querySelector('button#exportButton').addEventListener('click', exportSettings);
 
+  // colors dialog
+  $('button#colors').click(function(e) { writeToScreen('Farbeinstellumgen: (geht noch nicht)\n'); $("#cmd").focus(); });
+
   // toggle local echo
   $('button#localecho').click(function(e) {
     localEcho = !localEcho;
     saveSettings();
+    writeToScreen('Lokales Echo ist jetzt '+(localEcho==true ? 'an' : 'aus')+'.\n'); 
     $('button#localecho').html('Local Echo: ' + (localEcho==true ? 'an' : 'aus') + '');
     $("#cmd").focus(); 
   });
@@ -661,6 +692,8 @@ $(document).ready(function(){
         }
       }
     });
+
+$("#out").click(); 
 
   setTimeout(function(){
     adjustLayout();    

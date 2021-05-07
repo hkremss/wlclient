@@ -111,15 +111,16 @@
               </div>
               <button id="down" class="drp I18N" i18n="down">unten</button>          
             </div>
-            <button id="settings" onclick="settingsDropDownFunction()" class="drp I18N" i18n="settings">&lt; Optionen</button>
+            <button id="settings" onclick="settingsDropDownFunction()" class="drp I18N" i18n="settings">&lt; </span>Optionen</button>
           </div>
           <div id="settingsDropdown" class="dropdown-content">
-            <button id="importButton" class="drp I18N" i18n="import">Import Einst.</button>
+            <button id="importButton" class="drp I18N" i18n="import"><span class="iconimport"></span>Import Einst.</button>
               <input id="importButtonHiddenInput" type='file' style="display: none;" />
-            <button id="exportButton" class="drp I18N" i18n="export">Export Einst.</button>
+            <button id="exportButton" class="drp I18N" i18n="export"><span class="iconexport"></span>Export Einst.</button>
               <a id="exportButtonHiddenAnchor" href="data:text/plain;charset=utf-8,gna" download="wlclient-settings.txt" style="display: none;"></a>
+            <button id="colors" class="drp I18N" i18n="colors"><span class="iconpalette"></span>Farbschema</button>
             <button id="localecho" class="drp I18N" i18n="localecho">Lokales Echo: ?</button>
-            <button id="clear" class="drp I18N" i18n="clear">Fenster leeren</button>
+            <button id="clear" class="drp I18N" i18n="clear"><span class="iconscreen"></span>Bild löschen</button>
           </div>
         </div>
         <!--button id="send" class="cmd I18N" i18n="send">Senden</button-->
