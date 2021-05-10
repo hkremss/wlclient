@@ -506,7 +506,6 @@ $(document).ready(function(){
         }
       }
       if (msg.length > 0) writeToScreen(msg);
-      return false;
     }
     
     // Don't intercept Ctrl/Cmd + C  for copy
