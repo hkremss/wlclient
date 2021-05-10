@@ -499,7 +499,7 @@ $(document).ready(function(){
         if (namedKey.length>0) {
           var cmd = document.getElementById('cmd');
           if (cmd.value && cmd.value.substr(0, 4).toLowerCase() == '/def' && cmd.value.substr(cmd.value.length-4) == 'key_') {
-            cmd.value += namedKey.substr(4);
+            cmd.value += (namedKey.substr(4) + ' = ');
             event.preventDefault();
             return true;
           }
