@@ -7,29 +7,115 @@
  */
 var TMP;
 (function (TMP) {
+    var MacroProps = /** @class */ (function () {
+        function MacroProps() {
+        }
+        return MacroProps;
+    }());
+    var TriggerProps = /** @class */ (function () {
+        function TriggerProps() {
+        }
+        return TriggerProps;
+    }());
     var MacroProcessor = /** @class */ (function () {
-        // Constructor loads settings from localStorage
         function MacroProcessor() {
             // fields
             this.customMacros = {};
             this.recursionStack = [];
-            this.ReloadSettings();
         }
+        // Constructor loads settings from localStorage
+        //constructor() { 
+        //  this.ReloadSettings();
+        //}
         // Return version number
         MacroProcessor.prototype.getVersion = function () {
             return MacroProcessor.VERSION;
         };
-        // Try to reload settings from localStorage
+        // Save all settings to localStorage.
+        MacroProcessor.prototype.SaveSettings = function () {
+            localStorage.setItem(MacroProcessor.STORAGE_KEY, JSON.stringify(this.customMacros));
+        };
+        // Try to (re-)load settings from localStorage.
         MacroProcessor.prototype.ReloadSettings = function () {
-            var storedMacros = localStorage.getItem(MacroProcessor.STORAGE_KEY);
-            if (storedMacros) {
+            var storedMacrosString = localStorage.getItem(MacroProcessor.STORAGE_KEY);
+            if (storedMacrosString) {
                 try {
-                    this.customMacros = JSON.parse(storedMacros);
+                    var storedMacros = JSON.parse(storedMacrosString);
+                    // the first iteration of the save format had a cmd as string value,
+                    // but now its a dictionary, so we convert old saved data into new.
+                    this.customMacros = {};
+                    var updateRequired = false;
+                    if (storedMacros) {
+                        for (var mName in storedMacros) {
+                            var mBody = storedMacros[mName];
+                            if (typeof mBody === 'string') {
+                                var props = new MacroProps;
+                                props.body = mBody;
+                                this.customMacros[mName] = props;
+                                updateRequired = true;
+                            }
+                            else {
+                                this.customMacros[mName] = mBody;
+                            }
+                        }
+                    }
+                    else {
+                        updateRequired = true;
+                    }
+                    // We updated the save format. 
+                    if (updateRequired)
+                        this.SaveSettings();
                 }
                 catch (e) {
                     console.log('Macro processor: ' + e.name + ': ' + e.message);
                 }
             }
+        };
+        // Build a key name (similar to TF) from event.
+        MacroProcessor.prototype.GetNamedKey = function (event) {
+            var keyName = '';
+            // If the key is ONLY unidentified or a modifier key, skip it.
+            // see: https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values
+            // NOTE: IE and Firefox report 'OS' for 'Meta', see: https://bugzilla.mozilla.org/show_bug.cgi?id=1232918
+            if (['Unidentified', 'Alt', 'AltGraph', 'CapsLock', 'Control', 'Fn', 'FnLock', 'Hyper', 'Meta',
+                'NumLock', 'ScrollLock', 'Shift', 'Super', 'Symbol', 'SymbolLock', 'OS',
+                'Insert', 'Backspace', 'Delete'].indexOf(event.key) == -1) {
+                keyName = 'key_';
+                if (event.ctrlKey)
+                    keyName += 'ctrl_';
+                if (event.altKey)
+                    keyName += 'alt_';
+                if (event.shiftKey)
+                    keyName += 'shift_';
+                if (event.metaKey)
+                    keyName += 'meta_';
+                keyName += event.key == ' ' ? 'Space' : event.key;
+            }
+            return keyName;
+        };
+        // Handle a single key-down event.
+        // Returns 3-tuple: [doSend, new command, user message]
+        MacroProcessor.prototype.HandleKey = function (event) {
+            var result = [false, '', ''];
+            // Build a key name (similar to TF)
+            var keyName = this.GetNamedKey(event);
+            if (keyName.length > 0) {
+                // Try to handle this.
+                result = this.handleDEFAULT(keyName, '');
+                // If we can not?
+                if (!result[0]) {
+                    // Reset new command and user message.
+                    result[1] = '';
+                    result[2] = '';
+                    // Give a hint for function keys only.
+                    if (['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
+                        'F13', 'F14', 'F15', 'F16', 'F17', 'F18', 'F19', 'F20', 'F21', 'F22', 'F23', 'F24',
+                    ].indexOf(event.key) != -1) {
+                        result[2] = '% The key "' + keyName + '" is undefined; you may use "/def ' + keyName + ' = <commands>" to define it.\n';
+                    }
+                }
+            }
+            return result;
         };
         // Get Macro name or null, if there is none.
         MacroProcessor.prototype.getFirstWord = function (cmd) {
@@ -43,6 +129,7 @@ var TMP;
             return name;
         };
         // Handle /DEF command - define a named macro
+        // Returns 3-tuple: [doSend, new command, user message]
         MacroProcessor.prototype.handleDEF = function (firstWord, cmd) {
             var doSend = false;
             var newCmd = '';
@@ -53,11 +140,13 @@ var TMP;
                 var mName = body.substring(0, eqSign).trim();
                 var mBody = body.substring(eqSign + 1).trim();
                 if (mName.length > 0 && mBody.length > 0) {
-                    if (this.customMacros[mName] && this.customMacros[mName] !== mBody) {
+                    if (this.customMacros[mName] && this.customMacros[mName].body !== mBody) {
                         userMessage = '% ' + firstWord + ': Redefined macro ' + mName + '\n';
                     }
-                    this.customMacros[mName] = mBody;
-                    localStorage.setItem(MacroProcessor.STORAGE_KEY, JSON.stringify(this.customMacros));
+                    var macro = new MacroProps;
+                    macro.body = mBody;
+                    this.customMacros[mName] = macro;
+                    this.SaveSettings();
                 }
                 else if (mName.length == 0) {
                     userMessage = '% ' + firstWord + ': &lt;name&gt; must not be empty\n';
@@ -75,6 +164,7 @@ var TMP;
             return [doSend, newCmd, userMessage];
         };
         // Handle /UNDEF command - undefine a named macro
+        // Returns 3-tuple: [doSend, new command, user message]
         MacroProcessor.prototype.handleUNDEF = function (firstWord, cmd) {
             var doSend = false;
             var newCmd = '';
@@ -88,24 +178,26 @@ var TMP;
                     }
                     else {
                         delete this.customMacros[mNames[i]];
-                        localStorage.setItem(MacroProcessor.STORAGE_KEY, JSON.stringify(this.customMacros));
+                        this.SaveSettings();
                     }
                 }
             }
             return [doSend, newCmd, userMessage];
         };
         // Handle /LIST command - display a list of macros
+        // Returns 3-tuple: [doSend, new command, user message]
         MacroProcessor.prototype.handleLIST = function (firstWord, cmd) {
             var doSend = false;
             var newCmd = '';
             var userMessage = '';
             for (var mName in this.customMacros) {
-                var mBody = this.customMacros[mName];
-                userMessage += '/def ' + mName + ' = ' + mBody + '\n';
+                var macroProps = this.customMacros[mName];
+                userMessage += '/def ' + mName + ' = ' + macroProps.body + '\n';
             }
             return [doSend, newCmd, userMessage];
         };
         // Handle /HELP command - display the help text
+        // Returns 3-tuple: [doSend, new command, user message]
         MacroProcessor.prototype.handleHELP = function (firstWord, cmd) {
             var doSend = false;
             var newCmd = '';
@@ -181,7 +273,8 @@ var TMP;
             }
             return [doSend, newCmd, userMessage];
         };
-        // Handle default, custom macro or error
+        // Handle default case, custom macro or just do nothing.
+        // Returns 3-tuple: [doSend, new command, user message]
         MacroProcessor.prototype.handleDEFAULT = function (firstWord, cmd) {
             var doSend = false;
             var newCmd = '';
@@ -191,7 +284,7 @@ var TMP;
                 if (this.recursionStack.indexOf(firstWord) < 0) {
                     // push to recursion stack
                     this.recursionStack.push(firstWord);
-                    var steps = this.customMacros[firstWord].split('%;'); // '%;' is the TF separator token
+                    var steps = this.customMacros[firstWord].body.split('%;'); // '%;' is the TF separator token
                     var stepNums = steps.length;
                     if (stepNums > 42) {
                         userMessage = '% ' + firstWord + ': command list truncated to 42 for some reason, sorry\n';
@@ -225,8 +318,8 @@ var TMP;
             }
             return [doSend, newCmd, userMessage];
         };
-        // Function resolve() takes a single user command and returns a 
-        // 3-tuple of: [doSend, new command, user message] 
+        // Resolves a single user command (single line or just a command).
+        // Returns 3-tuple: [doSend, new command, user message]
         MacroProcessor.prototype.resolveSingle = function (cmd) {
             var result;
             if (cmd && cmd.length > 0 && cmd.charAt(0) == MacroProcessor.MACRO_KEY) {
@@ -261,6 +354,7 @@ var TMP;
         // The user input may consist of multiple lines, because
         // of copy&paste. So we split the input into separate lines
         // and concatenate the result(s).
+        // Returns 3-tuple: [doSend, new command, user message]
         MacroProcessor.prototype.resolve = function (cmd) {
             var doSend = false;
             var newCmd = '';
@@ -278,7 +372,7 @@ var TMP;
             return [doSend, newCmd, userMessage];
         };
         // constants
-        MacroProcessor.VERSION = '0.1';
+        MacroProcessor.VERSION = '0.2';
         MacroProcessor.MACRO_KEY = '/';
         MacroProcessor.STORAGE_KEY = 'Macros.List';
         return MacroProcessor;

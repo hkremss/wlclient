@@ -8,37 +8,125 @@
 
 module TMP {
 
+  class MacroProps {
+    public body : string;
+    public trigger : TriggerProps;
+  }
+
+  class TriggerProps {
+    public pattern : string;
+  }
+
   export class MacroProcessor {
   
     // constants
-    static readonly VERSION = '0.1';
+    static readonly VERSION = '0.2';
     static readonly MACRO_KEY = '/';
     static readonly STORAGE_KEY = 'Macros.List';
     
     // fields
-    private customMacros: { [key: string]: string } = {};
+    private customMacros: { [key: string]: MacroProps } = {};
     private recursionStack : Array<string> = [];
   
     // Constructor loads settings from localStorage
-    constructor() { 
-      this.ReloadSettings();
-    }
+    //constructor() { 
+    //  this.ReloadSettings();
+    //}
   
     // Return version number
     public getVersion() : string {
       return MacroProcessor.VERSION;
     }
   
-    // Try to reload settings from localStorage
+    // Save all settings to localStorage.
+    private SaveSettings() {
+      localStorage.setItem(MacroProcessor.STORAGE_KEY, JSON.stringify(this.customMacros));
+    }
+  
+    // Try to (re-)load settings from localStorage.
     public ReloadSettings() {
-      let storedMacros = localStorage.getItem(MacroProcessor.STORAGE_KEY);  
-      if (storedMacros) {
+      let storedMacrosString = localStorage.getItem(MacroProcessor.STORAGE_KEY);  
+      if (storedMacrosString) {
         try {
-          this.customMacros = JSON.parse(storedMacros);
+          let storedMacros = JSON.parse(storedMacrosString);
+          // the first iteration of the save format had a cmd as string value,
+          // but now its a dictionary, so we convert old saved data into new.
+          this.customMacros = {};
+          let updateRequired = false;
+          if (storedMacros) {
+            for (let mName in storedMacros) {
+              let mBody = storedMacros[mName];
+              if (typeof mBody === 'string') {
+                let props = new MacroProps;
+                props.body = mBody;
+                this.customMacros[mName] = props;
+                updateRequired = true;
+              } else {
+                this.customMacros[mName] = (mBody as unknown) as MacroProps;
+              }
+            }
+          }
+          else {
+            updateRequired = true;
+          }
+          // We updated the save format. 
+          if (updateRequired) this.SaveSettings();
         } catch (e) {
           console.log('Macro processor: ' + e.name + ': ' + e.message);
         }
       }
+    }
+  
+    // Build a key name (similar to TF) from event.
+    public GetNamedKey(event : KeyboardEvent) : string
+    {
+      let keyName = '';
+
+      // If the key is ONLY unidentified or a modifier key, skip it.
+      // see: https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values
+      // NOTE: IE and Firefox report 'OS' for 'Meta', see: https://bugzilla.mozilla.org/show_bug.cgi?id=1232918
+      if (['Unidentified','Alt','AltGraph','CapsLock','Control','Fn','FnLock','Hyper','Meta',
+        'NumLock','ScrollLock','Shift','Super','Symbol','SymbolLock','OS',
+        'Insert','Backspace','Delete'].indexOf(event.key) == -1)
+      {
+        keyName = 'key_';
+        if (event.ctrlKey) keyName += 'ctrl_';
+        if (event.altKey) keyName += 'alt_';
+        if (event.shiftKey) keyName += 'shift_';
+        if (event.metaKey) keyName += 'meta_';
+        keyName += event.key == ' ' ? 'Space' : event.key;
+      }
+      
+      return keyName;
+    }
+  
+    // Handle a single key-down event.
+    // Returns 3-tuple: [doSend, new command, user message]
+    public HandleKey(event : KeyboardEvent) : [boolean, string, string]
+    {
+      let result: [boolean, string, string] = [false, '', ''];
+
+      // Build a key name (similar to TF)
+      let keyName = this.GetNamedKey(event);
+        
+      if (keyName.length > 0) {       
+        // Try to handle this.
+        result = this.handleDEFAULT(keyName, '');
+  
+        // If we can not?
+        if (!result[0]) {
+          // Reset new command and user message.
+          result[1] = ''; result[2] = '';
+          // Give a hint for function keys only.
+          if (['F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12',
+            'F13','F14','F15','F16','F17','F18','F19','F20','F21','F22','F23','F24',
+            ].indexOf(event.key) != -1) {
+            result[2] = '% The key "' + keyName + '" is undefined; you may use "/def ' + keyName + ' = <commands>" to define it.\n';
+          }
+        }
+      }
+
+      return result;
     }
   
     // Get Macro name or null, if there is none.
@@ -54,6 +142,7 @@ module TMP {
     }
   
     // Handle /DEF command - define a named macro
+    // Returns 3-tuple: [doSend, new command, user message]
     private handleDEF(firstWord : string, cmd : string) : [boolean, string, string]
     {
       let doSend : boolean = false;
@@ -66,11 +155,13 @@ module TMP {
         let mName = body.substring(0, eqSign).trim();
         let mBody = body.substring(eqSign+1).trim();
         if (mName.length > 0 && mBody.length > 0) {
-          if (this.customMacros[mName] && this.customMacros[mName] !== mBody) {
+          if (this.customMacros[mName] && this.customMacros[mName].body !== mBody) {
             userMessage = '% '+firstWord+': Redefined macro ' + mName + '\n';
           }
-          this.customMacros[mName] = mBody;
-          localStorage.setItem(MacroProcessor.STORAGE_KEY, JSON.stringify(this.customMacros));
+          let macro = new MacroProps;
+          macro.body = mBody;
+          this.customMacros[mName] = macro;
+          this.SaveSettings();
         }
         else if (mName.length == 0) {
           userMessage = '% '+firstWord+': &lt;name&gt; must not be empty\n';
@@ -90,6 +181,7 @@ module TMP {
     }
 
     // Handle /UNDEF command - undefine a named macro
+    // Returns 3-tuple: [doSend, new command, user message]
     private handleUNDEF(firstWord : string, cmd : string) : [boolean, string, string]
     {
       let doSend : boolean = false;
@@ -104,7 +196,7 @@ module TMP {
             userMessage += '% '+firstWord+': Macro "' + mNames[i] + '" was not defined.\n';
           } else {
             delete this.customMacros[mNames[i]];
-            localStorage.setItem(MacroProcessor.STORAGE_KEY, JSON.stringify(this.customMacros));
+            this.SaveSettings();
           }
         }
       }
@@ -113,6 +205,7 @@ module TMP {
     }
 
     // Handle /LIST command - display a list of macros
+    // Returns 3-tuple: [doSend, new command, user message]
     private handleLIST(firstWord : string, cmd : string) : [boolean, string, string]
     {
       let doSend : boolean = false;
@@ -120,14 +213,15 @@ module TMP {
       let userMessage : string = '';
 
       for (let mName in this.customMacros) {
-        let mBody = this.customMacros[mName];
-        userMessage += '/def '+mName+' = '+mBody+'\n';
+        let macroProps = this.customMacros[mName];
+        userMessage += '/def '+mName+' = '+macroProps.body+'\n';
       }
 
       return [doSend, newCmd, userMessage];
     }
 
     // Handle /HELP command - display the help text
+    // Returns 3-tuple: [doSend, new command, user message]
     private handleHELP(firstWord : string, cmd : string) : [boolean, string, string]
     {
       let doSend : boolean = false;
@@ -207,7 +301,8 @@ module TMP {
       return [doSend, newCmd, userMessage];
     }
 
-    // Handle default, custom macro or error
+    // Handle default case, custom macro or just do nothing.
+    // Returns 3-tuple: [doSend, new command, user message]
     private handleDEFAULT(firstWord : string, cmd : string) : [boolean, string, string]
     {
       let doSend : boolean = false;
@@ -220,7 +315,7 @@ module TMP {
         {
           // push to recursion stack
           this.recursionStack.push(firstWord);
-          let steps = this.customMacros[firstWord].split('%;'); // '%;' is the TF separator token
+          let steps = this.customMacros[firstWord].body.split('%;'); // '%;' is the TF separator token
           let stepNums = steps.length;
           if (stepNums > 42) {
             userMessage = '% '+firstWord+': command list truncated to 42 for some reason, sorry\n';
@@ -254,8 +349,8 @@ module TMP {
       return [doSend, newCmd, userMessage];
     }
 
-    // Function resolve() takes a single user command and returns a 
-    // 3-tuple of: [doSend, new command, user message] 
+    // Resolves a single user command (single line or just a command).
+    // Returns 3-tuple: [doSend, new command, user message]
     private resolveSingle(cmd : string) : [boolean, string, string] {
       let result: [boolean, string, string];
   
@@ -293,6 +388,7 @@ module TMP {
     // The user input may consist of multiple lines, because
     // of copy&paste. So we split the input into separate lines
     // and concatenate the result(s).
+    // Returns 3-tuple: [doSend, new command, user message]
     public resolve(cmd : string) : [boolean, string, string] {
       let doSend : boolean = false;
       let newCmd : string = '';
@@ -309,7 +405,7 @@ module TMP {
         userMessage += result[2];
       }
 
-       return [doSend, newCmd, userMessage];
+      return [doSend, newCmd, userMessage];
     }
   }
 

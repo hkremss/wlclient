@@ -59,43 +59,6 @@ function bildstoerung(){
   }
 }
 
-// Called, whenever a key is pressed in the body area. We'd like to treat
-// everything as input to the client, but this would prevent copy&paste 
-// shortcuts or other special keys from working. So we try to skip these
-// and only care about the rest.
-function bodyKeyDown(event) {
-  var k = event.which;
-
-  if (event.key == 'c' && (event.ctrlKey || event.metaKey)) {
-    /* Don't intercept Ctrl/Cmd + C  for copy */
-    return true;
-  }
-
-  if ($.inArray(event.key, [
-    'CapsLock', /* Caps lock */
-    'Shift',    /* Shift */
-    'Tab',      /* Tab */
-    'Escape',   /* Escape Key */
-    'Control',  /* Control Key */
-    'Meta',     /* Windows Command Key */
-    'Pause',    /* Pause Break */
-    'Alt',      /* Alt Key */
-    'PageUp', 'PageDown', /*Page Down, Page Up */
-    'Home','End','ArrowDown','ArrowLeft','ArrowRight','ArrowUp', /* Home, End, Arrow Keys */
-    'Insert',   /* Insert Key */
-    'F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12', /* F1 - F12 */
-    'NumLock','ScrollLock' /* Num Lock, Scroll Lock */
-    ]) != -1) {
-    /* Don't intercept control keys */
-    return true;
-  }
-
-  /* Everything else is supposed to be a keyboard-input, which should got to the cmd element. */
-  setFocusToInput();
-
-  return true;
-}
-
 // Write something to the screen, scroll to bottom and limit number of rows.
 function writeToScreen(str) {
   if (str && str.length > 0) {
@@ -511,6 +474,69 @@ $(document).ready(function(){
       e.returnValue = '';
     }
   });
+
+  // Called, whenever a key is pressed in the window. We'd like to treat
+  // everything as input to the client, but this would prevent copy&paste 
+  // shortcuts or other special keys from working. So we try to skip these
+  // and only care about the rest.
+  function handleKeyDown(event)
+  {
+    if (!pwMode) {
+      // If macro processor handles the key, don't continue.
+      var result = macros.HandleKey(event);
+      var doSend = result[0];
+      var msg = result[2];
+      if (doSend) {
+        var cmd = result[1];
+        send(cmd + '\n', pwMode);
+        event.preventDefault();
+        return true;
+      }
+      // If there is nothing to send, but the input contains '/def key_', append the 
+      // pressed named key now as a convenience function.
+      else {
+        var namedKey = macros.GetNamedKey(event);
+        if (namedKey.length>0) {
+          var cmd = document.getElementById('cmd');
+          if (cmd.value && cmd.value.substr(0, 4).toLowerCase() == '/def' && cmd.value.substr(cmd.value.length-4) == 'key_') {
+            cmd.value += namedKey.substr(4);
+            event.preventDefault();
+            return true;
+          }
+        }
+      }
+      if (msg.length > 0) writeToScreen(msg);
+      return false;
+    }
+    
+    // Don't intercept Ctrl/Cmd + C  for copy
+    if (event.key == 'c' && (event.ctrlKey || event.metaKey)) return true;
+  
+    // Don't intercept control/meta/function keys
+    if ($.inArray(event.key, [
+      'CapsLock', /* Caps lock */
+      'Shift',    /* Shift */
+      'Tab',      /* Tab */
+      'Escape',   /* Escape Key */
+      'Control',  /* Control Key */
+      'Meta',     /* Windows Command Key */
+      'Pause',    /* Pause Break */
+      'Alt',      /* Alt Key */
+      'PageUp', 'PageDown', /*Page Down, Page Up */
+      'Home','End','ArrowDown','ArrowLeft','ArrowRight','ArrowUp', /* Home, End, Arrow Keys */
+      'Insert',   /* Insert Key */
+      'F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12','F13','F14','F15','F16','F17','F18','F19','F20', /* F1 - F20 */
+      'NumLock','ScrollLock' /* Num Lock, Scroll Lock */
+      ]) != -1) return true;
+  
+    // Everything else is supposed to be input, so focus to the right place.
+    setFocusToInput();
+  
+    return true;
+  }
+
+  // Intercept all keys.
+  window.addEventListener('keydown', handleKeyDown);
 
   // if mouse is released and nothing is marked, set 
   // the focus to the input element(s)
