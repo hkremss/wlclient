@@ -384,6 +384,14 @@ function uploadSettingsFile(e) {
       }
       if (settings && Object.keys(settings).length>0) {
         if (settings['#VERSION'] == 1) {
+          // Remove all existing Client.* and Macros.* keys.
+          for (var i = 0; i < localStorage.length; i++){
+            var key = localStorage.key(i);
+            if (key.substr(0,7)=='Client.' || key.substr(0,7)=='Macros.') {
+              localStorage.removeItem(key);
+            }
+          }
+          // Restore keys from imported file.
           var keys = Object.keys(settings);
           for (var i = 0; i < keys.length; i++) {
             var key = keys[i];
@@ -428,7 +436,7 @@ function exportSettings(event) {
   var settingsStr = JSON.stringify(settings);
   hiddenAnchorElement.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(settingsStr));
   hiddenAnchorElement.click();
-  writeToScreen('Einstellungen (V' + settings['#VERSION'] + ', #' + localStorage.length + ') exportiert.\n');
+  writeToScreen('Einstellungen (V' + settings['#VERSION'] + ', #' + (Object.keys(settings).length - 1) + ') exportiert.\n');
   $("#cmd").focus();
 }
 
