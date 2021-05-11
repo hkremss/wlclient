@@ -128,13 +128,70 @@ var TMP;
             }
             return name;
         };
+        // Find and return a double-quoted string from source.
+        // Return empty string, if not found.
+        MacroProcessor.prototype.getQuotedString = function (source) {
+            var quoted = '';
+            // charAt(0) must be the opening quote.
+            if (source.charAt(0) != '"')
+                return quoted;
+            // search for the closing quote.
+            for (var i = 1; i < source.length; i++) {
+                if (source.charAt(i) == '"') {
+                    // We have found one. But it must not be escaped, so
+                    // count '\' chars in front of quote. If it's an uneven
+                    // uneven number, it is escaped and we must continue!
+                    var bs = 0;
+                    for (var k = i - 1; k > 0; k--) {
+                        if (source.charAt(k) == '\\') {
+                            bs++;
+                            continue;
+                        }
+                        break;
+                    }
+                    if (bs % 2 == 0) {
+                        // even number of backslashes == closing quote found! 
+                        quoted = source.substr(0, i + 1);
+                        break;
+                    }
+                }
+            }
+            return quoted;
+        };
         // Handle /DEF command - define a named macro
         // Returns 3-tuple: [doSend, new command, user message]
         MacroProcessor.prototype.handleDEF = function (firstWord, cmd) {
             var doSend = false;
             var newCmd = '';
             var userMessage = '';
-            var body = cmd.substr(4);
+            var mTrigger = '';
+            var body = cmd.substr(4).trim();
+            if (body.length > 0 && body.charAt(0) == '-') {
+                if (body.length < 2) {
+                    userMessage = '% ' + firstWord + ': missing option -\n';
+                    return [doSend, newCmd, userMessage];
+                }
+                else if (body.charAt(1) != 't') {
+                    userMessage = '% ' + firstWord + ': unknown option -' + body.charAt(1) + '\n';
+                    return [doSend, newCmd, userMessage];
+                }
+                mTrigger = this.getQuotedString(body.substr(2));
+                if (!mTrigger || mTrigger.length == 0) {
+                    userMessage = '% ' + firstWord + ': invalid/incomplete trigger option, quotes missing?\n';
+                    return [doSend, newCmd, userMessage];
+                }
+                else if (mTrigger.length == 2) {
+                    userMessage = '% ' + firstWord + ': empty trigger found\n';
+                    return [doSend, newCmd, userMessage];
+                }
+                else { // found a quoted trigger string!
+                    // cut trigger part off the body. +2 for the '-t' option.
+                    body = body.substr(mTrigger.length + 2);
+                    // trim the quotes off on both sides.
+                    mTrigger = mTrigger.substr(1, mTrigger.length - 2);
+                    console.log('TMP ' + firstWord + ': found trigger:\'' + mTrigger + '\'.');
+                }
+            }
             var eqSign = body.indexOf("=");
             if (eqSign > 0) {
                 var mName = body.substring(0, eqSign).trim();
@@ -145,6 +202,8 @@ var TMP;
                     }
                     var macro = new MacroProps;
                     macro.body = mBody;
+                    macro.trigger = new TriggerProps;
+                    macro.trigger.pattern = mTrigger;
                     this.customMacros[mName] = macro;
                     this.SaveSettings();
                 }
@@ -234,7 +293,7 @@ var TMP;
                     '\n' +
                         'Help on: /undef\n' +
                         '\n' +
-                        'Usage: /undef <name>\n' +
+                        'Usage: /undef &lt;name&gt;\n' +
                         '\n' +
                         'Undefines a named macro. No options provided. It is the counterpart to /def. I have no ' +
                         'idea, why you would ever need it, but it exists. For you.\n';
