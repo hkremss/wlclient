@@ -30,6 +30,14 @@ button.drp span.iconsettings {
     height: 12px;
 }
 
+button.drp span.iconhelp {
+    background: url(../images/help-12.png) no-repeat;
+    float: left;
+    margin-left: 5px;
+    width: 12px;
+    height: 12px;
+}
+
 button.drp span.iconexport {
     background: url(../images/download-12.png) no-repeat;
     float: left;

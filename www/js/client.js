@@ -722,6 +722,9 @@ $(document).ready(function(){
     $("#cmd").focus(); 
   });
 
+  // open help in new tab
+  $('button#helpButton').click(function(e) { window.open('/webclient/help.html','_blank'); });
+
   // clear screen
   $('button#clear').click(function(e) { $('div#out').html(''); $("#cmd").focus(); });
 
