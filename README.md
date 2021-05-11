@@ -33,6 +33,4 @@ Playing Wunderland with mobile browser on Android:
 
 ## Credits
 
-Created by Raymond Xie, published under MIT license. 
-
-Adapted, fixed and extended for Wunderland by Holger@Wunderland, Fuchur@Wunderland
+Created by Raymond Xie, Holger@Wunderland and Fuchur@Wunderland, published under MIT license.
