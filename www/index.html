@@ -12,21 +12,18 @@
   <!-- to avoid the warning of content security policy -->
   <!--meta http-equiv="Content-Security-Policy" content="default-src *; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'"/-->
 
-<script>
-  // fix wp8 view port issue, see:
-  // https://github.com/floatinghotpot/cordova-admob-pro/issues/109
-  // https://coderwall.com/p/zk_2la/responsive-design-in-ie-10-on-windows-phone-8
-  // http://stackoverflow.com/questions/24007577/windows-phone-8-viewport-issue
-(function() {
-  if ("-ms-user-select" in document.documentElement.style && navigator.userAgent.match(/IEMobile\/10\.0/)) {
-    var msViewportStyle = document.createElement("style");
-    msViewportStyle.appendChild(
-      document.createTextNode("@-ms-viewport{width:auto!important}")
-    );
-    document.getElementsByTagName("head")[0].appendChild(msViewportStyle);
-  }
-})();
-</script>
+  <script type='text/javascript'>
+    function isItIE() {
+      user_agent = navigator.userAgent;
+      var is_it_ie = user_agent.indexOf("MSIE ") > -1 || user_agent.indexOf("IEMobile") > -1 || user_agent.indexOf("Trident/") > -1;
+      return is_it_ie; 
+    }
+    if (isItIE()){
+        console.log('It is Internet Explorer :-/');
+        document.write("<div style='border:16px ridge #FF0000;text-align:center;width:250px;margin-left:2em;margin-top:2em;font-size:16px;padding:1em;'>"+
+          "Internet Explorer wird<br>nicht mehr unterst&uuml;tzt.<br>SORRY!</div>");
+    }
+  </script>
 
   <script src="socket.io/socket.io.js"></script>
   <script src="js/jquery-1.12.4.min.js"></script>
