@@ -1,6 +1,38 @@
 // The WL client main code.
 
-"use strict";
+'use strict';
+
+// Local echo setting.
+var localEcho = false;
+
+// Handle window close
+var isConnected = false;
+
+// Called on connection
+function connected() {
+  isConnected = true; 
+  console.log('Connected.');
+}
+
+function disconnected() {
+  isConnected = false;
+  console.log('Disconnected.');
+}
+
+// Since ansi_up API 2.0 we need an instance of AnsiUp!
+var ansi_up = new AnsiUp;
+
+// Init macro processor
+var macros = new TMP.MacroProcessor;
+
+// `pending` stores partial telnet negotiations that cross message boundaries
+var pending = '';
+
+// reset to 0 on each WO/WILL TELOPT_TTYPE, see tty_neg_types below
+var tty_neg_index = 0;
+
+// pwMode + pw store local input, if cmd is in 'password' mode
+var pwMode = false;
 
 /// Split the query-string into key-value pairs and return a map.
 // Stolen from: http://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
@@ -14,37 +46,31 @@ function parseQuery(qstr) {
   return query;
 }
 
+// Handle image loading errors here!
+function bildstoerung(){
+  var img_a = $('a#room_image_a');
+  var img = $('img#room_image');
+  var brokenPath = img.attr('src');
+  if(brokenPath!='img/aaa_no_signal.jpg') {
+    img.attr('src', 'img/aaa_no_signal.jpg');
+    img.attr('alt', 'Bildstoerung: ' + brokenPath + ' is broken!');
+    img_a.attr('href', 'img/aaa_no_signal.jpg');
+    img_a.attr('data-title', 'Bildstoerung: ' + brokenPath + ' is broken!');
+  }
+}
+
+// Write something to the screen, scroll to bottom and limit number of rows.
 function writeToScreen(str) {
-  var out = $('div#out');
-//  out.append('<span class="out">' + str + '</span>');
-  out.append(str);
-  out.scrollTop(out.prop("scrollHeight"));
-  while(out.children().length>5000) out.children().first().remove();
+  if (str && str.length > 0) {
+    var out = document.getElementById('out');
+    out.insertAdjacentHTML('beforeend', str);
+    out.scrollTop = out.scrollHeight;
+    while(out.childNodes.length > 1000) out.childNodes[0].remove();
+  }
 }
 
-function pad(str, pad_str, max) {
-  str = str.toString();
-  return str.length < max ? pad(pad_str.toString() + str, pad_str, max) : str;
-}
-
-function numberWithDots(x) {
-    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-}
-
-// Since ansi_up API 2.0 we need an instance of AnsiUp!
-var ansi_up = new AnsiUp;
-
-// `pending` stores partial telnet negotiations that cross message boundaries
-var pending = '';
-
-// reset to 0 on each WO/WILL TELOPT_TTYPE, see tty_neg_types below
-var tty_neg_index = 0;
-
-// pwMode + pw store local input, if cmd is in 'password' mode
-var pwMode = false;
-
-// New: Telnet negotiations (Holger).
- function doTelnetNegotions(sock, buf) {
+// Do telnet negotiations for 'buf' and return the plain text only.
+function doTelnetNegotions(sock, buf) {
 
   // TELNET protocol
   var IAC  = '\xff'; // 255
@@ -141,11 +167,7 @@ var pwMode = false;
             switch(buf[newIacIdx+2]){
               case TELOPT_ECHO:
                 // enable local echo!
-                pwMode = false;
-                $("#pwd").hide();
-                $(".dropbtn").show();
-                $("#cmd").show();
-                $("#cmd").focus();
+                leavePWMode();
                 if(sock) sock.emit('stream', IAC+DONT+TELOPT_ECHO);
                 break;
               default:
@@ -164,12 +186,7 @@ var pwMode = false;
                 break;
               case TELOPT_ECHO:
                 // disable local echo!
-                pwMode = true;
-                $("#cmd").hide();
-                document.getElementById("myDropdown").classList.remove("dropshow");
-                $(".dropbtn").hide();
-                $("#pwd").show();
-                $("#pwd").focus();
+                enterPWMode();
                 if(sock) sock.emit('stream', IAC+DO+TELOPT_ECHO);
                 break;
               case TELOPT_GMCP:
@@ -222,13 +239,28 @@ var pwMode = false;
   return strippedBuf;
 }
 
+// Remove all backspaces and chars 'in front', called recursively.
+// Will destroy ANSI-Codes in front, if there are more '\b' than real
+// chars. But this is something, which cannot be avoided effectively.
+// We must trust the responsibility of the creators.
+function handleBackspace(str) {
+  var bs = str.indexOf('\b');
+  if (bs>=0) {
+    var newstr = str.substr(0, (bs-1)) + str.substr(bs+1);
+    return handleBackspace(newstr);
+  }
+  return str;
+}
+
+// Do ANSI conversion, before writing to screen.
 function writeServerData(buf) {
+  buf=handleBackspace(buf);
   var line = ansi_up.ansi_to_html(buf);
   writeToScreen(line);
 }
 
+// Adjust the UI layout.
 function adjustLayout() {
-
   var page_elem = $('div#page');
   var out_elem = $('div#out');
   var in_elem = $('div#in');
@@ -255,6 +287,29 @@ function adjustLayout() {
   out_elem.scrollTop(out_elem.prop("scrollHeight"));
 }
 
+// Save settings to localStorage.
+function saveSettings() {
+  localStorage.setItem('Client.Setting.LocalEcho', JSON.stringify(localEcho));
+}
+
+// Re-/Load settings from localStorage.
+function loadSettings() {
+  // Macro Processor re-/load
+  macros.ReloadSettings();
+
+  // Re-/load other client settings.
+  var localEchoSetting = localStorage.getItem('Client.Setting.LocalEcho');
+  if (localEchoSetting) {
+    localEcho = JSON.parse(localEchoSetting);
+  } else {
+    localEcho = false;
+  }
+
+  // Refresh UI
+  $('button#localecho').html('Local Echo: ' + (localEcho==true ? 'an' : 'aus') + '');
+}
+
+// Maybe the user wants other colors? Here we go.
 function processQueryParams() {
   var queryParams=parseQuery(document.location.search);
 
@@ -285,27 +340,216 @@ function processQueryParams() {
   else
     $('div#info').get(0).style.visibility = 'hidden'
   console.log('infoPanel = ' + infoPanel);
-  
 }
 
+// Popup the cookie warning.
 function doCookiePopup() {
   if (!document.cookie.split('; ').find(row => row.startsWith('didAcceptCookies'))) {
     $(".cookie-bar").css("display", "inline-block");
   }
 }
 
+// Called whenever the user closes the cookie warning.
 function doCookieAccept() {
   var cookieDate = new Date();
   cookieDate.setTime(new Date().getTime() + 2592000000); // 30 days in ms
   document.cookie = "didAcceptCookies=true; path=/; expires=" + cookieDate.toUTCString();
 }
 
-$(window).resize(adjustLayout);
+// Import settings from local file
+function importSettings(event) {
+  // Some tricks required here, to open local files. Most of it comes from here:
+  // https://stackoverflow.com/questions/3582671/how-to-open-a-local-disk-file-with-javascript
+  // What happens: We have an invisible input element in the document (importButtonHiddenInput),
+  // which we must use as tool to open a file selection dialog. So we attach a file read handler
+  // on this element and emit a 'click' event. 
+  var hiddenInputElement = document.getElementById('importButtonHiddenInput');
+  hiddenInputElement.onchange=uploadSettingsFile;
+  hiddenInputElement.click();
+}
 
+// Helper for importSettings()
+function uploadSettingsFile(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var settingsStr = e.target.result;
+    if (settingsStr && settingsStr.length > 0) {
+      var settings;
+      try {
+        settings = JSON.parse(settingsStr);
+      } catch (e) {
+        writeToScreen('' + e.name + ': ' + e.message + '\n');
+      }
+      if (settings && Object.keys(settings).length>0) {
+        if (settings['#VERSION'] == 1) {
+          var keys = Object.keys(settings);
+          for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            if (key!='#VERSION') {
+              localStorage.setItem(key, settings[key]);
+            }
+          }
+          writeToScreen('Einstellungen (V' + settings['#VERSION'] + ', #' + (keys.length - 1) + ') importiert.\n');
+          loadSettings(); // to refresh UI
+        }
+        else {
+          writeToScreen('Einstellungen haben falsche Version.\n');
+        }
+      }
+      else {
+        writeToScreen('Einstellungen leer.\n');
+      }
+    }
+    else {
+      writeToScreen('Einstellungen konnten nicht importiert werden.\n');
+    }
+    $("#cmd").focus();
+  }
+  reader.readAsText(file)
+}
+
+// Export settings to local file
+function exportSettings(event) {
+  // Some tricks required here, to open local files. Most of it comes from here:
+  // https://ourcodeworld.com/articles/read/189/how-to-create-a-file-and-generate-a-download-with-javascript-in-the-browser-without-a-server
+  // What happens: We have an invisible anchor element in the dockument (exportButtonHiddenAnchor),
+  // which we must use as tool to open a file download dialog. So we attach our file data on this 
+  // element and emit a 'click' event. 
+  var hiddenAnchorElement = document.getElementById('exportButtonHiddenAnchor');
+  var settings = { '#VERSION' : 1 };
+  for (var i = 0; i < localStorage.length; i++){
+    var key = localStorage.key(i);
+    if (key.substr(0,7)=='Client.' || key.substr(0,7)=='Macros.') {
+      settings[key] = localStorage.getItem(key);
+    }
+  }
+  var settingsStr = JSON.stringify(settings);
+  hiddenAnchorElement.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(settingsStr));
+  hiddenAnchorElement.click();
+  writeToScreen('Einstellungen (V' + settings['#VERSION'] + ', #' + localStorage.length + ') exportiert.\n');
+  $("#cmd").focus();
+}
+
+// Call to enter into pw mode.
+function enterPWMode() {
+  pwMode = true;
+  $("#cmd").hide();
+  closeAllDropDowns();
+  $(".dropbtn").hide();
+  $("#pwd").show();
+  $("#pwd").focus();
+}
+
+// Call to leave pw mode.
+function leavePWMode() {
+  pwMode = false;
+  $("#pwd").hide();
+  $(".dropbtn").show();
+  $("#cmd").show();
+  $("#cmd").focus();
+}
+
+// Give the focus to the input field.
+function setFocusToInput() {
+  if (pwMode)
+    document.getElementById('pwd').focus();
+  else 
+    document.getElementById('cmd').focus();
+}
+
+// Called once, when UI is loaded and ready to go.
 $(document).ready(function(){
+
+  // need to adjust layout after resize
+  window.addEventListener('resize', adjustLayout);
+
+  // don't close immediately, if connected
+  window.addEventListener("beforeunload", function (e) {
+    if (isConnected) {
+      // Cancel the event
+      e.preventDefault(); // If you prevent default behavior in Mozilla Firefox prompt will always be shown
+      // Chrome requires returnValue to be set
+      e.returnValue = '';
+    }
+  });
+
+  // Called, whenever a key is pressed in the window. We'd like to treat
+  // everything as input to the client, but this would prevent copy&paste 
+  // shortcuts or other special keys from working. So we try to skip these
+  // and only care about the rest.
+  function handleKeyDown(event)
+  {
+    if (!pwMode) {
+      // If macro processor handles the key, don't continue.
+      var result = macros.HandleKey(event);
+      var doSend = result[0];
+      var msg = result[2];
+      if (doSend) {
+        var cmd = result[1];
+        send(cmd + '\n', pwMode);
+        event.preventDefault();
+        return true;
+      }
+      // If there is nothing to send, but the input contains '/def key_', append the 
+      // pressed named key now as a convenience function.
+      else {
+        var namedKey = macros.GetNamedKey(event);
+        if (namedKey.length>0) {
+          var cmd = document.getElementById('cmd');
+          if (cmd.value && cmd.value.substr(0, 4).toLowerCase() == '/def' && cmd.value.substr(cmd.value.length-4) == 'key_') {
+            cmd.value += (namedKey.substr(4) + ' = ');
+            event.preventDefault();
+            return true;
+          }
+        }
+      }
+      if (msg.length > 0) writeToScreen(msg);
+    }
+    
+    // Don't intercept Ctrl/Cmd + C  for copy
+    if (event.key == 'c' && (event.ctrlKey || event.metaKey)) return true;
+  
+    // Don't intercept control/meta/function keys
+    if ($.inArray(event.key, [
+      'CapsLock', /* Caps lock */
+      'Shift',    /* Shift */
+      'Tab',      /* Tab */
+      'Escape',   /* Escape Key */
+      'Control',  /* Control Key */
+      'Meta',     /* Windows Command Key */
+      'Pause',    /* Pause Break */
+      'Alt',      /* Alt Key */
+      'PageUp', 'PageDown', /*Page Down, Page Up */
+      'Home','End','ArrowDown','ArrowLeft','ArrowRight','ArrowUp', /* Home, End, Arrow Keys */
+      'Insert',   /* Insert Key */
+      'F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12','F13','F14','F15','F16','F17','F18','F19','F20', /* F1 - F20 */
+      'NumLock','ScrollLock' /* Num Lock, Scroll Lock */
+      ]) != -1) return true;
+  
+    // Everything else is supposed to be input, so focus to the right place.
+    setFocusToInput();
+  
+    return true;
+  }
+
+  // Intercept all keys.
+  window.addEventListener('keydown', handleKeyDown);
+
+  // if mouse is released and nothing is marked, set 
+  // the focus to the input element(s)
+  window.addEventListener('mouseup', function (e) {
+    if (!window.getSelection() || window.getSelection().toString().length == 0) {
+      setFocusToInput();
+    }
+  });
 
   // enable ANSI classes
   ansi_up.use_classes = true;
+
+  // load settings from localStorage
+  loadSettings();
 
   // adjust layout colors, etc.
   processQueryParams();
@@ -319,10 +563,7 @@ $(document).ready(function(){
   });
 
   // websocket
-//  var sock = io.connect();
-//  var sock = io.connect('', {path:'/client/socket.io'});
-//  var sock = io.connect('', {path:location.pathname+'/socket.io'});
-  // truncate tailing /index.html
+  // use page location and truncate off tailing /index.html
   var baseUri = location.pathname.substring(0, location.pathname.lastIndexOf("/"))
   var sock = io.connect('', {path:baseUri+'/socket.io'});
   sock.on('stream', function(buf){
@@ -334,20 +575,25 @@ $(document).ready(function(){
     connected();
   });
   sock.on('disconnected', function(){
-    writeToScreen('Verbindung zum Wunderland verloren.\n');
+    writeToScreen('Verbindung zum Wunderland verloren. (Enter: neu verbinden)\n');
+    leavePWMode();
     $('#prompt').html('&gt; ');
     disconnected();
   });
 
-  // send
-  var send = function(str, isPassword) {
-    var viewStr;
-    // if password, print stars into the console
-    if(str.length>0 && isPassword)
-      viewStr=new Array(str.length+1).join('*');
-    else
-      viewStr=str;
-    writeToScreen(viewStr);
+  // Send a string to the remote server, echos it locally, if
+  // localEcho is true. If isPassword is true, the string will
+  // be masked as **** for local echo.
+  function send(str, isPassword) {
+    if (localEcho === true) {
+      var viewStr;
+      // if password, print stars into the console
+      if(str.length>0 && isPassword)
+        viewStr=new Array(str.length+1).join('*');
+      else
+        viewStr=str;
+      writeToScreen(viewStr);
+    }
     if(sock) sock.emit('stream', str);
   }
 
@@ -356,17 +602,37 @@ $(document).ready(function(){
   var history_tmp = ''; // remember current input
   var history = [];     // the history array
 
-  var sendInput = function() {
+  // Get user input from UI elements (either cmd or pwd),
+  // add it to the history and call send(). See above.
+  function sendInput() {
     var elem = (pwMode === true ? $('#pwd') : $('#cmd'));
-    var trim_cmd = elem.val(); //.trim(); // sometimes, we need leadinf spaces (e.g. editing news)
-    if(trim_cmd.length>0 && history.indexOf(trim_cmd)!=0) {
-      // add trim_cmd to history, if it's not a password
-      if(!pwMode) history.unshift(trim_cmd);
+    var cmd = elem.val();
+
+    // Push this line to the history, if it's not a pwd
+    if(cmd.length>0 && history.indexOf(cmd)!=0) {
+      // add cmd to history, if it's not a password
+      if(!pwMode) history.unshift(cmd);
       // limit length of history
       if (history.length > history_max) history.pop();
     }
     history_idx=-1;
-    send(trim_cmd + '\n', pwMode);
+
+    // The MacroProcessor may not send anything.
+    var doSend = true;
+
+    // Macro handling
+    if (!pwMode) {
+      var resolvedMacro = macros.resolve(cmd);
+      doSend = resolvedMacro[0];
+      cmd = resolvedMacro[1];
+      var msg = resolvedMacro[2];
+      if (msg.length > 0) writeToScreen(msg);
+    }
+
+    // Now send, if noone opted out.
+    if (doSend) send(cmd + '\n', pwMode);
+
+    // Clear input element
     elem.val('').change();
   }
 
@@ -421,7 +687,7 @@ $(document).ready(function(){
   });
 
   // 'Enter'
-  $('button#send').click(function(e) { sendInput(); (pwMode ? $('#pwd') : $("#cmd")).focus(); });
+  $('button#send').click(function(e) { sendInput(); setFocusToInput(); });
 
   // some basic commands
   $('button#channel').click(function(e) { $('#cmd').val('- '); $("#cmd").focus(); });
@@ -438,8 +704,41 @@ $(document).ready(function(){
   $('button#west').click(function(e) { $('#cmd').val('w'); sendInput(); $("#cmd").focus(); });
   $('button#down').click(function(e) { $('#cmd').val('u'); sendInput(); $("#cmd").focus(); });
 
+  // Settings
+
+  // import settings
+  document.querySelector('button#importButton').addEventListener('click', importSettings);
+  document.querySelector('button#exportButton').addEventListener('click', exportSettings);
+
+  // colors dialog
+  $('button#colors').click(function(e) { writeToScreen('Farbeinstellungen: (geht noch nicht)\n'); $("#cmd").focus(); });
+
+  // toggle local echo
+  $('button#localecho').click(function(e) {
+    localEcho = !localEcho;
+    saveSettings();
+    writeToScreen('Lokales Echo ist jetzt '+(localEcho==true ? 'an' : 'aus')+'.\n'); 
+    $('button#localecho').html('Local Echo: ' + (localEcho==true ? 'an' : 'aus') + '');
+    $("#cmd").focus(); 
+  });
+
+  // open help in new tab
+  $('button#helpButton').click(function(e) { window.open('/webclient/help.html','_blank'); });
+
   // clear screen
   $('button#clear').click(function(e) { $('div#out').html(''); $("#cmd").focus(); });
+
+  $( "#infoDialog" ).dialog({
+      modal: true,
+      autoOpen: false,
+      buttons: {
+        Ok: function() {
+          $(this).dialog("close");
+        }
+      }
+    });
+
+$("#out").click(); 
 
   setTimeout(function(){
     adjustLayout();    

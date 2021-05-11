@@ -1,4 +1,4 @@
-// all the GMCP handling is done here!
+// All the GMCP handling is done here.
 //
 // requires client.js
 //
@@ -15,6 +15,15 @@ var debug_GMCP = false;
 // Modify this line, if you need a different base URL
 // or leave it blank to use a pure relative path.
 var staticContentBase = '/webclient/';
+
+function pad(str, pad_str, max) {
+  str = str.toString();
+  return str.length < max ? pad(pad_str.toString() + str, pad_str, max) : str;
+}
+
+function numberWithDots(x) {
+  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
 
 // New: GMCP support (Holger)
 function getGMCPHello(){

@@ -104,6 +104,7 @@ textarea#cmd {
   margin: 0px;
   color:inherit;
   background-color:transparent;
+  outline:thin transparent;
 }
 
 input#pwd {
@@ -116,6 +117,7 @@ input#pwd {
   margin: 0px;
   color:inherit;
   background-color:transparent;
+  outline:thin transparent;
 }
 
 .cmdwrapper
@@ -164,7 +166,7 @@ button:hover {background-color: #CEF}
   color: white;
   font-size: 14px;
   font-family: "Lato", sans-serif;
-  font-weight: 100;
+  /*font-weight: 100;*/
   transition: 0.8s;
   -webkit-animation: slideIn 0.8s;
           animation: slideIn 0.8s;

@@ -29,7 +29,7 @@ var argv = process.argv;
 var me = argv[1];
 var args = require('minimist')(argv.slice(2));
 
-process.stdout.write('webtelnet, version ' + info.version + ', by ' + info.author.name + ' <' + info.author.email +'>\n');
+process.stdout.write('wlclient, version ' + info.version + ', by ' + info.author.name + ' <' + info.author.email +'>\n');
 
 if(args._.length < 2) {
   process.stdout.write(

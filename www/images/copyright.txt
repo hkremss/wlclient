@@ -1,0 +1,17 @@
+The icons in this folder can be used without attribution!
+
+https://iconmonstr.com/license/
+===============================
+- upload-12.png
+- download-12.png
+- palette-12.png
+- screen-12.png
+- settings-12.png
+
+
+https://github.com/lokesh/lightbox2/blob/master/LICENSE
+=======================================================
+- close.png
+- loading.gif
+- next.png
+- prev.png

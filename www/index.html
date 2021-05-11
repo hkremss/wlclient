@@ -1,7 +1,6 @@
 <!doctype html>
-<html>
+<html lang="de">
 <head>
-  <meta charset="utf-8" />
   <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,24 +12,20 @@
   <!-- to avoid the warning of content security policy -->
   <!--meta http-equiv="Content-Security-Policy" content="default-src *; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'"/-->
 
-<script>
-  // fix wp8 view port issue, see:
-  // https://github.com/floatinghotpot/cordova-admob-pro/issues/109
-  // https://coderwall.com/p/zk_2la/responsive-design-in-ie-10-on-windows-phone-8
-  // http://stackoverflow.com/questions/24007577/windows-phone-8-viewport-issue
-(function() {
-  if ("-ms-user-select" in document.documentElement.style && navigator.userAgent.match(/IEMobile\/10\.0/)) {
-    var msViewportStyle = document.createElement("style");
-    msViewportStyle.appendChild(
-      document.createTextNode("@-ms-viewport{width:auto!important}")
-    );
-    document.getElementsByTagName("head")[0].appendChild(msViewportStyle);
-  }
-})();
-</script>
+  <script type='text/javascript'>
+    function isItIE() {
+      user_agent = navigator.userAgent;
+      var is_it_ie = user_agent.indexOf("MSIE ") > -1 || user_agent.indexOf("IEMobile") > -1 || user_agent.indexOf("Trident/") > -1;
+      return is_it_ie; 
+    }
+    if (isItIE()){
+        console.log('It is Internet Explorer :-/');
+        document.write("<div style='border:16px ridge #FF0000;text-align:center;width:250px;margin-left:2em;margin-top:2em;font-size:16px;padding:1em;'>"+
+          "Internet Explorer wird<br>nicht mehr unterst&uuml;tzt.<br>SORRY!</div>");
+    }
+  </script>
 
   <script src="socket.io/socket.io.js"></script>
-  <!--script src="js/jquery-1.12.0.min.js"></script-->
   <script src="js/jquery-1.12.4.min.js"></script>
   <script src="js/jquery-ui.min.js"></script>
   <link rel="stylesheet" href="css/jquery-ui.min.css">
@@ -42,104 +37,14 @@
   <script src="js/lightbox.js"></script>
   <link rel="stylesheet" href="css/dropdown.css">
   <script src="js/dropdown.js"></script>
+  <script src="js/macros.js"></script>
   <script src="js/client.js"></script>
   <script src="js/gmcp_client.js"></script>
   <link rel="stylesheet" href="css/client.css"/>
   <link rel="stylesheet" href="css/tty-schemes.css"/>
   <title>WL@Web</title>
-  <script>
-  // Handle image loading errors here!
-  function bildstoerung(){
-    var img_a = $('a#room_image_a');
-    var img = $('img#room_image');
-    var brokenPath = img.attr('src');
-    if(brokenPath!='img/aaa_no_signal.jpg') {
-      img.attr('src', 'img/aaa_no_signal.jpg');
-      img.attr('alt', 'Bildstoerung: ' + brokenPath + ' is broken!');
-      img_a.attr('href', 'img/aaa_no_signal.jpg');
-      img_a.attr('data-title', 'Bildstoerung: ' + brokenPath + ' is broken!');
-    }
-  }
-  </script>
-  <script>
-  // Handle window close
-  var isConnected = false;
-
-  window.onbeforeunload = function (e) {
-    if (isConnected) {
-      e.preventDefault();
-    }
-  };
-
-  function connected() {
-    isConnected = true; 
-    //alert('Connected!');
-  }
-
-  function disconnected() {
-    isConnected = false;
-    //alert('Disonnected!');
-    //document.getElementById("cmd").innerHTML = "<span style='font-style: italic; color: #00FF00;'>Disconnected.</span><br>";
-  }
-  </script>
-  <script>
-  $( function() {
-    $( "#infoDialog" ).dialog({
-      modal: true,
-      autoOpen: false,
-      buttons: {
-        Ok: function() {
-          $(this).dialog("close");
-        }
-      }
-
-//      autoOpen: false,
-//      show: {
-//        effect: "blind",
-//        duration: 1000
-//      },
-//      hide: {
-//        effect: "explode",
-//        duration: 1000
-//      }
-    });
-  });
-  </script>
-  <script type="text/javascript">
-  function bodyKeyDown(event) {
-    var k = event.which;
-
-    if (event.key == 'c' && (event.ctrlKey || event.metaKey)) {
-      /* Don't intercept Ctrl/Cmd + C  for copy */
-	  return true;
-    }
-
-    if ($.inArray(event.key, [
-      'CapsLock', /* Caps lock */
-      'Shift',    /* Shift */
-      'Tab',      /* Tab */
-      'Escape',   /* Escape Key */
-      'Control',  /* Control Key */
-      'Meta',     /* Windows Command Key */
-      'Pause',    /* Pause Break */
-      'Alt',      /* Alt Key */
-      'PageUp', 'PageDown', /*Page Down, Page Up */
-      'Home','End','ArrowDown','ArrowLeft','ArrowRight','ArrowUp', /* Home, End, Arrow Keys */
-      'Insert',   /* Insert Key */
-      'F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12', /* F1 - F12 */
-      'NumLock','ScrollLock' /* Num Lock, Scroll Lock */
-      ]) != -1) {
-      /* Don't intercept control keys */
-      return true;
-    }
-
-    /* Everything else is supposed to be a keyboard-input, which should got to the cmd element. */
-    (pwMode ? $("#pwd") : $("#cmd")).focus();
-    return true;
-  }
-  </script>
 </head>
-<body onKeyDown="bodyKeyDown(event);">
+<body>
   <div id="page">
     <div id="out" class="putty-scheme"></div>
     <div id="info">
@@ -147,8 +52,7 @@
       <a id="room_image_a" href="img/aaa_no_signal.jpg" data-lightbox="Images" data-title="--== Bildstoerung ==--">
         <img id="room_image" src="img/aaa_no_signal.jpg" onerror="bildstoerung();" alt="Bildstoerung" style="width:calc(100% - 4px);height:auto;border-width:2px;border-color:#fff;border-style:inset;">
       </a>
-      <p>
-      <div class="rTbl" style="margin:0 auto;">
+      <div class="rTbl" style="margin:13px auto;">
         <div class="rTblRow">
           <div class="rTblCell" style="width:10em;text-align:right;">Erfahrung:</div>
           <div class="rTblCell" style="width:10em;"><span class="info" id="xp">?</span></div>
@@ -174,7 +78,6 @@
           <div class="rTblCell"><span class="info" id="wimpy_dir">?</span></div>
         </div>
       </div>
-      </p>
       <div class="rTbl" style="margin:0 auto;">
         <div class="rTblRow">
           <div class="rTblCell" style="width:5em;text-align:center;">I: <span class="info" id="int">?</span></div>
@@ -188,8 +91,8 @@
       <div id="prompt">&gt;&nbsp;</div>
       <div class="cmdwrapper">
         <div id="menu" class="dropdown">
-          <button onclick="dropDownFunction()" class="dropbtn">...</button>
-          <div id="myDropdown" class="dropdown-content">
+          <button onclick="mainDropDownFunction()" class="dropbtn">...</button>
+          <div id="mainDropdown" class="dropdown-content">
             <button id="who" class="drp I18N" i18n="who">wer</button>
             <button id="look" class="drp I18N" i18n="look">schau</button>
             <button id="inv" class="drp I18N" i18n="inv">inventar</button>
@@ -205,7 +108,17 @@
               </div>
               <button id="down" class="drp I18N" i18n="down">unten</button>          
             </div>
-            <button id="clear" class="drp I18N" i18n="clear">[Clear]</button>
+            <button id="settings" onclick="settingsDropDownFunction()" class="drp I18N" i18n="settings">&lt; </span>Optionen</button>
+          </div>
+          <div id="settingsDropdown" class="dropdown-content">
+            <button id="importButton" class="drp I18N" i18n="import"><span class="iconimport"></span>Import Einst.</button>
+              <input id="importButtonHiddenInput" type='file' style="display: none;" />
+            <button id="exportButton" class="drp I18N" i18n="export"><span class="iconexport"></span>Export Einst.</button>
+              <a id="exportButtonHiddenAnchor" href="data:text/plain;charset=utf-8,gna" download="wlclient-settings.txt" style="display: none;"></a>
+            <button id="colors" class="drp I18N" i18n="colors"><span class="iconpalette"></span>Farbschema</button>
+            <button id="localecho" class="drp I18N" i18n="localecho">Lokales Echo: ?</button>
+            <button id="helpButton" class="drp I18N" i18n="help"><span class="iconhelp"></span>Hilfe</button>
+            <button id="clear" class="drp I18N" i18n="clear"><span class="iconscreen"></span>Bild löschen</button>
           </div>
         </div>
         <!--button id="send" class="cmd I18N" i18n="send">Senden</button-->
@@ -214,19 +127,20 @@
           <input id="pwd" type="password" style="display:none;">
         </div>
       </div>
-  </div>
+    </div>
 
-  <div id="infoDialog" title="Information!" style="display:none;">
-    <p>Das ist ein Informationsdialog.</p>
-  </div>
+    <div id="infoDialog" title="Information!" style="display:none;">
+      <p>Das ist ein Informationsdialog.</p>
+    </div>
 
-  <input class="checkbox-cb" id="checkbox-cb" type="checkbox" onclick="doCookieAccept()"/>
-  <div class="cookie-bar" style="display:none">
-    <span class="message">Diese Seite ben&ouml;tigt zwingend Cookies. Wenn Du diese Seite verwendest, 
-      stimmst Du den <a href="/mud/datenschutz.html" target="_blank">Bedingungen</a> zu.</span>
-    <span class="mobile">Diese Seite ben&ouml;tigt Cookies! <a href="/mud/datenschutz.html" target="_blank">Mehr</a> erfahren.</span>
-    <label for="checkbox-cb" class="close-cb">x</label>
-  </div>
+    <input class="checkbox-cb" id="checkbox-cb" type="checkbox" onclick="doCookieAccept()"/>
+    <div class="cookie-bar" style="display:none">
+      <span class="message">Diese Seite ben&ouml;tigt zwingend Cookies. Wenn Du diese Seite verwendest,
+        stimmst Du den <a href="/mud/datenschutz.html" target="_blank">Bedingungen</a> zu.</span>
+      <span class="mobile">Diese Seite ben&ouml;tigt Cookies! <a href="/mud/datenschutz.html" target="_blank">Mehr</a> erfahren.</span>
+      <label for="checkbox-cb" class="close-cb">x</label>
+    </div>
 
+  </div>
 </body>
 </html>
