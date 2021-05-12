@@ -496,7 +496,9 @@ $(document).ready(function(){
       var msg = result[2];
       if (doSend) {
         var cmd = result[1];
-        send(cmd + '\n', pwMode);
+        // Append a LF, if the last character is not a LF yet.
+        if (cmd.length == 0 || cmd.charAt(cmd.length-1) != '\n') cmd += '\n';
+        send(cmd, pwMode);
         event.preventDefault();
         return true;
       }
@@ -637,8 +639,11 @@ $(document).ready(function(){
       if (msg.length > 0) writeToScreen(msg);
     }
 
+    // Append a LF, if the last character is not a LF yet.
+    if (cmd.length == 0 || cmd.charAt(cmd.length-1) != '\n') cmd += '\n';
+
     // Now send, if noone opted out.
-    if (doSend) send(cmd + '\n', pwMode);
+    if (doSend) send(cmd, pwMode);
 
     // Clear input element
     elem.val('').change();

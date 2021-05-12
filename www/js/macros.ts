@@ -4,6 +4,14 @@
  * Written in TypeScript and compiled to ECMAScript.
  *
  * Build: tsc --sourceMap macros.ts
+ * 
+ * Ideas: 
+ * Fuchur: /list soll was ausgeben, auch wenn keine Marcos definiert sind
+ * Fuchur: Fuchur denkt .o( makros mit / im Namen sind auch doof )
+ * Holger: ja vor allem braucht /list auch noch ein argument zum filtern, irgendwie /list key* oder so, zum nur key-macros anzeigen
+ * Fuchur: Fuchur sagt: Oh und ich denke, dass man leere Makros durchaus gebrauchen koennte.
+ * Holger: also es soll nichts passieren, aber auch keine fehlermeldung kommen, meinst du?
+ * Fuchur sagt: man kann  /def wasanders=%;  machen, aber das erzeugt halt 2! Leerzeilen
  */
 
 module TMP {
@@ -439,8 +447,8 @@ module TMP {
         }
       }
       else {
-        // This was no macro, just bypass.
-        result = [true, cmd, ''];
+        // This was no macro, just bypass
+        result = [true, cmd + '\n', ''];
       }
   
        return result;
