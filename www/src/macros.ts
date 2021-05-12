@@ -7,14 +7,14 @@
  * 
  * Ideas: 
  * Fuchur: /list soll was ausgeben, auch wenn keine Marcos definiert sind
- * Fuchur: Fuchur denkt .o( makros mit / im Namen sind auch doof )
+ * Fuchur: Fuchur denkt .o( makros mit / im Namen sind auch doof ) <- Holger: zumindest am Anfang!
  * Holger: ja vor allem braucht /list auch noch ein argument zum filtern, irgendwie /list key* oder so, zum nur key-macros anzeigen
  * Fuchur: Fuchur sagt: Oh und ich denke, dass man leere Makros durchaus gebrauchen koennte.
  * Holger: also es soll nichts passieren, aber auch keine fehlermeldung kommen, meinst du?
  * Fuchur sagt: man kann  /def wasanders=%;  machen, aber das erzeugt halt 2! Leerzeilen
  */
 
-module TMP {
+//namespace TMP {
 
   class MacroProps {
     public body : string;
@@ -25,7 +25,7 @@ module TMP {
     public pattern : string;
   }
 
-  export class MacroProcessor {
+  class MacroProcessor {
   
     // constants
     static readonly VERSION = '0.2';
@@ -37,9 +37,9 @@ module TMP {
     private recursionStack : Array<string> = [];
   
     // Constructor loads settings from localStorage
-    //constructor() { 
+    constructor() { 
     //  this.ReloadSettings();
-    //}
+    }
   
     // Return version number
     public getVersion() : string {
@@ -480,4 +480,8 @@ module TMP {
     }
   }
 
-}
+//}
+
+// This exports the module so we can 'see' it from the test
+// and links to the require().MacroProcessor line in the test class
+//module.exports.MacroProcessor = MacroProcessor; 

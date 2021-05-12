@@ -23,7 +23,7 @@ function disconnected() {
 var ansi_up = new AnsiUp;
 
 // Init macro processor
-var macros = new TMP.MacroProcessor;
+var macros = new MacroProcessor;
 
 // `pending` stores partial telnet negotiations that cross message boundaries
 var pending = '';
