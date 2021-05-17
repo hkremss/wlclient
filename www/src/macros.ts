@@ -31,10 +31,14 @@ namespace TMP {
     // constants
     static readonly VERSION = '0.3';
     static readonly MACRO_KEY = '/';
-    static readonly STORAGE_KEY = 'Macros.List';
+    static readonly STORAGE_KEY_LIST = 'Macros.List';
+    static readonly STORAGE_KEY_LISTVAR = 'Macros.ListVar';
     
-    // fields
+    // All custom macros we know.
     private customMacros: { [key: string]: MacroProps } = {};
+
+    // All global variables we know. (and some are default + special)
+    private globalVariables: { [key: string]: string } = { 'borg':'1', 'matching':'glob'};
     private recursionStack : Array<string> = [];
   
     // Constructor loads settings from localStorage
@@ -46,17 +50,42 @@ namespace TMP {
     public getVersion() : string {
       return MacroProcessor.VERSION;
     }
+
+    // Sanity checks! Someone may have deleted/corrupted special variables
+    private MaintainSpecialVariables() : boolean {
+      let fixed : boolean = false;
+      // 'borg' must exist, set it to '0' or '1' if unset or modified.
+      if (this.globalVariables['borg']==null || this.globalVariables['borg']=='') {
+        this.globalVariables['borg'] = '0';
+        fixed = true;
+      }
+      else if (this.globalVariables['borg']!='0') {
+        this.globalVariables['borg'] = '1';
+        fixed = true;
+      }
+      // 'matching' must exist, set it to 'glob', if unset or invalid value.
+      if (this.globalVariables['matching']!='simple' && this.globalVariables['matching']!='glob' && this.globalVariables['matching']!='regexp') {
+        this.globalVariables['matching'] = 'glob';
+        fixed = true;
+      }
+
+      return fixed;
+    }
   
     // Save all settings to localStorage.
     private SaveSettings() {
-      localStorage.setItem(MacroProcessor.STORAGE_KEY, JSON.stringify(this.customMacros));
+      this.MaintainSpecialVariables();
+      localStorage.setItem(MacroProcessor.STORAGE_KEY_LIST, JSON.stringify(this.customMacros));
+      localStorage.setItem(MacroProcessor.STORAGE_KEY_LISTVAR, JSON.stringify(this.globalVariables));
     }
   
     // Try to (re-)load settings from localStorage.
     public ReloadSettings() {
-      let storedMacrosString = localStorage.getItem(MacroProcessor.STORAGE_KEY);  
-      if (storedMacrosString) {
-        try {
+      let updateRequired = false;
+
+      try {
+        let storedMacrosString = localStorage.getItem(MacroProcessor.STORAGE_KEY_LIST);  
+        if (storedMacrosString) {
           let storedMacros = JSON.parse(storedMacrosString);
           // the first iteration of the save format had a cmd as string value,
           // but now its a dictionary, so we convert old saved data into new.
@@ -78,11 +107,26 @@ namespace TMP {
           else {
             updateRequired = true;
           }
-          // We updated the save format. 
-          if (updateRequired) this.SaveSettings();
-        } catch (e) {
-          console.log('Macro processor: ' + e.name + ': ' + e.message);
         }
+       
+        let storedGlobalVarsString = localStorage.getItem(MacroProcessor.STORAGE_KEY_LISTVAR);  
+        if (storedGlobalVarsString) {
+          let storedGlobalVars = JSON.parse(storedGlobalVarsString);
+          // the first iteration of the save format had a cmd as string value,
+          // but now its a dictionary, so we convert old saved data into new.
+          this.globalVariables = {};
+          if (storedGlobalVars) {
+            this.globalVariables = storedGlobalVars;
+          }
+        }
+
+        if (this.MaintainSpecialVariables()) updateRequired=true;
+        
+        // We updated the save format?
+        if (updateRequired) this.SaveSettings();
+      }
+      catch (e) {
+        console.log('Macro processor: ' + e.name + ': ' + e.message);
       }
     }
   
@@ -313,12 +357,57 @@ namespace TMP {
       let newCmd : string = '';
       let userMessage : string = '';
 
-      throw {name : 'NotImplementedError', message : 'Not implemented yet!'};
+      let body = cmd.substr(4).trim();
+      
+      let wsSign = body.indexOf(" ");
+      let eqSign = body.indexOf("=");
+
+      let vName : string  = '';
+      let vValue : string  = null;
+
+      // there is an '=' and no ' ' or the '=' is the first
+      if (eqSign>=0 && (wsSign<0 || eqSign<wsSign)) {
+        vName = body.substring(0, eqSign).trim();
+        vValue = body.substring(eqSign+1); // do not trim!
+        // no value is valid!
+      }
+      // maybe there is at least a ' '?
+      else if (wsSign > 0) {
+        vName = body.substring(0, wsSign).trim();
+        vValue = body.substring(wsSign+1).trim(); // trim!
+        if (vValue.length == 0) vValue = null; // no value is not valid!
+      }
+      // no '=' and no ' ' found.
+      else {
+        vName = body;
+      }
+      
+      if (vName.length > 0 && vValue != null) {
+        if (this.globalVariables[vName] && this.globalVariables[vName] !== vValue) {
+            userMessage = '% '+firstWord+': Redefined variable ' + vName + '\n';
+        }
+        this.globalVariables[vName] = vValue;
+        this.SaveSettings();
+      }
+      else if (vName.length == 0 && vValue != null && vValue.length > 0) {
+        userMessage = '% '+firstWord+': &lt;name&gt; must not be empty\n';
+      }
+      else if (vName.length == 0) {
+        return this.handleLISTVAR('listvar', 'listvar');
+      }
+      else {
+        if (this.globalVariables[vName]!=null) {
+            userMessage = '% '+vName+'='+this.globalVariables[vName]+'\n';
+        }
+        else {
+          userMessage = '% '+vName+' not set globally\n';
+        }
+      }
 
       return [doSend, newCmd, userMessage];
     }
 
-    // Handle /UNSET command - unset a variable
+    // Handle /UNSET command - unset variable(s)
     // Returns 3-tuple: [doSend, new command, user message]
     private handleUNSET(firstWord : string, cmd : string) : [boolean, string, string]
     {
@@ -326,7 +415,18 @@ namespace TMP {
       let newCmd : string = '';
       let userMessage : string = '';
 
-      throw {name : 'NotImplementedError', message : 'Not implemented yet!'};
+      let body = cmd.substr(6);
+      let vNames = body.split(' ');
+      for (let i = 0; i < vNames.length; i++) {
+        if (vNames[i].length > 0) {
+          if (this.globalVariables[vNames[i]]==null) {
+            userMessage += '% '+firstWord+': global variable "' + vNames[i] + '" was not defined.\n';
+          } else {
+            delete this.globalVariables[vNames[i]];
+            this.SaveSettings();
+          }
+        }
+      }
 
       return [doSend, newCmd, userMessage];
     }
@@ -339,7 +439,23 @@ namespace TMP {
       let newCmd : string = '';
       let userMessage : string = '';
 
-      throw {name : 'NotImplementedError', message : 'Not implemented yet!'};
+      let argse = cmd.substr(8).trim();
+
+      var picomatch = null;
+      
+      if (argse.length > 0) {
+        picomatch = require('picomatch');
+      }
+      
+      var sortedKeys = Object.keys(this.globalVariables).sort();
+      for (var i = 0; i<sortedKeys.length; i++) {
+        if (!picomatch || picomatch.isMatch(sortedKeys[i], argse)) {
+          let vValue = this.globalVariables[sortedKeys[i]];
+          userMessage += '/set '+sortedKeys[i]+'='+vValue+'\n';
+        }
+      }
+      
+      if (userMessage.length == 0) userMessage = '% '+firstWord+': no global variables found.\n';
 
       return [doSend, newCmd, userMessage];
     }
@@ -413,20 +529,21 @@ namespace TMP {
           'macros with a matching name are listed. \n';
       }
       else if (topic === 'set' || topic  === '/set') {
-        // Handle /SET command - set the value of a global variable
-        throw {name : 'NotImplementedError', message : 'Not implemented yet!'};
+        userMessage = 
+          '\n'+
+          'TODO: Handle /SET command - set the value of a global variable\n';
       }
       else if (topic === 'unset' || topic  === '/unset') {
-        // Handle /UNSET command - unset a variable
-        throw {name : 'NotImplementedError', message : 'Not implemented yet!'};
+        '\n'+
+        'TODO: Handle /UNSET command - unset one or more variable(s)\n';
       }
       else if (topic === 'listvar' || topic  === '/listvar') {
-        // Handle /LISTVAR command - list values of variables
-        throw {name : 'NotImplementedError', message : 'Not implemented yet!'};
+        '\n'+
+        'TODO: Handle /LISTVAR command - list values of variables\n';
       }      
       else if (topic === 'let' || topic  === '/let') {
-        // Handle /LET command - set the value of a local variable
-        throw {name : 'NotImplementedError', message : 'Not implemented yet!'};
+        '\n'+
+        'TODO: Handle /LET command - set the value of a local variable\n';
       }
       else {
         userMessage = 
