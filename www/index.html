@@ -25,23 +25,16 @@
     }
   </script>
 
-  <script src="socket.io/socket.io.js"></script>
-  <script src="js/jquery-1.12.4.min.js"></script>
-  <script src="js/jquery-ui.min.js"></script>
-  <link rel="stylesheet" href="css/jquery-ui.min.css">
-  <script src='js/underscore-min.js'></script>
-  <script src="js/jquery.cookie.js"></script>
-  <script src="js/ansi_up-2.0.2.js"></script>
-  <!--script src="js/ansi_up-5.0.1.js"></script-->
-  <link rel="stylesheet" href="css/lightbox.css">
-  <script src="js/lightbox.js"></script>
-  <link rel="stylesheet" href="css/dropdown.css">
-  <script src="js/dropdown.js"></script>
-  <script src="js/macros.js"></script>
-  <script src="js/client.js"></script>
-  <script src="js/gmcp_client.js"></script>
-  <link rel="stylesheet" href="css/client.css"/>
-  <link rel="stylesheet" href="css/tty-schemes.css"/>
+  <link  href="node_modules/jquery-ui/jquery-ui.min.css" rel="stylesheet">
+  <link  href="node_modules/lightbox2/css/lightbox.css" rel="stylesheet">
+  <link  href="css/dropdown.css" rel="stylesheet">
+  <link  href="css/client.css" rel="stylesheet">
+  <link  href="css/tty-schemes.css" rel="stylesheet">
+
+  <!-- data-main attribute tells require.js to load
+       scripts/main.js after require.js loads. -->
+  <script data-main="js/app" src="js/require.js"></script>
+
   <title>WL@Web</title>
 </head>
 <body>

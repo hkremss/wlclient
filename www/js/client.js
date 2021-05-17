@@ -20,10 +20,10 @@ function disconnected() {
 }
 
 // Since ansi_up API 2.0 we need an instance of AnsiUp!
-var ansi_up = new AnsiUp;
+var ansi_up = null;//new AnsiUp;
 
 // Init macro processor
-var macros = new MacroProcessor;
+var macros = null;//new MacroProcessor;
 
 // `pending` stores partial telnet negotiations that cross message boundaries
 var pending = '';
@@ -468,8 +468,23 @@ function setFocusToInput() {
 }
 
 // Called once, when UI is loaded and ready to go.
-$(document).ready(function(){
+//$(document).ready(startClientFunction);
 
+// Called once from app.js, when all required modules are loaded.
+function startClientFunction() {
+    
+  const AnsiUp = require('ansi_up').default;
+  //console.log('Found:' + AnsiUp);
+  ansi_up = new AnsiUp;
+
+  const MacroProcessor = require('js/macros');
+  //console.log('Found:' + TMP.MacroProcessor);
+  // Init macro processor
+  macros = new TMP.MacroProcessor;
+  
+  const io = require("socket.io");
+  //console.log('Found:' + io);
+    
   // need to adjust layout after resize
   window.addEventListener('resize', adjustLayout);
 
@@ -757,4 +772,4 @@ $("#out").click();
     adjustLayout();    
     send('\n', false);
   },200)
-});
+}

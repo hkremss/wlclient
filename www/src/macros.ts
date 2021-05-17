@@ -5,16 +5,17 @@
  *
  * Build: tsc --sourceMap macros.ts
  * 
+ * Requires:
+ *  picomatch ^2.2.3
+ *
  * Ideas: 
- * Fuchur: /list soll was ausgeben, auch wenn keine Marcos definiert sind
- * Fuchur: Fuchur denkt .o( makros mit / im Namen sind auch doof ) <- Holger: zumindest am Anfang!
- * Holger: ja vor allem braucht /list auch noch ein argument zum filtern, irgendwie /list key* oder so, zum nur key-macros anzeigen
- * Fuchur: Fuchur sagt: Oh und ich denke, dass man leere Makros durchaus gebrauchen koennte.
- * Holger: also es soll nichts passieren, aber auch keine fehlermeldung kommen, meinst du?
- * Fuchur sagt: man kann  /def wasanders=%;  machen, aber das erzeugt halt 2! Leerzeilen
+ *  Fuchur: Fuchur denkt .o( makros mit / im Namen sind auch doof ) <- Holger: zumindest am Anfang!
+ *  Fuchur: Fuchur sagt: Oh und ich denke, dass man leere Makros durchaus gebrauchen koennte.
+ *  Holger: also es soll nichts passieren, aber auch keine fehlermeldung kommen, meinst du?
+ *  Fuchur sagt: man kann  /def wasanders=%;  machen, aber das erzeugt halt 2! Leerzeilen
  */
 
-//namespace TMP {
+namespace TMP {
 
   class MacroProps {
     public body : string;
@@ -25,10 +26,10 @@
     public pattern : string;
   }
 
-  class MacroProcessor {
+  export class MacroProcessor {
   
     // constants
-    static readonly VERSION = '0.2';
+    static readonly VERSION = '0.3';
     static readonly MACRO_KEY = '/';
     static readonly STORAGE_KEY = 'Macros.List';
     
@@ -283,10 +284,75 @@
       let newCmd : string = '';
       let userMessage : string = '';
 
-      for (let mName in this.customMacros) {
-        let macroProps = this.customMacros[mName];
-        userMessage += '/def '+mName+' = '+macroProps.body+'\n';
+      let argse = cmd.substr(5).trim();
+
+      var picomatch = null;
+      
+      if (argse.length > 0) {
+        picomatch = require('picomatch');
       }
+      
+      var sortedKeys = Object.keys(this.customMacros).sort();
+      for (var i = 0; i<sortedKeys.length; i++) {
+        if (!picomatch || picomatch.isMatch(sortedKeys[i], argse)) {
+          let macroProps = this.customMacros[sortedKeys[i]];
+          userMessage += '/def '+sortedKeys[i]+' = '+macroProps.body+'\n';
+        }
+      }
+      
+      if (userMessage.length == 0) userMessage = '% '+firstWord+': no macros found.\n';
+
+      return [doSend, newCmd, userMessage];
+    }
+
+    // Handle /SET command - set the value of a global variable
+    // Returns 3-tuple: [doSend, new command, user message]
+    private handleSET(firstWord : string, cmd : string) : [boolean, string, string]
+    {
+      let doSend : boolean = false;
+      let newCmd : string = '';
+      let userMessage : string = '';
+
+      throw {name : 'NotImplementedError', message : 'Not implemented yet!'};
+
+      return [doSend, newCmd, userMessage];
+    }
+
+    // Handle /UNSET command - unset a variable
+    // Returns 3-tuple: [doSend, new command, user message]
+    private handleUNSET(firstWord : string, cmd : string) : [boolean, string, string]
+    {
+      let doSend : boolean = false;
+      let newCmd : string = '';
+      let userMessage : string = '';
+
+      throw {name : 'NotImplementedError', message : 'Not implemented yet!'};
+
+      return [doSend, newCmd, userMessage];
+    }
+
+    // Handle /LISTVAR command - list values of variables
+    // Returns 3-tuple: [doSend, new command, user message]
+    private handleLISTVAR(firstWord : string, cmd : string) : [boolean, string, string]
+    {
+      let doSend : boolean = false;
+      let newCmd : string = '';
+      let userMessage : string = '';
+
+      throw {name : 'NotImplementedError', message : 'Not implemented yet!'};
+
+      return [doSend, newCmd, userMessage];
+    }
+
+    // Handle /LET command - set the value of a local variable
+    // Returns 3-tuple: [doSend, new command, user message]
+    private handleLET(firstWord : string, cmd : string) : [boolean, string, string]
+    {
+      let doSend : boolean = false;
+      let newCmd : string = '';
+      let userMessage : string = '';
+
+      throw {name : 'NotImplementedError', message : 'Not implemented yet!'};
 
       return [doSend, newCmd, userMessage];
     }
@@ -341,11 +407,26 @@
           '\n'+
           'Help on: /list\n'+
           '\n'+
-          'Usage: /list\n'+
+          'Usage: /list [pattern]\n'+
           '\n'+
-          'Lists all currently defined macros. No options provided. The list is in a copy&paste '+
-          'friendly format. So it may be used to copy all defined macros into a local text file, '+
-          'to save macros for your next session.\n';
+          'Lists all currently defined macros, sorted alphabetically. If [pattern] is provided, only '+
+          'macros with a matching name are listed. \n';
+      }
+      else if (topic === 'set' || topic  === '/set') {
+        // Handle /SET command - set the value of a global variable
+        throw {name : 'NotImplementedError', message : 'Not implemented yet!'};
+      }
+      else if (topic === 'unset' || topic  === '/unset') {
+        // Handle /UNSET command - unset a variable
+        throw {name : 'NotImplementedError', message : 'Not implemented yet!'};
+      }
+      else if (topic === 'listvar' || topic  === '/listvar') {
+        // Handle /LISTVAR command - list values of variables
+        throw {name : 'NotImplementedError', message : 'Not implemented yet!'};
+      }      
+      else if (topic === 'let' || topic  === '/let') {
+        // Handle /LET command - set the value of a local variable
+        throw {name : 'NotImplementedError', message : 'Not implemented yet!'};
       }
       else {
         userMessage = 
@@ -439,6 +520,18 @@
           case 'list':
             result = this.handleLIST(firstWord, cmd);
             break;
+          case 'set':
+            result = this.handleSET(firstWord, cmd);
+            break;
+          case 'unset':
+            result = this.handleUNSET(firstWord, cmd);
+            break;
+          case 'listvar':
+            result = this.handleLISTVAR(firstWord, cmd);
+            break;
+          case 'let':
+            result = this.handleLET(firstWord, cmd);
+            break;
           case 'help':
             result = this.handleHELP(firstWord, cmd);
             break;
@@ -480,8 +573,4 @@
     }
   }
 
-//}
-
-// This exports the module so we can 'see' it from the test
-// and links to the require().MacroProcessor line in the test class
-//module.exports.MacroProcessor = MacroProcessor; 
+}
