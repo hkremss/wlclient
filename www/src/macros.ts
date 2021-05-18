@@ -38,7 +38,7 @@ namespace TMP {
     private customMacros: { [key: string]: MacroProps } = {};
 
     // All global variables we know. (and some are default + special)
-    private globalVariables: { [key: string]: string } = { 'borg':'1', 'matching':'glob'};
+    private globalVariables: { [key: string]: string } = { 'borg':'1', 'matching':'glob' };
     private recursionStack : Array<string> = [];
   
     // Constructor loads settings from localStorage
@@ -164,7 +164,7 @@ namespace TMP {
         
       if (keyName.length > 0) {       
         // Try to handle this.
-        result = this.handleDEFAULT(keyName, '');
+        result = this.handleDEFAULT(keyName, [keyName]);
   
         // If we can not?
         if (!result[0]) {
@@ -182,29 +182,92 @@ namespace TMP {
       return result;
     }
   
-    // Get Macro name or null, if there is none.
-    private getFirstWord(cmd:string) : string {
-      let name:string = null;
-      if (cmd && cmd.length>0) {
-        let splitted = cmd.split(" ");
-        if (splitted.length > 0) {
-          name = splitted[0].toLowerCase();
+    // Find and return an unescaped char in source from startPosition and return 
+    // position or -1, if not found.'"\"'
+    private searchUnescapedChar(source : string, startPosition : number, searchChar : string) : number {
+      let foundPosition : number = -1;
+      
+      // search for the closing quote.
+      for (let i=startPosition;i<source.length;i++) {
+        if (source.charAt(i) == searchChar) {
+          // We have found one. But it must not be escaped, so
+          // count '\' chars in front of quote. If it's an uneven
+          // uneven number, it is escaped and we must continue!
+          let bs = 0;
+          for (let k = i-1;k>=startPosition;k--) {
+            if (source.charAt(k) == '\\') {
+              bs++;
+              continue;
+            }
+            break;
+          }
+          if (bs % 2 == 0) {
+            // even number of backslashes == closing quote found! 
+            foundPosition = i;
+            break;
+          }
         }
       }
-      return name;
+      
+      return foundPosition;
     }
-    
+  
+    /*
+     * Get all spaces separated parts of string, respect double-quotes ("")
+     * and escaped spaces/quotes, eg.:
+     * Source of    : '/def -t"bla \\" blu" abc'
+     * Should return: [ '/def', '-t', 'bla \\" blu', 'abc' ]
+     */
+    private getWords(source : string) : Array<string> {
+      let allWords : Array<string> = [];
+      
+      let firstSpace = this.searchUnescapedChar(source, 0, ' ');
+      let firstQuote = this.searchUnescapedChar(source, 0, '"');
+      
+      if (firstSpace > -1 && (firstQuote == -1 || firstSpace < firstQuote)) {
+        // We found a real space first
+        if (firstSpace>0) allWords.push( source.substr(0, firstSpace) );
+        allWords = allWords.concat(this.getWords(source.substr(firstSpace+1)));
+      }
+      else if (firstQuote > -1 && (firstSpace == -1 || firstQuote < firstSpace)) {
+        // We found a first quote, lets see, if there is a word in front.
+        if (firstQuote > 0) {
+          allWords.push( source.substr(0, firstQuote) );
+          allWords = allWords.concat(this.getWords(source.substr(firstQuote)));
+        }
+        else {
+          // The quote begins a [0], look for closing quote.
+          let lastQuote = this.searchUnescapedChar(source, firstQuote+1, '"');
+          if (lastQuote > -1) {
+            // We have a quoted string
+            allWords.push( source.substr(0, lastQuote+1) );
+            allWords = allWords.concat(this.getWords(source.substr(lastQuote+1)));
+          }
+          else {
+            // We found an opening quote, but no closing quote, this is an error.
+            throw {name : 'ParseError', message : 'Open quote detected, cannot continue to parse'};
+          }
+        }
+      }
+      else {
+        // We found no space and no quote
+        allWords.push( source );
+      }
+
+      return allWords;
+    }
+
     // Find and return a double-quoted string from source.
     // Return empty string, if not found.
-    private getQuotedString(source:string) : string {
+    private getQuotedString(source : string, quoteChar : string) : string {
       let quoted : string = '';
       
       // charAt(0) must be the opening quote.
-      if (source.charAt(0) != '"') return quoted;
+      if (source.charAt(0) != quoteChar) return quoted;
 
       // search for the closing quote.
       for (let i=1;i<source.length;i++) {
-        if (source.charAt(i) == '"') {
+        if (source.charAt(i) == quoteChar) {
           // We have found one. But it must not be escaped, so
           // count '\' chars in front of quote. If it's an uneven
           // uneven number, it is escaped and we must continue!
@@ -227,7 +290,8 @@ namespace TMP {
       return quoted;
     }
   
-    // Handle /DEF command - define a named macro
+    // Handle /DEF command - define a named macro, do NOT pass words array, 
+    // but the whole cmd line, because char position is relevant here!
     // Returns 3-tuple: [doSend, new command, user message]
     private handleDEF(firstWord : string, cmd : string) : [boolean, string, string]
     {
@@ -246,7 +310,7 @@ namespace TMP {
           userMessage = '% '+firstWord+': unknown option -'+body.charAt(1)+'\n';
           return [doSend, newCmd, userMessage];
         }
-        mTrigger = this.getQuotedString(body.substr(2));
+        mTrigger = this.getQuotedString(body.substr(2), '"');
         if (!mTrigger || mTrigger.length==0) {
           userMessage = '% '+firstWord+': invalid/incomplete trigger option, quotes missing?\n';
           return [doSend, newCmd, userMessage];            
@@ -269,8 +333,8 @@ namespace TMP {
         let mName = body.substring(0, eqSign).trim();
         let mBody = body.substring(eqSign+1).trim();
         if (mName.length > 0 && mBody.length > 0) {
-          if (this.customMacros[mName] && this.customMacros[mName].body !== mBody) {
-            userMessage = '% '+firstWord+': Redefined macro ' + mName + '\n';
+          if (this.customMacros[mName]!=null && this.customMacros[mName].body !== mBody) {
+            userMessage = '% '+firstWord+': redefined macro ' + mName + '\n';
           }
           let macro = new MacroProps;
           macro.body = mBody;
@@ -298,20 +362,18 @@ namespace TMP {
 
     // Handle /UNDEF command - undefine a named macro
     // Returns 3-tuple: [doSend, new command, user message]
-    private handleUNDEF(firstWord : string, cmd : string) : [boolean, string, string]
+    private handleUNDEF(firstWord : string, cmdWords : Array<string>) : [boolean, string, string]
     {
       let doSend : boolean = false;
       let newCmd : string = '';
       let userMessage : string = '';
 
-      let body = cmd.substr(6);
-      let mNames = body.split(' ');
-      for (let i = 0; i < mNames.length; i++) {
-        if (mNames[i].length > 0) {
-          if (!this.customMacros[mNames[i]]) {
-            userMessage += '% '+firstWord+': Macro "' + mNames[i] + '" was not defined.\n';
+      for (let i = 1; i < cmdWords.length; i++) {
+        if (cmdWords[i].length > 0) {
+          if (!this.customMacros[cmdWords[i]]) {
+            userMessage += '% '+firstWord+': macro "' + cmdWords[i] + '" was not defined.\n';
           } else {
-            delete this.customMacros[mNames[i]];
+            delete this.customMacros[cmdWords[i]];
             this.SaveSettings();
           }
         }
@@ -322,23 +384,21 @@ namespace TMP {
 
     // Handle /LIST command - display a list of macros
     // Returns 3-tuple: [doSend, new command, user message]
-    private handleLIST(firstWord : string, cmd : string) : [boolean, string, string]
+    private handleLIST(firstWord : string, cmdWords : Array<string>) : [boolean, string, string]
     {
       let doSend : boolean = false;
       let newCmd : string = '';
       let userMessage : string = '';
 
-      let argse = cmd.substr(5).trim();
-
       var picomatch = null;
       
-      if (argse.length > 0) {
+      if (cmdWords.length > 1) {
         picomatch = require('picomatch');
       }
       
       var sortedKeys = Object.keys(this.customMacros).sort();
       for (var i = 0; i<sortedKeys.length; i++) {
-        if (!picomatch || picomatch.isMatch(sortedKeys[i], argse)) {
+        if (!picomatch || picomatch.isMatch(sortedKeys[i], cmdWords.slice(1))) {
           let macroProps = this.customMacros[sortedKeys[i]];
           userMessage += '/def '+sortedKeys[i]+' = '+macroProps.body+'\n';
         }
@@ -349,7 +409,64 @@ namespace TMP {
       return [doSend, newCmd, userMessage];
     }
 
-    // Handle /SET command - set the value of a global variable
+    // Substitute in 'text' in this order:
+    // 1. given parameters     : %{#}, %{*}, %{0}, %{1}, %{2} and so on
+    // 2. given local variables: %{whatever} in local scoped defined is
+    // 3. global variables     : %{borg}, %{matching} and so on 
+    private substituteVariables(text : string, parameters : Array<string>, localVariables : { [key: string]: string }) : string
+    {
+      let oldBody = text;
+      let newBody = '';
+
+      let deadEndLimit = 42; // limit number of substitution loops
+      
+      let globVars = this.globalVariables;
+
+      while (deadEndLimit--) {
+        newBody = oldBody.replace(/(%{[^ -]*?})/, function(m) { 
+          var strippedM = m.substr(2, m.length-3);
+          
+          if (strippedM == '#') {
+            return ''+parameters.length+'';
+          }
+          else if (strippedM == '*') {
+            return ''+parameters.join(' ')+'';
+          }
+          else {
+            const parsedM = parseInt(strippedM);
+            // if this is not a numbered parameter
+            if (isNaN(parsedM)) { 
+              // local variables may shadow global
+              let vValue = localVariables[strippedM];
+              if (vValue != null) return vValue;
+              // global variables as fallback
+              vValue = globVars[strippedM];
+              if (vValue != null) return vValue;
+              // or just empty
+              return ''; 
+            }
+            // it is a numbered parameter
+            else {
+              if (parsedM < parameters.length) {
+                return parameters[parsedM];
+              }
+              else {
+                return '';
+              }
+            }
+          }
+        });
+        if (newBody != oldBody) {
+          oldBody = newBody;
+        }
+        else break;
+      }
+      
+      return newBody;
+    }
+
+    // Handle /SET command - set the value of a global variable, do NOT pass words array, 
+    // but the whole cmd line, because spaces are relevant here!
     // Returns 3-tuple: [doSend, new command, user message]
     private handleSET(firstWord : string, cmd : string) : [boolean, string, string]
     {
@@ -383,8 +500,8 @@ namespace TMP {
       }
       
       if (vName.length > 0 && vValue != null) {
-        if (this.globalVariables[vName] && this.globalVariables[vName] !== vValue) {
-            userMessage = '% '+firstWord+': Redefined variable ' + vName + '\n';
+        if (this.globalVariables[vName]!=null && this.globalVariables[vName] !== vValue) {
+            userMessage = '% '+firstWord+': redefined variable ' + vName + '\n';
         }
         this.globalVariables[vName] = vValue;
         this.SaveSettings();
@@ -393,7 +510,7 @@ namespace TMP {
         userMessage = '% '+firstWord+': &lt;name&gt; must not be empty\n';
       }
       else if (vName.length == 0) {
-        return this.handleLISTVAR('listvar', 'listvar');
+        return this.handleLISTVAR('listvar', ['listvar']);
       }
       else {
         if (this.globalVariables[vName]!=null) {
@@ -409,20 +526,18 @@ namespace TMP {
 
     // Handle /UNSET command - unset variable(s)
     // Returns 3-tuple: [doSend, new command, user message]
-    private handleUNSET(firstWord : string, cmd : string) : [boolean, string, string]
+    private handleUNSET(firstWord : string, cmdWords : Array<string>) : [boolean, string, string]
     {
       let doSend : boolean = false;
       let newCmd : string = '';
       let userMessage : string = '';
 
-      let body = cmd.substr(6);
-      let vNames = body.split(' ');
-      for (let i = 0; i < vNames.length; i++) {
-        if (vNames[i].length > 0) {
-          if (this.globalVariables[vNames[i]]==null) {
-            userMessage += '% '+firstWord+': global variable "' + vNames[i] + '" was not defined.\n';
+      for (let i = 1; i < cmdWords.length; i++) {
+        if (cmdWords[i].length > 0) {
+          if (!this.globalVariables[cmdWords[i]]) {
+            userMessage += '% '+firstWord+': global variable "' + cmdWords[i] + '" was not defined.\n';
           } else {
-            delete this.globalVariables[vNames[i]];
+            delete this.globalVariables[cmdWords[i]];
             this.SaveSettings();
           }
         }
@@ -433,23 +548,21 @@ namespace TMP {
 
     // Handle /LISTVAR command - list values of variables
     // Returns 3-tuple: [doSend, new command, user message]
-    private handleLISTVAR(firstWord : string, cmd : string) : [boolean, string, string]
+    private handleLISTVAR(firstWord : string, cmdWords : Array<string>) : [boolean, string, string]
     {
       let doSend : boolean = false;
       let newCmd : string = '';
       let userMessage : string = '';
 
-      let argse = cmd.substr(8).trim();
-
       var picomatch = null;
       
-      if (argse.length > 0) {
+      if (cmdWords.length > 1) {
         picomatch = require('picomatch');
       }
       
       var sortedKeys = Object.keys(this.globalVariables).sort();
       for (var i = 0; i<sortedKeys.length; i++) {
-        if (!picomatch || picomatch.isMatch(sortedKeys[i], argse)) {
+        if (!picomatch || picomatch.isMatch(sortedKeys[i], cmdWords.slice(1))) {
           let vValue = this.globalVariables[sortedKeys[i]];
           userMessage += '/set '+sortedKeys[i]+'='+vValue+'\n';
         }
@@ -460,7 +573,8 @@ namespace TMP {
       return [doSend, newCmd, userMessage];
     }
 
-    // Handle /LET command - set the value of a local variable
+    // Handle /LET command - set the value of a local variable, do NOT pass words array, 
+    // but the whole cmd line, because spaces are relevant here!
     // Returns 3-tuple: [doSend, new command, user message]
     private handleLET(firstWord : string, cmd : string) : [boolean, string, string]
     {
@@ -475,13 +589,13 @@ namespace TMP {
 
     // Handle /HELP command - display the help text
     // Returns 3-tuple: [doSend, new command, user message]
-    private handleHELP(firstWord : string, cmd : string) : [boolean, string, string]
+    private handleHELP(firstWord : string, cmdWords : Array<string>) : [boolean, string, string]
     {
       let doSend : boolean = false;
       let newCmd : string = '';
       let userMessage : string = '';
 
-      let topic = cmd.substr(5).trim().toLowerCase();
+      let topic = cmdWords[1].toLowerCase();
       if (topic === 'def' || topic  === '/def') {
         userMessage = 
           '\n'+
@@ -572,19 +686,21 @@ namespace TMP {
 
     // Handle default case, custom macro or just do nothing.
     // Returns 3-tuple: [doSend, new command, user message]
-    private handleDEFAULT(firstWord : string, cmd : string) : [boolean, string, string]
+    private handleDEFAULT(firstWord : string, cmdWords : Array<string>) : [boolean, string, string]
     {
       let doSend : boolean = false;
       let newCmd : string = '';
       let userMessage : string = '';
 
-      if (this.customMacros[firstWord]) {
+      if (this.customMacros[firstWord]!=null) {
         // recursion check
         if (this.recursionStack.indexOf(firstWord)<0)
         {
           // push to recursion stack
           this.recursionStack.push(firstWord);
-          let steps = this.customMacros[firstWord].body.split('%;'); // '%;' is the TF separator token
+          let body = this.customMacros[firstWord].body;
+          body = this.substituteVariables(body, cmdWords, {}); // substitute variables TODO: LOCAL VARIABLES NOT IMPLEMENTED YET!
+          let steps = body.split('%;'); // split by '%;' TF separator token
           let stepNums = steps.length;
           if (stepNums > 42) {
             userMessage = '% '+firstWord+': command list truncated to 42 for some reason, sorry\n';
@@ -626,38 +742,47 @@ namespace TMP {
       if (cmd && cmd.length>0 && cmd.charAt(0) == MacroProcessor.MACRO_KEY) {
         cmd = cmd.substr(1);
         console.log('MacroProcessor resolve: ' + cmd);
-        let firstWord = this.getFirstWord(cmd);
-        switch(firstWord) {
-          case 'def':
-            result = this.handleDEF(firstWord, cmd);
-            break;
-          case 'undef':
-            result = this.handleUNDEF(firstWord, cmd);
-            break;
-          case 'list':
-            result = this.handleLIST(firstWord, cmd);
-            break;
-          case 'set':
-            result = this.handleSET(firstWord, cmd);
-            break;
-          case 'unset':
-            result = this.handleUNSET(firstWord, cmd);
-            break;
-          case 'listvar':
-            result = this.handleLISTVAR(firstWord, cmd);
-            break;
-          case 'let':
-            result = this.handleLET(firstWord, cmd);
-            break;
-          case 'help':
-            result = this.handleHELP(firstWord, cmd);
-            break;
-          default: // custom macro or error
-            result = this.handleDEFAULT(firstWord, cmd);
+        var words = this.getWords(cmd);
+        let firstWord = words[0].toLowerCase();
+        
+        if (firstWord.length>0 && firstWord == cmd.substr(0, firstWord.length).toLowerCase()) {
+          switch(firstWord) {
+            case 'def':
+              result = this.handleDEF(firstWord, cmd);
+              break;
+            case 'undef':
+              result = this.handleUNDEF(firstWord, words);
+              break;
+            case 'list':
+              result = this.handleLIST(firstWord, words);
+              break;
+            case 'set':
+              result = this.handleSET(firstWord, cmd);
+              break;
+            case 'unset':
+              result = this.handleUNSET(firstWord, words);
+              break;
+            case 'listvar':
+              result = this.handleLISTVAR(firstWord, words);
+              break;
+            case 'let':
+              result = this.handleLET(firstWord, cmd);
+              break;
+            case 'help':
+              result = this.handleHELP(firstWord, words);
+              break;
+            default: // custom macro or error
+              result = this.handleDEFAULT(firstWord, words);
+          }
+        }
+        else {
+        // The first word was empty, quoted or prefixed with spaces, 
+        // but was no macro nor command for sure. Bypass.
+        result = [true, cmd + '\n', ''];
         }
       }
       else {
-        // This was no macro, just bypass
+        // No '/' prefix, just bypass.
         result = [true, cmd + '\n', ''];
       }
   
