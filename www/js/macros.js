@@ -20,6 +20,14 @@ var TMP;
         }
         return TriggerProps;
     }());
+    var EvaluationContext = /** @class */ (function () {
+        function EvaluationContext() {
+            this.parameters = [];
+            this.localVariables = {};
+        }
+        return EvaluationContext;
+    }());
+    TMP.EvaluationContext = EvaluationContext;
     var MacroProcessor = /** @class */ (function () {
         // Constructor loads settings from localStorage
         function MacroProcessor() {
@@ -27,7 +35,6 @@ var TMP;
             this.customMacros = {};
             // All global variables we know. (and some are default + special)
             this.globalVariables = { 'borg': '1', 'matching': 'glob' };
-            this.recursionStack = [];
             //  this.reloadSettings();
         }
         // Return version number
@@ -138,7 +145,7 @@ var TMP;
             var keyName = this.getNamedKey(event);
             if (keyName.length > 0) {
                 // Try to handle this.
-                result = this.handleDEFAULT(keyName, [keyName]);
+                result = this.expandMacro(keyName, []);
                 // If we can not?
                 if (!result[0]) {
                     // Reset new command and user message.
@@ -262,12 +269,13 @@ var TMP;
         // Handle /DEF command - define a named macro, do NOT pass words array, 
         // but the whole cmd line, because char position is relevant here!
         // Returns 3-tuple: [doSend, new command, user message]
-        MacroProcessor.prototype.handleDEF = function (firstWord, cmd) {
+        MacroProcessor.prototype.handleDEF = function (firstWord, stack) {
             var doSend = false;
             var newCmd = '';
             var userMessage = '';
+            var topContext = stack[stack.length - 1];
             var mTrigger = '';
-            var body = cmd.substr(4).trim();
+            var body = topContext.cmd.substr(4).trim();
             if (body.length > 0 && body.charAt(0) == '-') {
                 if (body.length < 2) {
                     userMessage = '% ' + firstWord + ': missing option -\n';
@@ -323,17 +331,18 @@ var TMP;
         };
         // Handle /UNDEF command - undefine a named macro
         // Returns 3-tuple: [doSend, new command, user message]
-        MacroProcessor.prototype.handleUNDEF = function (firstWord, cmdWords) {
+        MacroProcessor.prototype.handleUNDEF = function (firstWord, stack) {
             var doSend = false;
             var newCmd = '';
             var userMessage = '';
-            for (var i = 1; i < cmdWords.length; i++) {
-                if (cmdWords[i].length > 0) {
-                    if (!this.customMacros[cmdWords[i]]) {
-                        userMessage += '% ' + firstWord + ': macro "' + cmdWords[i] + '" was not defined.\n';
+            var topContext = stack[stack.length - 1];
+            for (var i = 1; i < topContext.parameters.length; i++) {
+                if (topContext.parameters[i].length > 0) {
+                    if (!this.customMacros[topContext.parameters[i]]) {
+                        userMessage += '% ' + firstWord + ': macro "' + topContext.parameters[i] + '" was not defined.\n';
                     }
                     else {
-                        delete this.customMacros[cmdWords[i]];
+                        delete this.customMacros[topContext.parameters[i]];
                         this.saveSettings();
                     }
                 }
@@ -342,17 +351,18 @@ var TMP;
         };
         // Handle /LIST command - display a list of macros
         // Returns 3-tuple: [doSend, new command, user message]
-        MacroProcessor.prototype.handleLIST = function (firstWord, cmdWords) {
+        MacroProcessor.prototype.handleLIST = function (firstWord, stack) {
             var doSend = false;
             var newCmd = '';
             var userMessage = '';
             var picomatch = null;
-            if (cmdWords.length > 1) {
+            var topContext = stack[stack.length - 1];
+            if (topContext.parameters.length > 1) {
                 picomatch = require('picomatch');
             }
             var sortedKeys = Object.keys(this.customMacros).sort();
             for (var i = 0; i < sortedKeys.length; i++) {
-                if (!picomatch || picomatch.isMatch(sortedKeys[i], cmdWords.slice(1))) {
+                if (!picomatch || picomatch.isMatch(sortedKeys[i], topContext.parameters.slice(1))) {
                     var macroProps = this.customMacros[sortedKeys[i]];
                     userMessage += '/def ';
                     if (macroProps.trigger != null && macroProps.trigger.pattern != null && macroProps.trigger.pattern.length > 0) {
@@ -365,30 +375,43 @@ var TMP;
                 userMessage = '% ' + firstWord + ': no macros found.\n';
             return [doSend, newCmd, userMessage];
         };
+        // Search the variable in stack, beginning from the end /current. If nothing
+        // found, return null.
+        MacroProcessor.prototype.searchVariable = function (stack, vName) {
+            var vValue = null;
+            for (var i = stack.length - 1; i >= 0; i--) {
+                vValue = stack[i].localVariables[vName];
+                if (vValue != null)
+                    break;
+            }
+            return vValue;
+        };
         // Substitute in 'text' in this order:
         // 1. given parameters     : %{#}, %{*}, %{0}, %{1}, %{2} and so on
         // 2. given local variables: %{whatever} in local scoped defined is
         // 3. global variables     : %{borg}, %{matching} and so on 
-        MacroProcessor.prototype.substituteVariables = function (text, parameters, localVariables) {
+        MacroProcessor.prototype.substituteVariables = function (text, stack) {
             var oldBody = text;
             var newBody = '';
             var deadEndLimit = 42; // limit number of substitution loops
+            var topContext = stack[stack.length - 1];
             var globVars = this.globalVariables;
+            var myThis = this;
             while (deadEndLimit--) {
                 newBody = oldBody.replace(/(%{[^ -]*?})/, function (m) {
                     var strippedM = m.substr(2, m.length - 3);
                     if (strippedM == '#') {
-                        return '' + parameters.length + '';
+                        return '' + topContext.parameters.length + '';
                     }
                     else if (strippedM == '*') {
-                        return '' + parameters.slice(1).join(' ') + '';
+                        return '' + topContext.parameters.slice(1).join(' ') + '';
                     }
                     else {
                         var parsedM = parseInt(strippedM);
                         // if this is not a numbered parameter
                         if (isNaN(parsedM)) {
                             // local variables may shadow global
-                            var vValue = localVariables[strippedM];
+                            var vValue = myThis.searchVariable(stack, strippedM);
                             if (vValue != null)
                                 return vValue;
                             // global variables as fallback
@@ -400,8 +423,8 @@ var TMP;
                         }
                         // it is a numbered parameter
                         else {
-                            if (parsedM < parameters.length) {
-                                return parameters[parsedM];
+                            if (parsedM < topContext.parameters.length) {
+                                return topContext.parameters[parsedM];
                             }
                             else {
                                 return '';
@@ -420,11 +443,12 @@ var TMP;
         // Handle /SET command - set the value of a global variable, do NOT pass words array, 
         // but the whole cmd line, because spaces are relevant here!
         // Returns 3-tuple: [doSend, new command, user message]
-        MacroProcessor.prototype.handleSET = function (firstWord, cmd) {
+        MacroProcessor.prototype.handleSET = function (firstWord, stack) {
             var doSend = false;
             var newCmd = '';
             var userMessage = '';
-            var body = cmd.substr(4).trim();
+            var topContext = stack[stack.length - 1];
+            var body = topContext.cmd.substr(4).trim();
             var wsSign = body.indexOf(" ");
             var eqSign = body.indexOf("=");
             var vName = '';
@@ -457,7 +481,7 @@ var TMP;
                 userMessage = '% ' + firstWord + ': &lt;name&gt; must not be empty\n';
             }
             else if (vName.length == 0) {
-                return this.handleLISTVAR('listvar', ['listvar']);
+                return this.handleLISTVAR('listvar', stack);
             }
             else {
                 if (this.globalVariables[vName] != null) {
@@ -471,17 +495,18 @@ var TMP;
         };
         // Handle /UNSET command - unset variable(s)
         // Returns 3-tuple: [doSend, new command, user message]
-        MacroProcessor.prototype.handleUNSET = function (firstWord, cmdWords) {
+        MacroProcessor.prototype.handleUNSET = function (firstWord, stack) {
             var doSend = false;
             var newCmd = '';
             var userMessage = '';
-            for (var i = 1; i < cmdWords.length; i++) {
-                if (cmdWords[i].length > 0) {
-                    if (!this.globalVariables[cmdWords[i]]) {
-                        userMessage += '% ' + firstWord + ': global variable "' + cmdWords[i] + '" was not defined.\n';
+            var topContext = stack[stack.length - 1];
+            for (var i = 1; i < topContext.parameters.length; i++) {
+                if (topContext.parameters[i].length > 0) {
+                    if (!this.globalVariables[topContext.parameters[i]]) {
+                        userMessage += '% ' + firstWord + ': global variable "' + topContext.parameters[i] + '" was not defined.\n';
                     }
                     else {
-                        delete this.globalVariables[cmdWords[i]];
+                        delete this.globalVariables[topContext.parameters[i]];
                         this.saveSettings();
                     }
                 }
@@ -490,17 +515,18 @@ var TMP;
         };
         // Handle /LISTVAR command - list values of variables
         // Returns 3-tuple: [doSend, new command, user message]
-        MacroProcessor.prototype.handleLISTVAR = function (firstWord, cmdWords) {
+        MacroProcessor.prototype.handleLISTVAR = function (firstWord, stack) {
             var doSend = false;
             var newCmd = '';
             var userMessage = '';
             var picomatch = null;
-            if (cmdWords.length > 1) {
+            var topContext = stack[stack.length - 1];
+            if (topContext.parameters.length > 1) {
                 picomatch = require('picomatch');
             }
             var sortedKeys = Object.keys(this.globalVariables).sort();
             for (var i = 0; i < sortedKeys.length; i++) {
-                if (!picomatch || picomatch.isMatch(sortedKeys[i], cmdWords.slice(1))) {
+                if (!picomatch || picomatch.isMatch(sortedKeys[i], topContext.parameters.slice(1))) {
                     var vValue = this.globalVariables[sortedKeys[i]];
                     userMessage += '/set ' + sortedKeys[i] + '=' + vValue + '\n';
                 }
@@ -509,23 +535,65 @@ var TMP;
                 userMessage = '% ' + firstWord + ': no global variables found.\n';
             return [doSend, newCmd, userMessage];
         };
-        // Handle /LET command - set the value of a local variable, do NOT pass words array, 
-        // but the whole cmd line, because spaces are relevant here!
+        // Handle /LET command - set the value of a local variable in the parent (!) 
+        // context, because our local context will disappear after the macro expansion has finished.
         // Returns 3-tuple: [doSend, new command, user message]
-        MacroProcessor.prototype.handleLET = function (firstWord, cmd) {
+        MacroProcessor.prototype.handleLET = function (firstWord, stack) {
             var doSend = false;
             var newCmd = '';
             var userMessage = '';
-            throw { name: 'NotImplementedError', message: 'Not implemented yet!' };
+            var topContext = stack[stack.length - 1];
+            // It would not make sense to create a local variable in the current (top)
+            // context, because this will only exist for this macro lifecycle. Even 
+            // sibling macros would not be able to access it. So we create the local 
+            // variable in the parent context. If there is no parent context, this 'let' 
+            // will be completely useless...
+            var parentContext = null;
+            if (stack.length > 1) {
+                parentContext = stack[stack.length - 2];
+            }
+            else {
+                parentContext = stack[stack.length - 1];
+                userMessage = '% ' + topContext.cmd + ' is of no use in this context...\n';
+            }
+            var body = topContext.cmd.substr(4).trim();
+            var wsSign = body.indexOf(" ");
+            var eqSign = body.indexOf("=");
+            var vName = '';
+            var vValue = null;
+            // there is an '=' and no ' ' or the '=' is the first
+            if (eqSign >= 0 && (wsSign < 0 || eqSign < wsSign)) {
+                vName = body.substring(0, eqSign).trim();
+                vValue = body.substring(eqSign + 1); // do not trim!
+                // no value is valid!
+            }
+            // maybe there is at least a ' '?
+            else if (wsSign > 0) {
+                vName = body.substring(0, wsSign).trim();
+                vValue = body.substring(wsSign + 1).trim(); // trim!
+                if (vValue.length == 0)
+                    vValue = null; // no value is not valid!
+            }
+            // no '=' and no ' ' found.
+            else {
+                vName = body;
+            }
+            if (vName.length > 0 && vValue != null) {
+                parentContext.localVariables[vName] = vValue;
+            }
+            else {
+                userMessage = '% ' + firstWord + ': &lt;name&gt; must not be empty\n';
+            }
             return [doSend, newCmd, userMessage];
         };
         // Handle /HELP command - display the help text
         // Returns 3-tuple: [doSend, new command, user message]
-        MacroProcessor.prototype.handleHELP = function (firstWord, cmdWords) {
+        MacroProcessor.prototype.handleHELP = function (firstWord, stack) {
             var doSend = false;
             var newCmd = '';
             var userMessage = '';
-            var topic = cmdWords[1].toLowerCase();
+            var topContext = stack[stack.length - 1];
+            var topic = topContext.parameters[1].toLowerCase();
             if (topic === 'def' || topic === '/def') {
                 userMessage =
                     '\n' +
@@ -614,13 +682,12 @@ var TMP;
         };
         // Handle default case, custom macro or just do nothing.
         // Returns 3-tuple: [doSend, new command, user message]
-        MacroProcessor.prototype.handleDEFAULT = function (firstWord, cmdWords) {
+        MacroProcessor.prototype.handleDEFAULT = function (firstWord, stack) {
             var doSend = false;
             var newCmd = '';
             var userMessage = '';
             if (this.customMacros[firstWord] != null) {
                 var body = this.customMacros[firstWord].body;
-                body = this.substituteVariables(body, cmdWords, {}); // substitute variables TODO: LOCAL VARIABLES NOT IMPLEMENTED YET!
                 var steps = body.split('%;'); // split by '%;' TF separator token
                 var stepNums = steps.length;
                 if (stepNums > 42) {
@@ -628,10 +695,13 @@ var TMP;
                     stepNums = 42;
                 }
                 for (var i = 0; i < stepNums; i++) {
-                    // Macro calls macro?
+                    // substitute variables in this step
+                    var step = this.substituteVariables(steps[i], stack); // substitute variables
+                    // Macro calls macro? Do not check substituted 'step' here because this
+                    // may be (mis-)used for 'macro injection' through subsituted '/'.
                     if (steps[i].length > 0 && steps[i].charAt(0) == MacroProcessor.MACRO_KEY) {
-                        // resolve the nested macro
-                        var result = this.resolveSingle(steps[i]);
+                        // resolve nested macro
+                        var result = this.resolveSingle(step, stack);
                         if (result[0] === true)
                             doSend = true;
                         newCmd += result[1];
@@ -639,7 +709,7 @@ var TMP;
                     }
                     else {
                         // otherwise just append to list of new cmd
-                        newCmd += (steps[i] + '\n');
+                        newCmd += (step + '\n');
                     }
                 }
                 doSend = true;
@@ -649,50 +719,59 @@ var TMP;
             }
             return [doSend, newCmd, userMessage];
         };
-        MacroProcessor.prototype.expandMacro = function (cmd) {
+        MacroProcessor.prototype.expandMacro = function (cmd, stack) {
             var result;
+            // If there is no stack yet, create a new.
+            if (stack == null)
+                stack = [];
             if (cmd.length > 0) {
-                console.log('MacroProcessor expand: ' + cmd);
-                var words = cmd.split(' ');
-                var firstWord = words[0].toLowerCase();
+                //console.log('MacroProcessor expand: ' + cmd);
+                // Create a context, which will be used for expansion of 
+                // the macro containing the command line, the splittet
+                // command line and the and local variables.
+                var context = new EvaluationContext();
+                context.cmd = cmd;
+                context.parameters = cmd.split(' ');
+                context.localVariables = {};
+                var firstWord = cmd.split(' ')[0].toLowerCase();
                 // recursion check
-                if (this.recursionStack.length <= MacroProcessor.MAX_RECUR) {
+                if (stack.length <= MacroProcessor.MAX_RECUR) {
                     // push to recursion stack
-                    this.recursionStack.push(firstWord);
+                    stack.push(context);
                     switch (firstWord) {
                         case 'def':
-                            result = this.handleDEF(firstWord, cmd);
+                            result = this.handleDEF(firstWord, stack);
                             break;
                         case 'undef':
-                            result = this.handleUNDEF(firstWord, words);
+                            result = this.handleUNDEF(firstWord, stack);
                             break;
                         case 'list':
-                            result = this.handleLIST(firstWord, words);
+                            result = this.handleLIST(firstWord, stack);
                             break;
                         case 'set':
-                            result = this.handleSET(firstWord, cmd);
+                            result = this.handleSET(firstWord, stack);
                             break;
                         case 'unset':
-                            result = this.handleUNSET(firstWord, words);
+                            result = this.handleUNSET(firstWord, stack);
                             break;
                         case 'listvar':
-                            result = this.handleLISTVAR(firstWord, words);
+                            result = this.handleLISTVAR(firstWord, stack);
                             break;
                         case 'let':
-                            result = this.handleLET(firstWord, cmd);
+                            result = this.handleLET(firstWord, stack);
                             break;
                         case 'help':
-                            result = this.handleHELP(firstWord, words);
+                            result = this.handleHELP(firstWord, stack);
                             break;
                         default: // custom macro or error
-                            result = this.handleDEFAULT(firstWord, words);
+                            result = this.handleDEFAULT(firstWord, stack);
                     }
                     // pop from recursion stack
-                    this.recursionStack.pop();
+                    stack.pop();
                 }
                 else {
                     result = [true, cmd + '\n', ''];
-                    result[2] = '% ' + firstWord + ': maximum recursion reached, stack: ' + this.recursionStack.toString() + '\n';
+                    result[2] = '% ' + firstWord + ': maximum recursion reached, stack size: ' + stack.length + '\n';
                 }
             }
             else {
@@ -704,11 +783,11 @@ var TMP;
         };
         // Resolves a single user command (single line or just a command).
         // Returns 3-tuple: [doSend, new command, user message]
-        MacroProcessor.prototype.resolveSingle = function (cmd) {
+        MacroProcessor.prototype.resolveSingle = function (cmd, stack) {
             var result;
             if (cmd != null && cmd.length > 0 && cmd.charAt(0) == MacroProcessor.MACRO_KEY) {
                 // Chop off leading '/' and expand macro.
-                result = this.expandMacro(cmd.substr(1));
+                result = this.expandMacro(cmd.substr(1), stack);
             }
             else {
                 // No '/' prefix or just a single '/', just bypass.
@@ -726,11 +805,9 @@ var TMP;
             var doSend = false;
             var newCmd = '';
             var userMessage = '';
-            // clear recursion stack
-            this.recursionStack = [];
             var lines = cmd.split('\n');
             for (var i = 0; i < lines.length; i++) {
-                var result = this.resolveSingle(lines[i]);
+                var result = this.resolveSingle(lines[i], []);
                 if (result[0] === true)
                     doSend = true;
                 newCmd += result[1];

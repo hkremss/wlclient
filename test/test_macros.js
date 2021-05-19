@@ -20,10 +20,12 @@ const mod = rewire('../www/js/macros.js');
 // Expose module functions for testing
 var TMP = mod.__get__('TMP');
 var MacroProcessor = mod.__get__('TMP.MacroProcessor');
+var EvaluationContext = mod.__get__('TMP.EvaluationContext');
 
 //console.log("==========");
 //console.log(TMP);
 //console.log(MacroProcessor);
+//console.log(EvaluationContext);
 //console.log("==========");
 
 describe('MacroProcessor', function () {
@@ -194,7 +196,8 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.handleDEF('def', '/def a = sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}');
+
+      var handle = macros.expandMacro('def a = sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}', []);
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -214,7 +217,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.handleDEF('def', '/def  = some body');
+      var handle = macros.expandMacro('def  = some body', []);
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -235,7 +238,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.handleDEF('def', '/def a = ');
+      var handle = macros.expandMacro('def a = ');
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -257,7 +260,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.handleDEF('def', '/def -t"{*} kommt an." greet = winke %{1}');
+      var handle = macros.expandMacro('def -t"{*} kommt an." greet = winke %{1}');
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -274,7 +277,7 @@ describe('MacroProcessor', function () {
     it('should return a list of macros', function() {
       var macros = new TMP.MacroProcessor;
       //macros.handleDEF('def', 'def a=b');
-      var handle = macros.handleLIST('list', 'list *');
+      var handle = macros.expandMacro('list *');
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -283,17 +286,43 @@ describe('MacroProcessor', function () {
     });
   });
 
+  describe('searchVariable', function () {
+    it('should be written later');
+  });
+
   describe('substituteVariables', function () {
-    var macros = new TMP.MacroProcessor;
     it('should substitute numbered parameters', function() {
-      var handle = macros.substituteVariables('sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}', ['a','b','x\'c\\\'','d\''], {});
+      var macros = new TMP.MacroProcessor;
+      let context = new TMP.EvaluationContext;
+        context.cmd = 'a b x\'c\\\' d\'';
+        context.parameters = context.cmd.split(' ');
+        context.localVariables = {};
+        var handle = macros.substituteVariables('sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}', [context]);
       handle.should.be.type('string');
       handle.should.eql('sag a, einzeln: 1:b 2:x\'c\\\'\ 3:d\' 4:, alle: b x\'c\\\'\ d\'');
     });
-    it('should substitute local variables -> not implemented yet');
+    it('should substitute local variables', function() {
+      var macros = new TMP.MacroProcessor;
+      macros.globalVariables = { 'borg':'1', 'matching':'glob', 'foo':'bar' };
+      let stack = [];
+      let context1 = new TMP.EvaluationContext;
+      context1.cmd = 'a b x\'c\\\' d\'';
+      context1.parameters = context1.cmd.split(' ');
+      context1.localVariables = {'loc1':'val1 original','loc2':'val2 original','loc3':'val3','foo':'shadowing global variable'};
+      stack.push(context1);
+      let context2 = new TMP.EvaluationContext;
+      context2.cmd = 'a b x\'c\\\' d\'';
+      context2.parameters = context2.cmd.split(' ');
+      context2.localVariables = {'loc2':'val2 shadow','foo':'shadowing global variable'};
+      stack.push(context2);
+      var handle = macros.substituteVariables('loc1: %{loc1}, loc2: %{loc2}, matching: %{matching}, foo: %{foo}', stack);
+      handle.should.be.type('string');
+      handle.should.eql('loc1: val1 original, loc2: val2 shadow, matching: glob, foo: shadowing global variable');
+    });
     it('should substitute global variables', function() {
+      var macros = new TMP.MacroProcessor;
       macros.globalVariables = { 'borg':'1', 'matching':'glob', 'foo':'bar', 'recursiv':'-%{recursiv}' };
-      var handle = macros.substituteVariables('borg: %{borg} matching: %{matching} foo: %{foo} recursiv: %{recursiv}', [], {});
+      var handle = macros.substituteVariables('borg: %{borg} matching: %{matching} foo: %{foo} recursiv: %{recursiv}', []);
       handle.should.be.type('string');
       handle.should.eql('borg: 1 matching: glob foo: bar recursiv: ---------------------------------------%{recursiv}'); // limited recursion!
     });
@@ -314,7 +343,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.handleSET('set', 'set a=42');
+      var handle = macros.expandMacro('set a=42');
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -334,7 +363,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.handleSET('set', 'set a=   43');
+      var handle = macros.expandMacro('set a=   43');
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -354,7 +383,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.handleSET('set', 'set a ');
+      var handle = macros.expandMacro('set a ');
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -374,7 +403,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.handleSET('set', 'set a=');
+      var handle = macros.expandMacro('set a=');
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -394,7 +423,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.handleSET('set', 'set a 53 b %{1}');
+      var handle = macros.expandMacro('set a 53 b %{1}');
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -414,7 +443,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.handleSET('set', 'set a       56 c %{1}');
+      var handle = macros.expandMacro('set a       56 c %{1}');
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -434,7 +463,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.handleSET('set', 'set borg=0');
+      var handle = macros.expandMacro('set borg=0');
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -454,7 +483,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.handleSET('set', 'set borg=egal+irgendwas');
+      var handle = macros.expandMacro('set borg=egal+irgendwas');
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -474,7 +503,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.handleSET('set', 'set matching=regexp');
+      var handle = macros.expandMacro('set matching=regexp');
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -494,7 +523,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.handleSET('set', 'set matching=glob');
+      var handle = macros.expandMacro('set matching=glob');
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -514,7 +543,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.handleSET('set', 'set matching=simple');
+      var handle = macros.expandMacro('set matching=simple');
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -534,7 +563,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.handleSET('set', 'set matching=nonsense');
+      var handle = macros.expandMacro('set matching=nonsense', []);
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -550,8 +579,7 @@ describe('MacroProcessor', function () {
   describe('handleLISTVAR', function () {
     var macros = new TMP.MacroProcessor;
     it('should return a list of all special global variables', function() {
-      //var handle = macros.handleLISTVAR('varlist', ['varlist', '*']);
-      var handle = macros.handleLISTVAR('varlist', ['varlist']);
+      var handle = macros.expandMacro('listvar', []);
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -559,7 +587,7 @@ describe('MacroProcessor', function () {
       handle[2].should.have.lengthOf(31); // '/set borg=1\n/set matching=glob\n'
     });
     it('should return the special global variable \'borg\'', function() {
-      var handle = macros.handleLISTVAR('varlist', ['varlist', '*org']);
+      var handle = macros.expandMacro('listvar *org', []);
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -567,7 +595,7 @@ describe('MacroProcessor', function () {
       handle[2].should.have.lengthOf(12); // '/set borg=1\n'
     });
     it('should return the special global variables \'borg\' and \'matching\'', function() {
-      var handle = macros.handleLISTVAR('varlist', ['varlist', '*g']);
+      var handle = macros.expandMacro('listvar *g', []);
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -577,7 +605,30 @@ describe('MacroProcessor', function () {
   });
 
   describe('handleLET', function () {
-    it('should be written later');
+    it('should set a local variable in it\'s parent context of the stack', function() {
+      var macros = new TMP.MacroProcessor;
+      let context1 = new TMP.EvaluationContext;
+      context1.cmd = 'egal1';
+      context1.parameters = context1.cmd.split(' ');
+      context1.localVariables = {};
+      let context2 = new TMP.EvaluationContext;
+      context2.cmd = 'egal2';
+      context2.parameters = context2.cmd.split(' ');
+      context2.localVariables = {};
+      let stack = [];
+      stack.push(context1);
+      stack.push(context2);
+
+      var handle = macros.expandMacro('let a=b', stack);
+
+      stack.should.have.lengthOf(2);
+      stack[0].localVariables.should.be.type('object');
+      Object.keys(stack[0].localVariables).should.have.lengthOf(0);
+      stack[1].localVariables.should.be.type('object');
+      Object.keys(stack[1].localVariables).should.have.lengthOf(1);
+      stack[1].localVariables['a'].should.be.type('string');
+      stack[1].localVariables['a'].should.eql('b');
+    });
   });
 
   describe('handleHELP', function () {
@@ -599,8 +650,8 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      macros.handleDEF('def', 'def a = sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}');
-      var handle = macros.handleDEFAULT('a', 'a b x\'c\\\'\\ d\''.split(' '));
+      macros.expandMacro('def a = sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}');
+      var handle = macros.expandMacro('a b x\'c\\\'\\ d\'');
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
