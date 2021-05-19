@@ -9,3 +9,4 @@ dist
 tmp
 data
 nohup.out
+www/js/save/*
