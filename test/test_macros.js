@@ -54,7 +54,7 @@ describe('MacroProcessor', function () {
     it('should be written later');
   });
 
-  describe('getWords', function () {
+/*   describe('getWords', function () {
       var macros = new TMP.MacroProcessor;
     it('should return an 1 empty word, if string consits of spaces only', function() {
       var words = macros.getWords('   ');
@@ -117,9 +117,9 @@ describe('MacroProcessor', function () {
       words[2].should.eql('"bla \\" blu"');
       words[3].should.eql('abc');
     });
-  });
+  });*/
 
-  describe('searchUnescapedChar', function () {
+/*   describe('searchUnescapedChar', function () {
       var macros = new TMP.MacroProcessor;
     it('should return position of a non-escaped char start index of the input string', function() {
       var 
@@ -144,7 +144,7 @@ describe('MacroProcessor', function () {
       pos = macros.searchUnescapedChar('\\\\ ', 0, ' '); // need double-escapes (4==2)!
       pos.should.eql(2);
     });
-  });
+  }); */
 
   describe('getQuotedString', function () {
       var macros = new TMP.MacroProcessor;
@@ -180,21 +180,84 @@ describe('MacroProcessor', function () {
   });
 
   describe('handleDEF', function () {
-    var macros = new TMP.MacroProcessor;
-    it('should set and store a macro \'test=sag lets test %{#}: %{0} tiggles %{1} giggles %{2} wiggles %{3} miggles %{4} and ALL (%{*})\' to localStorage key \''+MacroProcessor.STORAGE_KEY_LIST+'\'', function() {
+    it('should set and store a macro \'a=sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}\' to localStorage key \''+MacroProcessor.STORAGE_KEY_LIST+'\'', function() {
+      var macros = new TMP.MacroProcessor;
       var lsMock = {
         setItem: function (key, jsonString) {
           if (key == MacroProcessor.STORAGE_KEY_LIST) {
             let storedMacros = JSON.parse(jsonString);
             storedMacros.should.be.type('object');
             Object.keys(storedMacros).should.have.lengthOf(1);
-            storedMacros['test'].body.should.eql('sag lets test %{#}: %{0} tiggles %{1} giggles %{2} wiggles %{3} miggles %{4} and ALL (%{*})');
+            storedMacros['a'].body.should.eql('sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}');
           }
         }
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.handleDEF('def', 'def test=sag lets test %{#}: %{0} tiggles %{1} giggles %{2} wiggles %{3} miggles %{4} and ALL (%{*})');
+      var handle = macros.handleDEF('def', '/def a = sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}');
+      // [doSend, newCmd, userMessage]
+      handle.should.be.type('object');
+      handle.should.have.lengthOf(3);
+      handle[2].should.be.type('string');
+      handle[2].should.have.lengthOf(0); // success
+    });
+    it('should not allow a macro with empty name', function() {
+      var macros = new TMP.MacroProcessor;
+      var lsMock = {
+        setItem: function (key, jsonString) {
+          if (key == MacroProcessor.STORAGE_KEY_LIST) {
+            let storedMacros = JSON.parse(jsonString);
+            storedMacros.should.be.type('object');
+            Object.keys(storedMacros).should.have.lengthOf(0);
+          }
+        }
+      };
+      mod.__set__("localStorage", lsMock);
+
+      var handle = macros.handleDEF('def', '/def  = some body');
+      // [doSend, newCmd, userMessage]
+      handle.should.be.type('object');
+      handle.should.have.lengthOf(3);
+      handle[2].should.be.type('string');
+      handle[2].should.not.have.lengthOf(0); // error message!
+    });
+    it('should allow a macro with empty body', function() {
+      var macros = new TMP.MacroProcessor;
+      var lsMock = {
+        setItem: function (key, jsonString) {
+          if (key == MacroProcessor.STORAGE_KEY_LIST) {
+            let storedMacros = JSON.parse(jsonString);
+            storedMacros.should.be.type('object');
+            Object.keys(storedMacros).should.have.lengthOf(1);
+            storedMacros['a'].body.should.eql('');
+          }
+        }
+      };
+      mod.__set__("localStorage", lsMock);
+
+      var handle = macros.handleDEF('def', '/def a = ');
+      // [doSend, newCmd, userMessage]
+      handle.should.be.type('object');
+      handle.should.have.lengthOf(3);
+      handle[2].should.be.type('string');
+      handle[2].should.have.lengthOf(0); // success
+    });
+    it('should create a macro with trigger option', function() {
+      var macros = new TMP.MacroProcessor;
+      var lsMock = {
+        setItem: function (key, jsonString) {
+          if (key == MacroProcessor.STORAGE_KEY_LIST) {
+            let storedMacros = JSON.parse(jsonString);
+            storedMacros.should.be.type('object');
+            Object.keys(storedMacros).should.have.lengthOf(1);
+            storedMacros['greet'].body.should.eql('winke %{1}');
+            storedMacros['greet'].trigger.pattern.should.eql('{*} kommt an.');
+          }
+        }
+      };
+      mod.__set__("localStorage", lsMock);
+
+      var handle = macros.handleDEF('def', '/def -t"{*} kommt an." greet = winke %{1}');
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
@@ -223,9 +286,9 @@ describe('MacroProcessor', function () {
   describe('substituteVariables', function () {
     var macros = new TMP.MacroProcessor;
     it('should substitute numbered parameters', function() {
-      var handle = macros.substituteVariables('number: %{#} Arg0: %{0} Arg1: %{1} Arg2: %{2} Arg3: %{3} Arg4: %{4} and all: (%{*})', ['a','b','c','d'], {});
+      var handle = macros.substituteVariables('sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}', ['a','b','x\'c\\\'','d\''], {});
       handle.should.be.type('string');
-      handle.should.eql('number: 4 Arg0: a Arg1: b Arg2: c Arg3: d Arg4:  and all: (a b c d)');
+      handle.should.eql('sag a, einzeln: 1:b 2:x\'c\\\'\ 3:d\' 4:, alle: b x\'c\\\'\ d\'');
     });
     it('should substitute local variables -> not implemented yet');
     it('should substitute global variables', function() {
@@ -523,26 +586,26 @@ describe('MacroProcessor', function () {
 
   describe('handleDEFAULT', function () {
     var macros = new TMP.MacroProcessor;
-    it('should evaluate a macro \'test=sag lets %{#}: %{0} tiggles %{1} giggles %{2} wiggles %{3} miggles %{4} and ALL (%{*})\' with arguments', function() {
+    it('should evaluate a macro \'a=sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}', function() {
       var lsMock = {
         setItem: function (key, jsonString) {
           if (key == MacroProcessor.STORAGE_KEY_LIST) {
             let storedMacros = JSON.parse(jsonString);
             storedMacros.should.be.type('object');
             Object.keys(storedMacros).should.have.lengthOf(1);
-            storedMacros['test'].body.should.eql('sag lets %{#}: %{0} tiggles %{1} giggles %{2} wiggles %{3} miggles %{4} and ALL (%{*})');
+            storedMacros['a'].body.should.eql('sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}');
           }
         }
       };
       mod.__set__("localStorage", lsMock);
 
-      macros.handleDEF('def', 'def test=sag lets %{#}: %{0} tiggles %{1} giggles %{2} wiggles %{3} miggles %{4} and ALL (%{*})');
-      var handle = macros.handleDEFAULT('test', macros.getWords('test a1 b2 c3'));
+      macros.handleDEF('def', 'def a = sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}');
+      var handle = macros.handleDEFAULT('a', 'a b x\'c\\\'\\ d\''.split(' '));
       // [doSend, newCmd, userMessage]
       handle.should.be.type('object');
       handle.should.have.lengthOf(3);
       handle[1].should.be.type('string');
-      handle[1].should.eql('sag lets 4: test tiggles a1 giggles b2 wiggles c3 miggles  and ALL (test a1 b2 c3)\n');
+      handle[1].should.eql('sag a, einzeln: 1:b 2:x\'c\\\'\\ 3:d\' 4:, alle: b x\'c\\\'\\ d\'\n');
       handle[2].should.be.type('string');
       handle[2].should.have.lengthOf(0); // success
     });

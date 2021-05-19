@@ -295,7 +295,7 @@ function saveSettings() {
 // Re-/Load settings from localStorage.
 function loadSettings() {
   // Macro Processor re-/load
-  macros.ReloadSettings();
+  macros.reloadSettings();
 
   // Re-/load other client settings.
   var localEchoSetting = localStorage.getItem('Client.Setting.LocalEcho');
@@ -506,7 +506,7 @@ function startClientFunction() {
   {
     if (!pwMode) {
       // If macro processor handles the key, don't continue.
-      var result = macros.HandleKey(event);
+      var result = macros.handleKey(event);
       var doSend = result[0];
       var msg = result[2];
       if (doSend) {
@@ -520,7 +520,7 @@ function startClientFunction() {
       // If there is nothing to send, but the input contains '/def key_', append the 
       // pressed named key now as a convenience function.
       else {
-        var namedKey = macros.GetNamedKey(event);
+        var namedKey = macros.getNamedKey(event);
         if (namedKey.length>0) {
           var cmd = document.getElementById('cmd');
           if (cmd.value && cmd.value.substr(0, 4).toLowerCase() == '/def' && cmd.value.substr(cmd.value.length-4) == 'key_') {

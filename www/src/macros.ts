@@ -5,14 +5,8 @@
  *
  * Build: tsc --sourceMap macros.ts
  * 
- * Requires:
- *  picomatch ^2.2.3
- *
  * Ideas: 
  *  Fuchur: Fuchur denkt .o( makros mit / im Namen sind auch doof ) <- Holger: zumindest am Anfang!
- *  Fuchur: Fuchur sagt: Oh und ich denke, dass man leere Makros durchaus gebrauchen koennte.
- *  Holger: also es soll nichts passieren, aber auch keine fehlermeldung kommen, meinst du?
- *  Fuchur sagt: man kann  /def wasanders=%;  machen, aber das erzeugt halt 2! Leerzeilen
  */
 
 namespace TMP {
@@ -33,6 +27,7 @@ namespace TMP {
     static readonly MACRO_KEY = '/';
     static readonly STORAGE_KEY_LIST = 'Macros.List';
     static readonly STORAGE_KEY_LISTVAR = 'Macros.ListVar';
+    static readonly MAX_RECUR = 42;
     
     // All custom macros we know.
     private customMacros: { [key: string]: MacroProps } = {};
@@ -43,7 +38,7 @@ namespace TMP {
   
     // Constructor loads settings from localStorage
     constructor() { 
-    //  this.ReloadSettings();
+    //  this.reloadSettings();
     }
   
     // Return version number
@@ -52,7 +47,7 @@ namespace TMP {
     }
 
     // Sanity checks! Someone may have deleted/corrupted special variables
-    private MaintainSpecialVariables() : boolean {
+    private maintainSpecialVariables() : boolean {
       let fixed : boolean = false;
       // 'borg' must exist, set it to '0' or '1' if unset or modified.
       if (this.globalVariables['borg']==null || this.globalVariables['borg']=='') {
@@ -73,14 +68,14 @@ namespace TMP {
     }
   
     // Save all settings to localStorage.
-    private SaveSettings() {
-      this.MaintainSpecialVariables();
+    private saveSettings() {
+      this.maintainSpecialVariables();
       localStorage.setItem(MacroProcessor.STORAGE_KEY_LIST, JSON.stringify(this.customMacros));
       localStorage.setItem(MacroProcessor.STORAGE_KEY_LISTVAR, JSON.stringify(this.globalVariables));
     }
   
     // Try to (re-)load settings from localStorage.
-    public ReloadSettings() {
+    public reloadSettings() {
       let updateRequired = false;
 
       try {
@@ -120,10 +115,10 @@ namespace TMP {
           }
         }
 
-        if (this.MaintainSpecialVariables()) updateRequired=true;
+        if (this.maintainSpecialVariables()) updateRequired=true;
         
         // We updated the save format?
-        if (updateRequired) this.SaveSettings();
+        if (updateRequired) this.saveSettings();
       }
       catch (e) {
         console.log('Macro processor: ' + e.name + ': ' + e.message);
@@ -131,7 +126,7 @@ namespace TMP {
     }
   
     // Build a key name (similar to TF) from event.
-    public GetNamedKey(event : KeyboardEvent) : string
+    public getNamedKey(event : KeyboardEvent) : string
     {
       let keyName = '';
 
@@ -155,12 +150,12 @@ namespace TMP {
   
     // Handle a single key-down event.
     // Returns 3-tuple: [doSend, new command, user message]
-    public HandleKey(event : KeyboardEvent) : [boolean, string, string]
+    public handleKey(event : KeyboardEvent) : [boolean, string, string]
     {
       let result: [boolean, string, string] = [false, '', ''];
 
       // Build a key name (similar to TF)
-      let keyName = this.GetNamedKey(event);
+      let keyName = this.getNamedKey(event);
         
       if (keyName.length > 0) {       
         // Try to handle this.
@@ -181,7 +176,7 @@ namespace TMP {
 
       return result;
     }
-  
+/*   
     // Find and return an unescaped char in source from startPosition and return 
     // position or -1, if not found.'"\"'
     private searchUnescapedChar(source : string, startPosition : number, searchChar : string) : number {
@@ -211,14 +206,14 @@ namespace TMP {
       
       return foundPosition;
     }
-  
+ */  
     /*
      * Get all spaces separated parts of string, respect double-quotes ("")
      * and escaped spaces/quotes, eg.:
      * Source of    : '/def -t"bla \\" blu" abc'
      * Should return: [ '/def', '-t', 'bla \\" blu', 'abc' ]
      */
-    private getWords(source : string) : Array<string> {
+/*     private getWords(source : string) : Array<string> {
       let allWords : Array<string> = [];
       
       let firstSpace = this.searchUnescapedChar(source, 0, ' ');
@@ -255,7 +250,7 @@ namespace TMP {
       }
 
       return allWords;
-    }
+    } */
 
     // Find and return a double-quoted string from source.
     // Return empty string, if not found.
@@ -324,7 +319,7 @@ namespace TMP {
           body = body.substr(mTrigger.length + 2);
           // trim the quotes off on both sides.
           mTrigger = mTrigger.substr(1, mTrigger.length-2);
-          console.log('TMP '+firstWord+': found trigger:\''+mTrigger+'\'.');          
+          //console.log('TMP '+firstWord+': found trigger:\''+mTrigger+'\'.');          
         }
       }
       
@@ -332,7 +327,7 @@ namespace TMP {
       if (eqSign > 0) {
         let mName = body.substring(0, eqSign).trim();
         let mBody = body.substring(eqSign+1).trim();
-        if (mName.length > 0 && mBody.length > 0) {
+        if (mName.length > 0) {
           if (this.customMacros[mName]!=null && this.customMacros[mName].body !== mBody) {
             userMessage = '% '+firstWord+': redefined macro ' + mName + '\n';
           }
@@ -341,13 +336,10 @@ namespace TMP {
           macro.trigger = new TriggerProps;
           macro.trigger.pattern = mTrigger;
           this.customMacros[mName] = macro;
-          this.SaveSettings();
-        }
-        else if (mName.length == 0) {
-          userMessage = '% '+firstWord+': &lt;name&gt; must not be empty\n';
+          this.saveSettings();
         }
         else {
-          userMessage = '% '+firstWord+': &lt;body&gt; must not be empty\n';
+          userMessage = '% '+firstWord+': &lt;name&gt; must not be empty\n';
         }
       }
       else if (eqSign == 0) {
@@ -374,7 +366,7 @@ namespace TMP {
             userMessage += '% '+firstWord+': macro "' + cmdWords[i] + '" was not defined.\n';
           } else {
             delete this.customMacros[cmdWords[i]];
-            this.SaveSettings();
+            this.saveSettings();
           }
         }
       }
@@ -400,7 +392,11 @@ namespace TMP {
       for (var i = 0; i<sortedKeys.length; i++) {
         if (!picomatch || picomatch.isMatch(sortedKeys[i], cmdWords.slice(1))) {
           let macroProps = this.customMacros[sortedKeys[i]];
-          userMessage += '/def '+sortedKeys[i]+' = '+macroProps.body+'\n';
+          userMessage += '/def ';
+          if (macroProps.trigger != null && macroProps.trigger.pattern!=null && macroProps.trigger.pattern.length > 0) {
+            userMessage += '-t"' + macroProps.trigger.pattern + '" ';
+          }
+          userMessage += (sortedKeys[i]+' = '+macroProps.body+'\n');
         }
       }
       
@@ -430,7 +426,7 @@ namespace TMP {
             return ''+parameters.length+'';
           }
           else if (strippedM == '*') {
-            return ''+parameters.join(' ')+'';
+            return ''+parameters.slice(1).join(' ')+'';
           }
           else {
             const parsedM = parseInt(strippedM);
@@ -504,7 +500,7 @@ namespace TMP {
             userMessage = '% '+firstWord+': redefined variable ' + vName + '\n';
         }
         this.globalVariables[vName] = vValue;
-        this.SaveSettings();
+        this.saveSettings();
       }
       else if (vName.length == 0 && vValue != null && vValue.length > 0) {
         userMessage = '% '+firstWord+': &lt;name&gt; must not be empty\n';
@@ -538,7 +534,7 @@ namespace TMP {
             userMessage += '% '+firstWord+': global variable "' + cmdWords[i] + '" was not defined.\n';
           } else {
             delete this.globalVariables[cmdWords[i]];
-            this.SaveSettings();
+            this.saveSettings();
           }
         }
       }
@@ -693,40 +689,29 @@ namespace TMP {
       let userMessage : string = '';
 
       if (this.customMacros[firstWord]!=null) {
-        // recursion check
-        if (this.recursionStack.indexOf(firstWord)<0)
-        {
-          // push to recursion stack
-          this.recursionStack.push(firstWord);
-          let body = this.customMacros[firstWord].body;
-          body = this.substituteVariables(body, cmdWords, {}); // substitute variables TODO: LOCAL VARIABLES NOT IMPLEMENTED YET!
-          let steps = body.split('%;'); // split by '%;' TF separator token
-          let stepNums = steps.length;
-          if (stepNums > 42) {
-            userMessage = '% '+firstWord+': command list truncated to 42 for some reason, sorry\n';
-            stepNums = 42;
-          }
-          for (let i = 0; i < stepNums; i++) {
-            // Macro calls macro?
-            if (steps[i].length>0 && steps[i].charAt(0) == MacroProcessor.MACRO_KEY) {
-              // resolve the nested macro
-              let result = this.resolveSingle(steps[i]);
-              if (result[0] === true) doSend = true;
-              newCmd += result[1];
-              userMessage += result[2];
-            }
-            else {
-              // otherwise just append to list of new cmd
-              newCmd += (steps[i] + '\n');
-            }
-          }
-          doSend = true;
-          // pop from recursion stack
-          this.recursionStack.pop();
+        let body = this.customMacros[firstWord].body;
+        body = this.substituteVariables(body, cmdWords, {}); // substitute variables TODO: LOCAL VARIABLES NOT IMPLEMENTED YET!
+        let steps = body.split('%;'); // split by '%;' TF separator token
+        let stepNums = steps.length;
+        if (stepNums > 42) {
+          userMessage = '% '+firstWord+': command list truncated to 42 for some reason, sorry\n';
+          stepNums = 42;
         }
-        else {
-          userMessage = '% '+firstWord+': macro self recursion detected, stack: '+this.recursionStack.toString()+'\n';
+        for (let i = 0; i < stepNums; i++) {
+          // Macro calls macro?
+          if (steps[i].length>0 && steps[i].charAt(0) == MacroProcessor.MACRO_KEY) {
+            // resolve the nested macro
+            let result = this.resolveSingle(steps[i]);
+            if (result[0] === true) doSend = true;
+            newCmd += result[1];
+            userMessage += result[2];
+          }
+          else {
+            // otherwise just append to list of new cmd
+            newCmd += (steps[i] + '\n');
+          }
         }
+        doSend = true;
       }
       else {
         userMessage = '% '+firstWord+': no such command or macro\n';
@@ -734,18 +719,19 @@ namespace TMP {
       return [doSend, newCmd, userMessage];
     }
 
-    // Resolves a single user command (single line or just a command).
-    // Returns 3-tuple: [doSend, new command, user message]
-    private resolveSingle(cmd : string) : [boolean, string, string] {
+    private expandMacro(cmd : string) : [boolean, string, string] {
       let result: [boolean, string, string];
-  
-      if (cmd && cmd.length>0 && cmd.charAt(0) == MacroProcessor.MACRO_KEY) {
-        cmd = cmd.substr(1);
-        console.log('MacroProcessor resolve: ' + cmd);
-        var words = this.getWords(cmd);
+
+      if (cmd.length > 0) {
+        console.log('MacroProcessor expand: ' + cmd);
+        var words = cmd.split(' ');
         let firstWord = words[0].toLowerCase();
-        
-        if (firstWord.length>0 && firstWord == cmd.substr(0, firstWord.length).toLowerCase()) {
+      
+        // recursion check
+        if (this.recursionStack.length <= MacroProcessor.MAX_RECUR) {
+          // push to recursion stack
+          this.recursionStack.push(firstWord);
+
           switch(firstWord) {
             case 'def':
               result = this.handleDEF(firstWord, cmd);
@@ -774,15 +760,35 @@ namespace TMP {
             default: // custom macro or error
               result = this.handleDEFAULT(firstWord, words);
           }
+
+          // pop from recursion stack
+          this.recursionStack.pop();
         }
         else {
-        // The first word was empty, quoted or prefixed with spaces, 
-        // but was no macro nor command for sure. Bypass.
-        result = [true, cmd + '\n', ''];
+          result = [true, cmd + '\n', ''];
+          result[2] = '% '+firstWord+': maximum recursion reached, stack: '+this.recursionStack.toString()+'\n';
         }
       }
       else {
-        // No '/' prefix, just bypass.
+        // The first word was empty, quoted or prefixed with spaces, 
+        // but was no macro nor command for sure. Bypass.
+        result = [true, cmd + '\n', ''];
+      }
+
+      return result;
+    }
+
+    // Resolves a single user command (single line or just a command).
+    // Returns 3-tuple: [doSend, new command, user message]
+    private resolveSingle(cmd : string) : [boolean, string, string] {
+      let result: [boolean, string, string];
+  
+      if (cmd!=null && cmd.length>0 && cmd.charAt(0) == MacroProcessor.MACRO_KEY) {
+        // Chop off leading '/' and expand macro.
+        result = this.expandMacro(cmd.substr(1));
+      }
+      else {
+        // No '/' prefix or just a single '/', just bypass.
         result = [true, cmd + '\n', ''];
       }
   

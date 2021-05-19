@@ -5,14 +5,8 @@
  *
  * Build: tsc --sourceMap macros.ts
  *
- * Requires:
- *  picomatch ^2.2.3
- *
  * Ideas:
  *  Fuchur: Fuchur denkt .o( makros mit / im Namen sind auch doof ) <- Holger: zumindest am Anfang!
- *  Fuchur: Fuchur sagt: Oh und ich denke, dass man leere Makros durchaus gebrauchen koennte.
- *  Holger: also es soll nichts passieren, aber auch keine fehlermeldung kommen, meinst du?
- *  Fuchur sagt: man kann  /def wasanders=%;  machen, aber das erzeugt halt 2! Leerzeilen
  */
 var TMP;
 (function (TMP) {
@@ -34,14 +28,14 @@ var TMP;
             // All global variables we know. (and some are default + special)
             this.globalVariables = { 'borg': '1', 'matching': 'glob' };
             this.recursionStack = [];
-            //  this.ReloadSettings();
+            //  this.reloadSettings();
         }
         // Return version number
         MacroProcessor.prototype.getVersion = function () {
             return MacroProcessor.VERSION;
         };
         // Sanity checks! Someone may have deleted/corrupted special variables
-        MacroProcessor.prototype.MaintainSpecialVariables = function () {
+        MacroProcessor.prototype.maintainSpecialVariables = function () {
             var fixed = false;
             // 'borg' must exist, set it to '0' or '1' if unset or modified.
             if (this.globalVariables['borg'] == null || this.globalVariables['borg'] == '') {
@@ -60,13 +54,13 @@ var TMP;
             return fixed;
         };
         // Save all settings to localStorage.
-        MacroProcessor.prototype.SaveSettings = function () {
-            this.MaintainSpecialVariables();
+        MacroProcessor.prototype.saveSettings = function () {
+            this.maintainSpecialVariables();
             localStorage.setItem(MacroProcessor.STORAGE_KEY_LIST, JSON.stringify(this.customMacros));
             localStorage.setItem(MacroProcessor.STORAGE_KEY_LISTVAR, JSON.stringify(this.globalVariables));
         };
         // Try to (re-)load settings from localStorage.
-        MacroProcessor.prototype.ReloadSettings = function () {
+        MacroProcessor.prototype.reloadSettings = function () {
             var updateRequired = false;
             try {
                 var storedMacrosString = localStorage.getItem(MacroProcessor.STORAGE_KEY_LIST);
@@ -104,18 +98,18 @@ var TMP;
                         this.globalVariables = storedGlobalVars;
                     }
                 }
-                if (this.MaintainSpecialVariables())
+                if (this.maintainSpecialVariables())
                     updateRequired = true;
                 // We updated the save format?
                 if (updateRequired)
-                    this.SaveSettings();
+                    this.saveSettings();
             }
             catch (e) {
                 console.log('Macro processor: ' + e.name + ': ' + e.message);
             }
         };
         // Build a key name (similar to TF) from event.
-        MacroProcessor.prototype.GetNamedKey = function (event) {
+        MacroProcessor.prototype.getNamedKey = function (event) {
             var keyName = '';
             // If the key is ONLY unidentified or a modifier key, skip it.
             // see: https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values
@@ -138,10 +132,10 @@ var TMP;
         };
         // Handle a single key-down event.
         // Returns 3-tuple: [doSend, new command, user message]
-        MacroProcessor.prototype.HandleKey = function (event) {
+        MacroProcessor.prototype.handleKey = function (event) {
             var result = [false, '', ''];
             // Build a key name (similar to TF)
-            var keyName = this.GetNamedKey(event);
+            var keyName = this.getNamedKey(event);
             if (keyName.length > 0) {
                 // Try to handle this.
                 result = this.handleDEFAULT(keyName, [keyName]);
@@ -160,75 +154,81 @@ var TMP;
             }
             return result;
         };
-        // Find and return an unescaped char in source from startPosition and return 
-        // position or -1, if not found.'"\"'
-        MacroProcessor.prototype.searchUnescapedChar = function (source, startPosition, searchChar) {
-            var foundPosition = -1;
-            // search for the closing quote.
-            for (var i = startPosition; i < source.length; i++) {
+        /*
+            // Find and return an unescaped char in source from startPosition and return
+            // position or -1, if not found.'"\"'
+            private searchUnescapedChar(source : string, startPosition : number, searchChar : string) : number {
+              let foundPosition : number = -1;
+              
+              // search for the closing quote.
+              for (let i=startPosition;i<source.length;i++) {
                 if (source.charAt(i) == searchChar) {
-                    // We have found one. But it must not be escaped, so
-                    // count '\' chars in front of quote. If it's an uneven
-                    // uneven number, it is escaped and we must continue!
-                    var bs = 0;
-                    for (var k = i - 1; k >= startPosition; k--) {
-                        if (source.charAt(k) == '\\') {
-                            bs++;
-                            continue;
-                        }
-                        break;
+                  // We have found one. But it must not be escaped, so
+                  // count '\' chars in front of quote. If it's an uneven
+                  // uneven number, it is escaped and we must continue!
+                  let bs = 0;
+                  for (let k = i-1;k>=startPosition;k--) {
+                    if (source.charAt(k) == '\\') {
+                      bs++;
+                      continue;
                     }
-                    if (bs % 2 == 0) {
-                        // even number of backslashes == closing quote found! 
-                        foundPosition = i;
-                        break;
-                    }
+                    break;
+                  }
+                  if (bs % 2 == 0) {
+                    // even number of backslashes == closing quote found!
+                    foundPosition = i;
+                    break;
+                  }
                 }
+              }
+              
+              return foundPosition;
             }
-            return foundPosition;
-        };
+         */
         /*
          * Get all spaces separated parts of string, respect double-quotes ("")
          * and escaped spaces/quotes, eg.:
          * Source of    : '/def -t"bla \\" blu" abc'
          * Should return: [ '/def', '-t', 'bla \\" blu', 'abc' ]
          */
-        MacroProcessor.prototype.getWords = function (source) {
-            var allWords = [];
-            var firstSpace = this.searchUnescapedChar(source, 0, ' ');
-            var firstQuote = this.searchUnescapedChar(source, 0, '"');
-            if (firstSpace > -1 && (firstQuote == -1 || firstSpace < firstQuote)) {
+        /*     private getWords(source : string) : Array<string> {
+              let allWords : Array<string> = [];
+              
+              let firstSpace = this.searchUnescapedChar(source, 0, ' ');
+              let firstQuote = this.searchUnescapedChar(source, 0, '"');
+              
+              if (firstSpace > -1 && (firstQuote == -1 || firstSpace < firstQuote)) {
                 // We found a real space first
-                if (firstSpace > 0)
-                    allWords.push(source.substr(0, firstSpace));
-                allWords = allWords.concat(this.getWords(source.substr(firstSpace + 1)));
-            }
-            else if (firstQuote > -1 && (firstSpace == -1 || firstQuote < firstSpace)) {
+                if (firstSpace>0) allWords.push( source.substr(0, firstSpace) );
+                allWords = allWords.concat(this.getWords(source.substr(firstSpace+1)));
+              }
+              else if (firstQuote > -1 && (firstSpace == -1 || firstQuote < firstSpace)) {
                 // We found a first quote, lets see, if there is a word in front.
                 if (firstQuote > 0) {
-                    allWords.push(source.substr(0, firstQuote));
-                    allWords = allWords.concat(this.getWords(source.substr(firstQuote)));
+                  allWords.push( source.substr(0, firstQuote) );
+                  allWords = allWords.concat(this.getWords(source.substr(firstQuote)));
                 }
                 else {
-                    // The quote begins a [0], look for closing quote.
-                    var lastQuote = this.searchUnescapedChar(source, firstQuote + 1, '"');
-                    if (lastQuote > -1) {
-                        // We have a quoted string
-                        allWords.push(source.substr(0, lastQuote + 1));
-                        allWords = allWords.concat(this.getWords(source.substr(lastQuote + 1)));
-                    }
-                    else {
-                        // We found an opening quote, but no closing quote, this is an error.
-                        throw { name: 'ParseError', message: 'Open quote detected, cannot continue to parse' };
-                    }
+                  // The quote begins a [0], look for closing quote.
+                  let lastQuote = this.searchUnescapedChar(source, firstQuote+1, '"');
+                  if (lastQuote > -1) {
+                    // We have a quoted string
+                    allWords.push( source.substr(0, lastQuote+1) );
+                    allWords = allWords.concat(this.getWords(source.substr(lastQuote+1)));
+                  }
+                  else {
+                    // We found an opening quote, but no closing quote, this is an error.
+                    throw {name : 'ParseError', message : 'Open quote detected, cannot continue to parse'};
+                  }
                 }
-            }
-            else {
+              }
+              else {
                 // We found no space and no quote
-                allWords.push(source);
-            }
-            return allWords;
-        };
+                allWords.push( source );
+              }
+        
+              return allWords;
+            } */
         // Find and return a double-quoted string from source.
         // Return empty string, if not found.
         MacroProcessor.prototype.getQuotedString = function (source, quoteChar) {
@@ -291,14 +291,14 @@ var TMP;
                     body = body.substr(mTrigger.length + 2);
                     // trim the quotes off on both sides.
                     mTrigger = mTrigger.substr(1, mTrigger.length - 2);
-                    console.log('TMP ' + firstWord + ': found trigger:\'' + mTrigger + '\'.');
+                    //console.log('TMP '+firstWord+': found trigger:\''+mTrigger+'\'.');          
                 }
             }
             var eqSign = body.indexOf("=");
             if (eqSign > 0) {
                 var mName = body.substring(0, eqSign).trim();
                 var mBody = body.substring(eqSign + 1).trim();
-                if (mName.length > 0 && mBody.length > 0) {
+                if (mName.length > 0) {
                     if (this.customMacros[mName] != null && this.customMacros[mName].body !== mBody) {
                         userMessage = '% ' + firstWord + ': redefined macro ' + mName + '\n';
                     }
@@ -307,13 +307,10 @@ var TMP;
                     macro.trigger = new TriggerProps;
                     macro.trigger.pattern = mTrigger;
                     this.customMacros[mName] = macro;
-                    this.SaveSettings();
-                }
-                else if (mName.length == 0) {
-                    userMessage = '% ' + firstWord + ': &lt;name&gt; must not be empty\n';
+                    this.saveSettings();
                 }
                 else {
-                    userMessage = '% ' + firstWord + ': &lt;body&gt; must not be empty\n';
+                    userMessage = '% ' + firstWord + ': &lt;name&gt; must not be empty\n';
                 }
             }
             else if (eqSign == 0) {
@@ -337,7 +334,7 @@ var TMP;
                     }
                     else {
                         delete this.customMacros[cmdWords[i]];
-                        this.SaveSettings();
+                        this.saveSettings();
                     }
                 }
             }
@@ -357,7 +354,11 @@ var TMP;
             for (var i = 0; i < sortedKeys.length; i++) {
                 if (!picomatch || picomatch.isMatch(sortedKeys[i], cmdWords.slice(1))) {
                     var macroProps = this.customMacros[sortedKeys[i]];
-                    userMessage += '/def ' + sortedKeys[i] + ' = ' + macroProps.body + '\n';
+                    userMessage += '/def ';
+                    if (macroProps.trigger != null && macroProps.trigger.pattern != null && macroProps.trigger.pattern.length > 0) {
+                        userMessage += '-t"' + macroProps.trigger.pattern + '" ';
+                    }
+                    userMessage += (sortedKeys[i] + ' = ' + macroProps.body + '\n');
                 }
             }
             if (userMessage.length == 0)
@@ -380,7 +381,7 @@ var TMP;
                         return '' + parameters.length + '';
                     }
                     else if (strippedM == '*') {
-                        return '' + parameters.join(' ') + '';
+                        return '' + parameters.slice(1).join(' ') + '';
                     }
                     else {
                         var parsedM = parseInt(strippedM);
@@ -450,7 +451,7 @@ var TMP;
                     userMessage = '% ' + firstWord + ': redefined variable ' + vName + '\n';
                 }
                 this.globalVariables[vName] = vValue;
-                this.SaveSettings();
+                this.saveSettings();
             }
             else if (vName.length == 0 && vValue != null && vValue.length > 0) {
                 userMessage = '% ' + firstWord + ': &lt;name&gt; must not be empty\n';
@@ -481,7 +482,7 @@ var TMP;
                     }
                     else {
                         delete this.globalVariables[cmdWords[i]];
-                        this.SaveSettings();
+                        this.saveSettings();
                     }
                 }
             }
@@ -618,56 +619,46 @@ var TMP;
             var newCmd = '';
             var userMessage = '';
             if (this.customMacros[firstWord] != null) {
-                // recursion check
-                if (this.recursionStack.indexOf(firstWord) < 0) {
-                    // push to recursion stack
-                    this.recursionStack.push(firstWord);
-                    var body = this.customMacros[firstWord].body;
-                    body = this.substituteVariables(body, cmdWords, {}); // substitute variables TODO: LOCAL VARIABLES NOT IMPLEMENTED YET!
-                    var steps = body.split('%;'); // split by '%;' TF separator token
-                    var stepNums = steps.length;
-                    if (stepNums > 42) {
-                        userMessage = '% ' + firstWord + ': command list truncated to 42 for some reason, sorry\n';
-                        stepNums = 42;
-                    }
-                    for (var i = 0; i < stepNums; i++) {
-                        // Macro calls macro?
-                        if (steps[i].length > 0 && steps[i].charAt(0) == MacroProcessor.MACRO_KEY) {
-                            // resolve the nested macro
-                            var result = this.resolveSingle(steps[i]);
-                            if (result[0] === true)
-                                doSend = true;
-                            newCmd += result[1];
-                            userMessage += result[2];
-                        }
-                        else {
-                            // otherwise just append to list of new cmd
-                            newCmd += (steps[i] + '\n');
-                        }
-                    }
-                    doSend = true;
-                    // pop from recursion stack
-                    this.recursionStack.pop();
+                var body = this.customMacros[firstWord].body;
+                body = this.substituteVariables(body, cmdWords, {}); // substitute variables TODO: LOCAL VARIABLES NOT IMPLEMENTED YET!
+                var steps = body.split('%;'); // split by '%;' TF separator token
+                var stepNums = steps.length;
+                if (stepNums > 42) {
+                    userMessage = '% ' + firstWord + ': command list truncated to 42 for some reason, sorry\n';
+                    stepNums = 42;
                 }
-                else {
-                    userMessage = '% ' + firstWord + ': macro self recursion detected, stack: ' + this.recursionStack.toString() + '\n';
+                for (var i = 0; i < stepNums; i++) {
+                    // Macro calls macro?
+                    if (steps[i].length > 0 && steps[i].charAt(0) == MacroProcessor.MACRO_KEY) {
+                        // resolve the nested macro
+                        var result = this.resolveSingle(steps[i]);
+                        if (result[0] === true)
+                            doSend = true;
+                        newCmd += result[1];
+                        userMessage += result[2];
+                    }
+                    else {
+                        // otherwise just append to list of new cmd
+                        newCmd += (steps[i] + '\n');
+                    }
                 }
+                doSend = true;
             }
             else {
                 userMessage = '% ' + firstWord + ': no such command or macro\n';
             }
             return [doSend, newCmd, userMessage];
         };
-        // Resolves a single user command (single line or just a command).
-        // Returns 3-tuple: [doSend, new command, user message]
-        MacroProcessor.prototype.resolveSingle = function (cmd) {
+        MacroProcessor.prototype.expandMacro = function (cmd) {
             var result;
-            if (cmd && cmd.length > 0 && cmd.charAt(0) == MacroProcessor.MACRO_KEY) {
-                cmd = cmd.substr(1);
-                console.log('MacroProcessor resolve: ' + cmd);
-                var words = this.getWords(cmd);
+            if (cmd.length > 0) {
+                console.log('MacroProcessor expand: ' + cmd);
+                var words = cmd.split(' ');
                 var firstWord = words[0].toLowerCase();
-                if (firstWord.length > 0 && firstWord == cmd.substr(0, firstWord.length).toLowerCase()) {
+                // recursion check
+                if (this.recursionStack.length <= MacroProcessor.MAX_RECUR) {
+                    // push to recursion stack
+                    this.recursionStack.push(firstWord);
                     switch (firstWord) {
                         case 'def':
                             result = this.handleDEF(firstWord, cmd);
@@ -696,15 +687,31 @@ var TMP;
                         default: // custom macro or error
                             result = this.handleDEFAULT(firstWord, words);
                     }
+                    // pop from recursion stack
+                    this.recursionStack.pop();
                 }
                 else {
-                    // The first word was empty, quoted or prefixed with spaces, 
-                    // but was no macro nor command for sure. Bypass.
                     result = [true, cmd + '\n', ''];
+                    result[2] = '% ' + firstWord + ': maximum recursion reached, stack: ' + this.recursionStack.toString() + '\n';
                 }
             }
             else {
-                // No '/' prefix, just bypass.
+                // The first word was empty, quoted or prefixed with spaces, 
+                // but was no macro nor command for sure. Bypass.
+                result = [true, cmd + '\n', ''];
+            }
+            return result;
+        };
+        // Resolves a single user command (single line or just a command).
+        // Returns 3-tuple: [doSend, new command, user message]
+        MacroProcessor.prototype.resolveSingle = function (cmd) {
+            var result;
+            if (cmd != null && cmd.length > 0 && cmd.charAt(0) == MacroProcessor.MACRO_KEY) {
+                // Chop off leading '/' and expand macro.
+                result = this.expandMacro(cmd.substr(1));
+            }
+            else {
+                // No '/' prefix or just a single '/', just bypass.
                 result = [true, cmd + '\n', ''];
             }
             return result;
@@ -736,6 +743,7 @@ var TMP;
         MacroProcessor.MACRO_KEY = '/';
         MacroProcessor.STORAGE_KEY_LIST = 'Macros.List';
         MacroProcessor.STORAGE_KEY_LISTVAR = 'Macros.ListVar';
+        MacroProcessor.MAX_RECUR = 42;
         return MacroProcessor;
     }());
     TMP.MacroProcessor = MacroProcessor;
