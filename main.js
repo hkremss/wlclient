@@ -61,7 +61,6 @@ var app = express();
 app.use('/client', express.static(conf.www));
 
 // Propagate some nodes_modules to a static web uri as well
-app.use('/client/node_modules/socket.io', express.static(__dirname + '/node_modules/socket.io/'));
 app.use('/client/node_modules/ansi_up', express.static(__dirname + '/node_modules/ansi_up/'));
 app.use('/client/node_modules/jquery', express.static(__dirname + '/node_modules/jquery/dist/'));
 app.use('/client/node_modules/jquery-ui', express.static(__dirname + '/node_modules/jquery-ui-dist/'));

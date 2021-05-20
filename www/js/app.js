@@ -17,8 +17,8 @@ requirejs.config({
     // the '.js' file extension.
     'jquery': 'node_modules/jquery/jquery.min',
     'jquery-ui': 'node_modules/jquery-ui/jquery-ui.min',
-    'lightbox2': 'node_modules/lightbox2/js/lightbox',
-    'socket.io': 'node_modules/socket.io/client-dist/socket.io.min',
+    'lightbox2': 'node_modules/lightbox2/js/lightbox.min',
+    'socket.io': 'socket.io/socket.io.min', // socket.io serves it's own client(s)
     'ansi_up': 'node_modules/ansi_up/ansi_up',
     'constants': 'js/picomatch/constants',
     'scan': 'js/picomatch/scan',
