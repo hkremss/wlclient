@@ -8,6 +8,7 @@
     "target": "es5",
     "module": "none",
     "outDir": "www/js/",
+    "outFile": "www/js/macros.js",
     "newLine": "lf"
   },
   "include": [

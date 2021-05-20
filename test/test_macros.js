@@ -7,32 +7,29 @@
 // see https://stackoverflow.com/a/30794280
 var rewire = require('rewire');
 var should = require('should');
-//var anymatch = require('anymatch');
-
-//import rewire from 'rewire';
-//import should from 'should';
-//import anymatch from 'anymatch/index.js';
 
 const mod = rewire('../www/js/macros.js');
-
-//import {TMP} from '../www/js/macros.js';
+//const mod_help = rewire('../www/js/macros_help.js');
 
 // Expose module functions for testing
 var TMP = mod.__get__('TMP');
 var MacroProcessor = mod.__get__('TMP.MacroProcessor');
 var EvaluationContext = mod.__get__('TMP.EvaluationContext');
+var MacroHelp = mod.__get__('TMP.MacroHelp');
 
 //console.log("==========");
-//console.log(TMP);
-//console.log(MacroProcessor);
-//console.log(EvaluationContext);
+//console.log(TMP1);
+//console.log(TMP2);
+console.log(MacroProcessor);
+console.log(EvaluationContext);
+console.log(MacroHelp);
 //console.log("==========");
 
 describe('MacroProcessor', function () {
 
   describe('getVersion', function () {
     it('should return version 0.2 as string', function () {
-      var macros = new TMP.MacroProcessor;
+      var macros = new MacroProcessor;
       var version = macros.getVersion();
       version.should.be.type('string');
       version.should.have.lengthOf(3);
@@ -40,24 +37,24 @@ describe('MacroProcessor', function () {
     });
   });
 
-  describe('SaveSettings', function () {
+  describe('saveSettings', function () {
     it('should be written later');
   });
 
-  describe('ReloadSettings', function () {
+  describe('reloadSettings', function () {
     it('should be written later');
   });
 
-  describe('GetNamedKey', function () {
+  describe('getNamedKey', function () {
     it('should be written later');
   });
 
-  describe('HandleKey', function () {
+  describe('handleKey', function () {
     it('should be written later');
   });
 
 /*   describe('getWords', function () {
-      var macros = new TMP.MacroProcessor;
+      var macros = new MacroProcessor;
     it('should return an 1 empty word, if string consits of spaces only', function() {
       var words = macros.getWords('   ');
       words.should.have.lengthOf(1);
@@ -122,7 +119,7 @@ describe('MacroProcessor', function () {
   });*/
 
 /*   describe('searchUnescapedChar', function () {
-      var macros = new TMP.MacroProcessor;
+      var macros = new MacroProcessor;
     it('should return position of a non-escaped char start index of the input string', function() {
       var 
       pos = macros.searchUnescapedChar('abc', 0, '"');
@@ -149,7 +146,7 @@ describe('MacroProcessor', function () {
   }); */
 
   describe('getQuotedString', function () {
-      var macros = new TMP.MacroProcessor;
+      var macros = new MacroProcessor;
     it('should return a quoted string from index 0 to n of the input string', function() {
       var firstWord = macros.getQuotedString('"reg ex" und so weiter', '"');
       firstWord.should.eql('"reg ex"');
@@ -183,7 +180,7 @@ describe('MacroProcessor', function () {
 
   describe('handleDEF', function () {
     it('should set and store a macro \'a=sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}\' to localStorage key \''+MacroProcessor.STORAGE_KEY_LIST+'\'', function() {
-      var macros = new TMP.MacroProcessor;
+      var macros = new MacroProcessor;
       var lsMock = {
         setItem: function (key, jsonString) {
           if (key == MacroProcessor.STORAGE_KEY_LIST) {
@@ -205,7 +202,7 @@ describe('MacroProcessor', function () {
       handle[2].should.have.lengthOf(0); // success
     });
     it('should not allow a macro with empty name', function() {
-      var macros = new TMP.MacroProcessor;
+      var macros = new MacroProcessor;
       var lsMock = {
         setItem: function (key, jsonString) {
           if (key == MacroProcessor.STORAGE_KEY_LIST) {
@@ -225,7 +222,7 @@ describe('MacroProcessor', function () {
       handle[2].should.not.have.lengthOf(0); // error message!
     });
     it('should allow a macro with empty body', function() {
-      var macros = new TMP.MacroProcessor;
+      var macros = new MacroProcessor;
       var lsMock = {
         setItem: function (key, jsonString) {
           if (key == MacroProcessor.STORAGE_KEY_LIST) {
@@ -246,7 +243,7 @@ describe('MacroProcessor', function () {
       handle[2].should.have.lengthOf(0); // success
     });
     it('should create a macro with trigger option', function() {
-      var macros = new TMP.MacroProcessor;
+      var macros = new MacroProcessor;
       var lsMock = {
         setItem: function (key, jsonString) {
           if (key == MacroProcessor.STORAGE_KEY_LIST) {
@@ -275,7 +272,7 @@ describe('MacroProcessor', function () {
 
   describe('handleLIST', function () {
     it('should return a list of macros', function() {
-      var macros = new TMP.MacroProcessor;
+      var macros = new MacroProcessor;
       //macros.handleDEF('def', 'def a=b');
       var handle = macros.expandMacro('list *');
       // [doSend, newCmd, userMessage]
@@ -292,8 +289,8 @@ describe('MacroProcessor', function () {
 
   describe('substituteVariables', function () {
     it('should substitute numbered parameters', function() {
-      var macros = new TMP.MacroProcessor;
-      let context = new TMP.EvaluationContext;
+      var macros = new MacroProcessor;
+      let context = new EvaluationContext;
         context.cmd = 'a b x\'c\\\' d\'';
         context.parameters = context.cmd.split(' ');
         context.localVariables = {};
@@ -302,15 +299,15 @@ describe('MacroProcessor', function () {
       handle.should.eql('sag a, einzeln: 1:b 2:x\'c\\\'\ 3:d\' 4:, alle: b x\'c\\\'\ d\'');
     });
     it('should substitute local variables', function() {
-      var macros = new TMP.MacroProcessor;
+      var macros = new MacroProcessor;
       macros.globalVariables = { 'borg':'1', 'matching':'glob', 'foo':'bar' };
       let stack = [];
-      let context1 = new TMP.EvaluationContext;
+      let context1 = new EvaluationContext;
       context1.cmd = 'a b x\'c\\\' d\'';
       context1.parameters = context1.cmd.split(' ');
       context1.localVariables = {'loc1':'val1 original','loc2':'val2 original','loc3':'val3','foo':'shadowing global variable'};
       stack.push(context1);
-      let context2 = new TMP.EvaluationContext;
+      let context2 = new EvaluationContext;
       context2.cmd = 'a b x\'c\\\' d\'';
       context2.parameters = context2.cmd.split(' ');
       context2.localVariables = {'loc2':'val2 shadow','foo':'shadowing global variable'};
@@ -320,7 +317,7 @@ describe('MacroProcessor', function () {
       handle.should.eql('loc1: val1 original, loc2: val2 shadow, matching: glob, foo: shadowing global variable');
     });
     it('should substitute global variables', function() {
-      var macros = new TMP.MacroProcessor;
+      var macros = new MacroProcessor;
       macros.globalVariables = { 'borg':'1', 'matching':'glob', 'foo':'bar', 'recursiv':'-%{recursiv}' };
       var handle = macros.substituteVariables('borg: %{borg} matching: %{matching} foo: %{foo} recursiv: %{recursiv}', []);
       handle.should.be.type('string');
@@ -329,7 +326,7 @@ describe('MacroProcessor', function () {
   });
 
   describe('handleSET', function () {
-    var macros = new TMP.MacroProcessor;
+    var macros = new MacroProcessor;
     it('should set and store a global variable \'a=42\' to localStorage key \''+MacroProcessor.STORAGE_KEY_LISTVAR+'\'', function() {
       var lsMock = {
         setItem: function (key, jsonString) {
@@ -577,7 +574,7 @@ describe('MacroProcessor', function () {
   });
 
   describe('handleLISTVAR', function () {
-    var macros = new TMP.MacroProcessor;
+    var macros = new MacroProcessor;
     it('should return a list of all special global variables', function() {
       var handle = macros.expandMacro('listvar', []);
       // [doSend, newCmd, userMessage]
@@ -606,12 +603,12 @@ describe('MacroProcessor', function () {
 
   describe('handleLET', function () {
     it('should set a local variable in it\'s parent context of the stack', function() {
-      var macros = new TMP.MacroProcessor;
-      let context1 = new TMP.EvaluationContext;
+      var macros = new MacroProcessor;
+      let context1 = new EvaluationContext;
       context1.cmd = 'egal1';
       context1.parameters = context1.cmd.split(' ');
       context1.localVariables = {};
-      let context2 = new TMP.EvaluationContext;
+      let context2 = new EvaluationContext;
       context2.cmd = 'egal2';
       context2.parameters = context2.cmd.split(' ');
       context2.localVariables = {};
@@ -629,14 +626,94 @@ describe('MacroProcessor', function () {
       stack[1].localVariables['a'].should.be.type('string');
       stack[1].localVariables['a'].should.eql('b');
     });
+    it('should return an error message, if name is missing', function() {
+      var macros = new MacroProcessor;
+      var handle = macros.expandMacro('let ', []);
+
+      handle.should.have.lengthOf(3);
+      handle.should.be.type('object');
+      handle[2].should.eql('% let: &lt;name&gt; must not be empty\n');
+    });
+    it('should return an error message, if value is missing', function() {
+      var macros = new MacroProcessor;
+      var handle = macros.expandMacro('let a ', []);
+
+      handle.should.have.lengthOf(3);
+      handle.should.be.type('object');
+      handle[2].should.eql('% let: &lt;value&gt; must not be empty\n');
+    });
   });
 
   describe('handleHELP', function () {
-    it('should be written later');
+    it('should return a help page for /help', function() {
+      var macros = new MacroProcessor;
+      var handle = macros.expandMacro('help', []);
+
+      handle.should.have.lengthOf(3);
+      handle.should.be.type('object');
+      handle[2].should.be.type('string');
+      handle[2].should.not.have.lengthOf(0);
+    });
+    it('should return a help page for /help def', function() {
+      var macros = new MacroProcessor;
+      var handle = macros.expandMacro('help def', []);
+
+      handle.should.have.lengthOf(3);
+      handle.should.be.type('object');
+      handle[2].should.startWith('\nHelp on: /def');
+    });
+    it('should return a help page for /help undef', function() {
+      var macros = new MacroProcessor;
+      var handle = macros.expandMacro('help undef', []);
+
+      handle.should.have.lengthOf(3);
+      handle.should.be.type('object');
+      handle[2].should.startWith('\nHelp on: /undef');
+    });
+    it('should return a help page for /help list', function() {
+      var macros = new MacroProcessor;
+      var handle = macros.expandMacro('help list', []);
+
+      handle.should.have.lengthOf(3);
+      handle.should.be.type('object');
+      handle[2].should.startWith('\nHelp on: /list');
+    });
+    it('should return a help page for /help set', function() {
+      var macros = new MacroProcessor;
+      var handle = macros.expandMacro('help set', []);
+
+      handle.should.have.lengthOf(3);
+      handle.should.be.type('object');
+      handle[2].should.startWith('\nHelp on: /set');
+    });
+    it('should return a help page for /help unset', function() {
+      var macros = new MacroProcessor;
+      var handle = macros.expandMacro('help unset', []);
+
+      handle.should.have.lengthOf(3);
+      handle.should.be.type('object');
+      handle[2].should.startWith('\nHelp on: /unset');
+    });
+    it('should return a help page for /help listvar', function() {
+      var macros = new MacroProcessor;
+      var handle = macros.expandMacro('help listvar', []);
+
+      handle.should.have.lengthOf(3);
+      handle.should.be.type('object');
+      handle[2].should.startWith('\nHelp on: /listvar');
+    });
+    it('should return a help page for /help let', function() {
+      var macros = new MacroProcessor;
+      var handle = macros.expandMacro('help let', []);
+
+      handle.should.have.lengthOf(3);
+      handle.should.be.type('object');
+      handle[2].should.startWith('\nHelp on: /let');
+    });
   });
 
   describe('handleDEFAULT', function () {
-    var macros = new TMP.MacroProcessor;
+    var macros = new MacroProcessor;
     it('should evaluate a macro \'a=sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}', function() {
       var lsMock = {
         setItem: function (key, jsonString) {

@@ -645,8 +645,11 @@ namespace TMP {
       if (vName.length > 0 && vValue != null) {
         parentContext.localVariables[vName] = vValue;
       }
-      else {
+      else if (vName.length == 0) {
         userMessage = '% '+firstWord+': &lt;name&gt; must not be empty\n';
+      }
+      else {
+        userMessage = '% '+firstWord+': &lt;value&gt; must not be empty\n';
       }
 
       return [doSend, newCmd, userMessage];
@@ -661,91 +664,9 @@ namespace TMP {
       let userMessage : string = '';
 
       let topContext = stack[stack.length-1];
-      let topic = topContext.parameters[1].toLowerCase();
-      if (topic === 'def' || topic  === '/def') {
-        userMessage = 
-          '\n'+
-          'Help on: /def\n'+
-          '\n'+
-          'Usage: /def &lt;name&gt; = &lt;body&gt;\n'+
-          '\n'+
-          'Defines a named macro. No options provided. The &lt;name&gt; can be anything, but must not '+
-          'contain whitespaces. The &lt;body&gt; is the text to be executed as a user command. Multiple '+
-          'commands can be separated by token \'%;\'. For example, if you define a macro like:\n'+
-          '\n'+
-          '  /def time_warp = :jumps to the left!%;:steps to the right!\n'+
-          '\n'+
-          'and call it by typing\n'+
-          '\n'+
-          '  /time_warp\n'+
-          '\n'+
-          'you will execute the commands\n'+
-          '\n'+
-          ':jumps to the left!\n'+
-          ':steps to the right!\n'+
-          '\n'+
-          'You can execute a macro by typing \'/\' followed by the name of the macro. Macros can call '+
-          'other macros, but self recursion will be treated as error. You can define as much macros as '+
-          'you want, but the number of executed steps is arbitrary limited. Sorry.\n';
-      }
-      else if (topic === 'undef' || topic  === '/undef') {
-        userMessage = 
-          '\n'+
-          'Help on: /undef\n'+
-          '\n'+
-          'Usage: /undef &lt;name&gt;\n'+
-          '\n'+
-          'Undefines a named macro. No options provided. It is the counterpart to /def. I have no '+
-          'idea, why you would ever need it, but it exists. For you.\n';
-      }
-      else if (topic === 'list' || topic  === '/list') {
-        userMessage = 
-          '\n'+
-          'Help on: /list\n'+
-          '\n'+
-          'Usage: /list [pattern]\n'+
-          '\n'+
-          'Lists all currently defined macros, sorted alphabetically. If [pattern] is provided, only '+
-          'macros with a matching name are listed. \n';
-      }
-      else if (topic === 'set' || topic  === '/set') {
-        userMessage = 
-          '\n'+
-          'TODO: Handle /SET command - set the value of a global variable\n';
-      }
-      else if (topic === 'unset' || topic  === '/unset') {
-        '\n'+
-        'TODO: Handle /UNSET command - unset one or more variable(s)\n';
-      }
-      else if (topic === 'listvar' || topic  === '/listvar') {
-        '\n'+
-        'TODO: Handle /LISTVAR command - list values of variables\n';
-      }      
-      else if (topic === 'let' || topic  === '/let') {
-        '\n'+
-        'TODO: Handle /LET command - set the value of a local variable\n';
-      }
-      else {
-        userMessage = 
-          '\n'+
-          'Tiny Macro Processor V' + MacroProcessor.VERSION + '\n'+
-          '~~~~~~~~~~~~~~~~~~~~~~~~~~\n'+
-          'The macro processor is an optional and experimental component of the Wunderland '+
-          'web-client and provides tools to define and excute macros. These macros '+
-          'may define scripts to do complex or repetetive tasks. One typical use case is '+
-          'the definition of long routes to walk through the MUD. The number of commands per '+
-          'macro is limited. Any feature may change anytime and the whole processor may '+
-          'disappear completely in the future, without further notice.\n'+
-          '\n'+
-          'Commands:\n'+
-          ' /def   - define a named macro\n'+
-          ' /undef - undefine a named macro\n'+
-          ' /list  - display a list of macros\n'+
-          ' /help &lt;command&gt; - help for any command (without \'/\')\n'+
-          '\n'+
-          'The macros are stored in your browsers localStorage only and not saved permanently, '+
-          'yet! So try copy&paste of /list for now!\n';
-      }
+      let topic = topContext.parameters.length > 1 ? topContext.parameters[1].toLowerCase() : '';
+
+      userMessage = new MacroHelp(topic).getHelp();
 
       return [doSend, newCmd, userMessage];
     }
