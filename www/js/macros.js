@@ -873,11 +873,11 @@ var TMP;
                         'variables have default values and usually can only be set to predefined values.\n' +
                         'NOTE: Special global variables may be reserved in the future for special purpose settings.\n' +
                         'Export your client settings to save your custom macros and variables permanently!\n\n' +
-                        'See: /listvar, /set, /unset, /let, subsitution\n';
+                        'See: /listvar, /set, /unset, /let, substitution\n';
                     break;
-                case 'subsitution':
+                case 'substitution':
                     return '\n' +
-                        'Help on: subsitution\n' +
+                        'Help on: substitution\n' +
                         '\n' +
                         'Macros may use global or local variables or parameters for substitute portions of the macro ' +
                         'body. The substitution pattern has always the form (brackets are not optional!):\n\n' +
