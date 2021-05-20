@@ -18,7 +18,7 @@ requirejs.config({
     'jquery': 'node_modules/jquery/jquery.min',
     'jquery-ui': 'node_modules/jquery-ui/jquery-ui.min',
     'lightbox2': 'node_modules/lightbox2/js/lightbox',
-    'socket.io': 'node_modules/socket.io/client-dist/socket.io',
+    'socket.io': 'node_modules/socket.io/client-dist/socket.io.min',
     'ansi_up': 'node_modules/ansi_up/ansi_up',
     'constants': 'js/picomatch/constants',
     'scan': 'js/picomatch/scan',
