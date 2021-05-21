@@ -239,22 +239,8 @@ function doTelnetNegotions(sock, buf) {
   return strippedBuf;
 }
 
-// Remove all backspaces and chars 'in front', called recursively.
-// Will destroy ANSI-Codes in front, if there are more '\b' than real
-// chars. But this is something, which cannot be avoided effectively.
-// We must trust the responsibility of the creators.
-function handleBackspace(str) {
-  var bs = str.indexOf('\b');
-  if (bs>=0) {
-    var newstr = str.substr(0, (bs-1)) + str.substr(bs+1);
-    return handleBackspace(newstr);
-  }
-  return str;
-}
-
 // Do ANSI conversion, before writing to screen.
 function writeServerData(buf) {
-  buf=handleBackspace(buf);
   var line = ansi_up.ansi_to_html(buf);
   writeToScreen(line);
 }
@@ -506,11 +492,11 @@ function startClientFunction() {
   {
     if (!pwMode) {
       // If macro processor handles the key, don't continue.
-      var result = macros.handleKey(event);
-      var doSend = result[0];
-      var msg = result[2];
+      var result = macros.keyTrigger(event);
+      var doSend = result.send;
+      var msg = result.message;
       if (doSend) {
-        var cmd = result[1];
+        var cmd = result.cmd;
         // Append a LF, if the last character is not a LF yet.
         if (cmd.length == 0 || cmd.charAt(cmd.length-1) != '\n') cmd += '\n';
         send(cmd, pwMode);
@@ -587,14 +573,54 @@ function startClientFunction() {
     }
   });
 
+  // Remove all backspaces and chars 'in front', called recursively.
+  // Will destroy ANSI-Codes in front, if there are more '\b' than real
+  // chars. But this is something, which cannot be avoided effectively.
+  // We must trust the responsibility of the creators.
+  function handleBackspace(str) {
+    var bs = str.indexOf('\b');
+    if (bs>=0) {
+      var newstr = str.substr(0, (bs-1)) + str.substr(bs+1);
+      return handleBackspace(newstr);
+    }
+    return str;
+  }
+
+  // Strip all ansi codes from string.
+  const ansiRegex = require('ansi-regex');
+  function stripAnsi(str) {
+    return str.replace(ansiRegex(), '');
+  }
+
   // websocket
   // use page location and truncate off tailing /index.html
   var baseUri = location.pathname.substring(0, location.pathname.lastIndexOf("/"))
   var sock = io.connect('', {path:baseUri+'/socket.io'});
-  sock.on('stream', function(buf){
-    buf = doTelnetNegotions(sock, buf);
+
+  // We received something!
+  sock.on('stream', function(buf) {
+    // telnet negs first (telnet!)
+    buf = doTelnetNegotions(sock, buf); 
+
+    // treat backspace (might be evil)
+    buf = handleBackspace(buf);
+
+    // write into UI (after ansi2html)
     writeServerData(buf);
+
+    // finally strip ansi and feed triggers
+    var result = macros.textTrigger(stripAnsi(buf));
+    var doSend = result.send;
+    var msg = result.message;
+    if (doSend) {
+      var cmd = result.cmd;
+      // Append a LF, if the last character is not a LF yet.
+      if (cmd.length == 0 || cmd.charAt(cmd.length-1) != '\n') cmd += '\n';
+      send(cmd, pwMode);
+    }
+    if (msg.length > 0) writeToScreen(msg);
   });
+
   sock.on('connected', function(){
     writeToScreen('Verbindung zum Wunderland hergestellt.\n');
     connected();
@@ -647,10 +673,10 @@ function startClientFunction() {
 
     // Macro handling
     if (!pwMode) {
-      var resolvedMacro = macros.resolve(cmd);
-      doSend = resolvedMacro[0];
-      cmd = resolvedMacro[1];
-      var msg = resolvedMacro[2];
+      var result = macros.resolve(cmd);
+      doSend = result.send;
+      cmd = result.cmd;
+      var msg = result.message;
       if (msg.length > 0) writeToScreen(msg);
     }
 

@@ -25,13 +25,15 @@ requirejs.config({
     'parse': 'js/picomatch/parse',
     'utils': 'js/picomatch/utils',
     'picomatch': 'js/picomatch/picomatch',
+    'ansi-regex': 'js/ansi-regex/index',
   }
 });
 
 /* Load dependencies and start client. */
 require([
-  'jquery', 'jquery-ui', 'lightbox2', 'socket.io', 'ansi_up', 
+  'jquery', 'jquery-ui', 'lightbox2', 'socket.io', 'ansi_up',
   'constants','scan','parse','utils','picomatch',
+  'ansi-regex',
   'js/dropdown','js/macros','js/gmcp_client','js/client'], function() {
     //This function is called when scripts are loaded.
     console.log('DONE!');

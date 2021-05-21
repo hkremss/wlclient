@@ -14,14 +14,17 @@ const mod = rewire('../www/js/macros.js');
 // Expose module functions for testing
 var TMP = mod.__get__('TMP');
 var MacroProcessor = mod.__get__('TMP.MacroProcessor');
+var Stack = mod.__get__('TMP.Stack');
 var EvaluationContext = mod.__get__('TMP.EvaluationContext');
+var EvalResult = mod.__get__('TMP.EvalResult');
 var MacroHelp = mod.__get__('TMP.MacroHelp');
 
 //console.log("==========");
-//console.log(TMP1);
-//console.log(TMP2);
+//console.log(TMP);
 console.log(MacroProcessor);
+console.log(Stack);
 console.log(EvaluationContext);
+console.log(EvalResult);
 console.log(MacroHelp);
 //console.log("==========");
 
@@ -49,7 +52,11 @@ describe('MacroProcessor', function () {
     it('should be written later');
   });
 
-  describe('handleKey', function () {
+  describe('keyTrigger', function () {
+    it('should be written later');
+  });
+
+  describe('textTrigger', function () {
     it('should be written later');
   });
 
@@ -193,13 +200,12 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-
-      var handle = macros.expandMacro('def a = sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}', []);
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('def a = sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(0); // success
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(0); // success
     });
     it('should not allow a macro with empty name', function() {
       var macros = new MacroProcessor;
@@ -214,12 +220,12 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro('def  = some body', []);
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('def  = some body')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.not.have.lengthOf(0); // error message!
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.not.have.lengthOf(0); // error message!
     });
     it('should allow a macro with empty body', function() {
       var macros = new MacroProcessor;
@@ -235,12 +241,12 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro('def a = ');
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('def a = ')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(0); // success
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(0); // success
     });
     it('should create a macro with trigger option', function() {
       var macros = new MacroProcessor;
@@ -257,12 +263,12 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro('def -t"{*} kommt an." greet = winke %{1}');
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('def -t"{*} kommt an." greet = winke %{1}')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(0); // success
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(0); // success
     });
   });
 
@@ -274,12 +280,12 @@ describe('MacroProcessor', function () {
     it('should return a list of macros', function() {
       var macros = new MacroProcessor;
       //macros.handleDEF('def', 'def a=b');
-      var handle = macros.expandMacro('list *');
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('list *')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(25); // '% list: no macros found.\n'
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(25); // '% list: no macros found.\n'
     });
   });
 
@@ -294,14 +300,14 @@ describe('MacroProcessor', function () {
         context.cmd = 'a b x\'c\\\' d\'';
         context.parameters = context.cmd.split(' ');
         context.localVariables = {};
-        var handle = macros.substituteVariables('sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}', [context]);
+        var handle = macros.substituteVariables('sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}', new Stack(context));
       handle.should.be.type('string');
       handle.should.eql('sag a, einzeln: 1:b 2:x\'c\\\'\ 3:d\' 4:, alle: b x\'c\\\'\ d\'');
     });
     it('should substitute local variables', function() {
       var macros = new MacroProcessor;
       macros.globalVariables = { 'borg':'1', 'matching':'glob', 'foo':'bar' };
-      let stack = [];
+      let stack = new Stack(null);
       let context1 = new EvaluationContext;
       context1.cmd = 'a b x\'c\\\' d\'';
       context1.parameters = context1.cmd.split(' ');
@@ -319,7 +325,7 @@ describe('MacroProcessor', function () {
     it('should substitute global variables', function() {
       var macros = new MacroProcessor;
       macros.globalVariables = { 'borg':'1', 'matching':'glob', 'foo':'bar', 'recursiv':'-%{recursiv}' };
-      var handle = macros.substituteVariables('borg: %{borg} matching: %{matching} foo: %{foo} recursiv: %{recursiv}', []);
+      var handle = macros.substituteVariables('borg: %{borg} matching: %{matching} foo: %{foo} recursiv: %{recursiv}', new Stack(null));
       handle.should.be.type('string');
       handle.should.eql('borg: 1 matching: glob foo: bar recursiv: ---------------------------------------%{recursiv}'); // limited recursion!
     });
@@ -340,12 +346,12 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro('set a=42');
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('set a=42')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(0); // success
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(0); // success
     });
     it('should redefine global variable \'a=   43\' with leading spaces', function() {
       var lsMock = {
@@ -360,12 +366,12 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro('set a=   43');
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('set a=   43')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(28); // '% set: Redefined variable a\n'
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(28); // '% set: Redefined variable a\n'
     });
     it('should output global variable \'a \', because argument is missing', function() {
       var lsMock = {
@@ -380,12 +386,12 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro('set a ');
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('set a ')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(10); // '% a=   43\n'
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(10); // '% a=   43\n'
     });
     it('should set global variable \'a=\' to an empty value', function() {
       var lsMock = {
@@ -400,12 +406,12 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro('set a=');
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('set a=')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(28); // '% set: redefined variable a\n'
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(28); // '% set: redefined variable a\n'
     });
     it('should set global variable \'a 53 b %{1}\', alternative syntax', function() {
       var lsMock = {
@@ -420,12 +426,12 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro('set a 53 b %{1}');
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('set a 53 b %{1}')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(28); // '% set: redefined variable a\n'
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(28); // '% set: redefined variable a\n'
     });
     it('should set global variable \'a       56 c %{1}\', alternative syntax without leading spaces', function() {
       var lsMock = {
@@ -440,12 +446,12 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro('set a       56 c %{1}');
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('set a       56 c %{1}')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(28); // '% set: redefined variable a\n'
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(28); // '% set: redefined variable a\n'
     });
     it('should set special global variable \'borg=0\' to 0 ', function() {
       var lsMock = {
@@ -460,12 +466,12 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro('set borg=0');
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('set borg=0')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(31); // '% set: redefined variable borg\n'
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(31); // '% set: redefined variable borg\n'
     });
     it('should set special global variable \'borg=egal+irgendwas\' to 1 ', function() {
       var lsMock = {
@@ -480,12 +486,12 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro('set borg=egal+irgendwas');
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('set borg=egal+irgendwas')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(31); // '% set: redefined variable borg\n'
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(31); // '% set: redefined variable borg\n'
     });
     it('should set special global variable \'matching=regexp\' to \'regexp\' ', function() {
       var lsMock = {
@@ -500,12 +506,12 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro('set matching=regexp');
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('set matching=regexp')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(35); // '% set: redefined variable matching\n'
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(35); // '% set: redefined variable matching\n'
     });
     it('should set special global variable \'matching=glob\' to \'glob\' ', function() {
       var lsMock = {
@@ -520,12 +526,12 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro('set matching=glob');
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('set matching=glob')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(35); // '% set: redefined variable matching\n'
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(35); // '% set: redefined variable matching\n'
     });
     it('should set special global variable \'matching=simple\' to \'simple\' ', function() {
       var lsMock = {
@@ -540,12 +546,12 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro('set matching=simple');
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('set matching=simple')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(35); // '% set: redefined variable matching\n'
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(35); // '% set: redefined variable matching\n'
     });
     it('should set special global variable \'matching=nonsense\' to \'glob\' (default)', function() {
       var lsMock = {
@@ -560,12 +566,12 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro('set matching=nonsense', []);
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('set matching=nonsense')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(35); // '% set: redefined variable matching\n'
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(35); // '% set: redefined variable matching\n'
     });
   });
 
@@ -576,139 +582,127 @@ describe('MacroProcessor', function () {
   describe('handleLISTVAR', function () {
     var macros = new MacroProcessor;
     it('should return a list of all special global variables', function() {
-      var handle = macros.expandMacro('listvar', []);
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('listvar')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(31); // '/set borg=1\n/set matching=glob\n'
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(31); // '/set borg=1\n/set matching=glob\n'
     });
     it('should return the special global variable \'borg\'', function() {
-      var handle = macros.expandMacro('listvar *org', []);
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('listvar *org')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(12); // '/set borg=1\n'
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(12); // '/set borg=1\n'
     });
     it('should return the special global variables \'borg\' and \'matching\'', function() {
-      var handle = macros.expandMacro('listvar *g', []);
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('listvar *g')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(31); // '/set borg=1\n/set matching=glob\n'
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(31); // '/set borg=1\n/set matching=glob\n'
     });
   });
 
   describe('handleLET', function () {
-    it('should set a local variable in it\'s parent context of the stack', function() {
+    it('should set a local variable in the current context of the stack', function() {
       var macros = new MacroProcessor;
-      let context1 = new EvaluationContext;
-      context1.cmd = 'egal1';
-      context1.parameters = context1.cmd.split(' ');
-      context1.localVariables = {};
-      let context2 = new EvaluationContext;
-      context2.cmd = 'egal2';
-      context2.parameters = context2.cmd.split(' ');
-      context2.localVariables = {};
-      let stack = [];
-      stack.push(context1);
-      stack.push(context2);
+      let stack = new Stack(new EvaluationContext('let a=b'))
 
-      var handle = macros.expandMacro('let a=b', stack);
+      var handle = macros.expandMacro(stack);
 
-      stack.should.have.lengthOf(2);
-      stack[0].localVariables.should.be.type('object');
-      Object.keys(stack[0].localVariables).should.have.lengthOf(0);
-      stack[1].localVariables.should.be.type('object');
-      Object.keys(stack[1].localVariables).should.have.lengthOf(1);
-      stack[1].localVariables['a'].should.be.type('string');
-      stack[1].localVariables['a'].should.eql('b');
+      let cc = stack.getCContext();
+      cc.localVariables.should.be.type('object');
+      Object.keys(cc.localVariables).should.have.lengthOf(1);
+      cc.localVariables['a'].should.be.type('string');
+      cc.localVariables['a'].should.eql('b');
     });
     it('should return an error message, if name is missing', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro('let ', []);
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('let ')));
 
-      handle.should.have.lengthOf(3);
-      handle.should.be.type('object');
-      handle[2].should.eql('% let: &lt;name&gt; must not be empty\n');
+      //handle.should.have.lengthOf(3);
+      //handle.should.be.type('object');
+      handle.message.should.eql('% let: &lt;name&gt; must not be empty\n');
     });
     it('should return an error message, if value is missing', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro('let a ', []);
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('let a ')));
 
-      handle.should.have.lengthOf(3);
-      handle.should.be.type('object');
-      handle[2].should.eql('% let: &lt;value&gt; must not be empty\n');
+      //handle.should.have.lengthOf(3);
+      //handle.should.be.type('object');
+      handle.message.should.eql('% let: &lt;value&gt; must not be empty\n');
     });
   });
 
   describe('handleHELP', function () {
     it('should return a help page for /help', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro('help', []);
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('help')));
 
-      handle.should.have.lengthOf(3);
-      handle.should.be.type('object');
-      handle[2].should.be.type('string');
-      handle[2].should.not.have.lengthOf(0);
+      //handle.should.have.lengthOf(3);
+      //handle.should.be.type('object');
+      handle.message.should.be.type('string');
+      handle.message.should.not.have.lengthOf(0);
     });
     it('should return a help page for /help def', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro('help def', []);
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('help def')));
 
-      handle.should.have.lengthOf(3);
-      handle.should.be.type('object');
-      handle[2].should.startWith('\nHelp on: /def');
+      //handle.should.have.lengthOf(3);
+      //handle.should.be.type('object');
+      handle.message.should.startWith('\nHelp on: /def');
     });
     it('should return a help page for /help undef', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro('help undef', []);
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('help undef')));
 
-      handle.should.have.lengthOf(3);
-      handle.should.be.type('object');
-      handle[2].should.startWith('\nHelp on: /undef');
+      //handle.should.have.lengthOf(3);
+      //handle.should.be.type('object');
+      handle.message.should.startWith('\nHelp on: /undef');
     });
     it('should return a help page for /help list', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro('help list', []);
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('help list')));
 
-      handle.should.have.lengthOf(3);
-      handle.should.be.type('object');
-      handle[2].should.startWith('\nHelp on: /list');
+      //handle.should.have.lengthOf(3);
+      //handle.should.be.type('object');
+      handle.message.should.startWith('\nHelp on: /list');
     });
     it('should return a help page for /help set', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro('help set', []);
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('help set')));
 
-      handle.should.have.lengthOf(3);
-      handle.should.be.type('object');
-      handle[2].should.startWith('\nHelp on: /set');
+      //handle.should.have.lengthOf(3);
+      //handle.should.be.type('object');
+      handle.message.should.startWith('\nHelp on: /set');
     });
     it('should return a help page for /help unset', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro('help unset', []);
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('help unset')));
 
-      handle.should.have.lengthOf(3);
-      handle.should.be.type('object');
-      handle[2].should.startWith('\nHelp on: /unset');
+      //handle.should.have.lengthOf(3);
+      //handle.should.be.type('object');
+      handle.message.should.startWith('\nHelp on: /unset');
     });
     it('should return a help page for /help listvar', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro('help listvar', []);
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('help listvar')));
 
-      handle.should.have.lengthOf(3);
-      handle.should.be.type('object');
-      handle[2].should.startWith('\nHelp on: /listvar');
+      //handle.should.have.lengthOf(3);
+      //handle.should.be.type('object');
+      handle.message.should.startWith('\nHelp on: /listvar');
     });
     it('should return a help page for /help let', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro('help let', []);
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('help let')));
 
-      handle.should.have.lengthOf(3);
-      handle.should.be.type('object');
-      handle[2].should.startWith('\nHelp on: /let');
+      //handle.should.have.lengthOf(3);
+      //handle.should.be.type('object');
+      handle.message.should.startWith('\nHelp on: /let');
     });
   });
 
@@ -727,15 +721,15 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      macros.expandMacro('def a = sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}');
-      var handle = macros.expandMacro('a b x\'c\\\'\\ d\'');
+      macros.expandMacro(new Stack(new EvaluationContext('def a = sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('a b x\'c\\\'\\ d\'')));
       // [doSend, newCmd, userMessage]
-      handle.should.be.type('object');
-      handle.should.have.lengthOf(3);
-      handle[1].should.be.type('string');
-      handle[1].should.eql('sag a, einzeln: 1:b 2:x\'c\\\'\\ 3:d\' 4:, alle: b x\'c\\\'\\ d\'\n');
-      handle[2].should.be.type('string');
-      handle[2].should.have.lengthOf(0); // success
+      //handle.should.be.type('object');
+      //handle.should.have.lengthOf(3);
+      handle.cmd.should.be.type('string');
+      handle.cmd.should.eql('sag a, einzeln: 1:b 2:x\'c\\\'\\ 3:d\' 4:, alle: b x\'c\\\'\\ d\'\n');
+      handle.message.should.be.type('string');
+      handle.message.should.have.lengthOf(0); // success
     });
   });
 

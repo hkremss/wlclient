@@ -134,6 +134,7 @@ namespace TMP {
           ' #             - the the number of existing macro parameters\n'+
           ' 0             - the name of the current evaluated macro\n'+
           ' 1, 2, 3, etc. - positional macro parameters, e.g. %{1}\n'+
+          ' *             - selects all positional parameters (1 2 3 etc.)\n'+
           '\n'+
           'More selectors may be available in the future.\n\n'+
           'See: /listvar, /set, /unset, /let, variables\n';

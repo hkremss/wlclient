@@ -24,6 +24,123 @@ namespace TMP {
     public cmd : string;
     public parameters : Array<string> = [];
     public localVariables : { [key: string]: string } = {};
+
+    /**
+     * Constructor to pass command in
+     */
+     constructor(cmd : string) {
+      if (cmd) {
+        this.cmd = cmd;
+        this.parameters = cmd.split(' ');
+        this.localVariables = {};
+      }
+      else {
+        this.cmd = '';
+        this.parameters = [];
+        this.localVariables = {};
+      }
+    }
+
+    /**
+     * isMacro - return true, if the current command is a macro, otherwise false.
+     */
+     public isMacro() {
+      return (this.cmd!=null && this.cmd.length>0 && this.cmd.charAt(0) == MacroProcessor.MACRO_KEY);
+    }
+
+    /**
+     * getFirstWord returns the first word of the macro/command
+     * @returns the first word of the command without leading '/'
+     */
+    public getFirstWord() {
+      if (this.parameters.length==0) return '';
+      let firstWord = this.parameters[0];
+      return this.isMacro ? firstWord.substr(1) : firstWord;
+    }
+  }
+
+  /**
+   * Stack holding a list of execution context and a step 
+   * counter for recursion detection.
+   */
+  export class Stack {
+    public content : Array<EvaluationContext> = [];
+    public stepCount : number = 0;
+
+    /**
+     * Constructor to pass initial EvaluationContext in
+     */
+    constructor(firstContext : EvaluationContext) {
+      if (!firstContext) firstContext = new EvaluationContext(null);
+      this.content.push(firstContext);
+    }
+    /**
+     * getContext - return current context, if there is none, create one
+     */
+    public getCContext() {
+      if (this.content.length == 0) {
+        this.content.push(new EvaluationContext(null));
+      }
+      return this.content[this.content.length-1];
+    }
+    /**
+     * getCCmd - get current command
+     */
+    public getCCmd() {
+      return this.content.length > 0 ? this.content[this.content.length-1].cmd : '';
+    }
+
+    public push(context : EvaluationContext) {
+      this.content.push(context);
+    }
+
+    public pop() : EvaluationContext {
+      return this.content.pop();
+    }
+
+    /**
+     * Search the variable in stack, beginning from the end /current.
+     * If nothing found, return null.
+     * @param vName name of the variable to search
+     * @returns a value string or ```null```
+     */
+    public searchVariable(vName : string) : string {
+      let vValue : string = null;
+      for (let i = this.content.length-1; i>=0; i--) {
+        vValue = this.content[i].localVariables[vName]
+        if (vValue!=null) break;
+      }
+      return vValue;
+    }
+  }
+
+  /**
+   * MacroResult contains the result of a macro evaluation.
+   */
+  export class EvalResult {
+    /**
+     * ```true``` if the cmd should be send remote, otherwise ```false```
+     */
+    public send : boolean;
+    /**
+     * the command to send remote
+     */
+    public cmd : string;
+    /**
+     * a message to output locally, may be multiline, but must end with '\n'
+     */
+    public message : string;
+    /**
+     * Constructor to initialze class
+     * @param send ```true``` if the cmd should be send remote, otherwise ```false```
+     * @param cmd the command to send remote
+     * @param message a message to output locally, may be multiline, but must end with '\n'
+     */
+    constructor (send : boolean, cmd : string, message : string) {
+      this.send = send;
+      this.cmd = cmd;
+      this.message = message;
+    }
   }
 
   export class MacroProcessor {
@@ -34,6 +151,7 @@ namespace TMP {
     static readonly STORAGE_KEY_LIST = 'Macros.List';
     static readonly STORAGE_KEY_LISTVAR = 'Macros.ListVar';
     static readonly MAX_RECUR = 42;
+    static readonly TF_SEPARATOR_TOKEN = '%;';
     
     // All custom macros we know.
     private customMacros: { [key: string]: MacroProps } = {};
@@ -41,6 +159,10 @@ namespace TMP {
     // All global variables we know. (and some are default + special)
     private globalVariables: { [key: string]: string } = { 'borg':'1', 'matching':'glob' };
   
+    // Triggers need complete lines to match. If we received a partial 
+    // line, store it here and use it, as soon as it completes.
+    private partialLineBufferForTrigger : string = '';
+
     // Constructor loads settings from localStorage
     constructor() { 
     //  this.reloadSettings();
@@ -154,33 +276,108 @@ namespace TMP {
     }
   
     // Handle a single key-down event.
-    // Returns 3-tuple: [doSend, new command, user message]
-    public handleKey(event : KeyboardEvent) : [boolean, string, string]
-    {
-      let result: [boolean, string, string] = [false, '', ''];
+    // @returns evaluation result
+    public keyTrigger(event : KeyboardEvent) : EvalResult {
+      let result = new EvalResult(false, '', '');
 
       // Build a key name (similar to TF)
       let keyName = this.getNamedKey(event);
         
       if (keyName.length > 0) {       
-        // Try to handle this.
-        result = this.expandMacro(keyName, []);
-  
+        // Try to handle this, can only be a custom macro, so check it first.
+        if (this.customMacros[keyName]) {
+          result = this.expandMacro(new Stack(new EvaluationContext('/'+keyName)));  
+        }
+
         // If we can not?
-        if (!result[0]) {
+        if (!result.send) {
           // Reset new command and user message.
-          result[1] = ''; result[2] = '';
+          result.cmd = ''; result.message = '';
           // Give a hint for function keys only.
           if (['F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12',
             'F13','F14','F15','F16','F17','F18','F19','F20','F21','F22','F23','F24',
             ].indexOf(event.key) != -1) {
-            result[2] = '% The key "' + keyName + '" is undefined; you may use "/def ' + keyName + ' = <commands>" to define it.\n';
+            result.message = '% The key "' + keyName + '" is undefined; you may use "/def ' + keyName + ' = <commands>" to define it.\n';
           }
         }
       }
 
       return result;
     }
+
+    public textTrigger (text : string) : EvalResult {
+      let result = new EvalResult(false, '', '');
+
+      if (text.length > 0) {
+        // Prefix the new text with the old buffer and reset buffer.
+        text = this.partialLineBufferForTrigger.concat(text);
+        this.partialLineBufferForTrigger = '';
+
+        // Split text into lines. (no matter if LF or CRLF)
+        let lines = text.split(/\r?\n/);
+
+        // There last element on 'lines' contains the rest after the 
+        // last '\n'. It might be empty anyway, but we need to chop
+        // it off the array and append it to the 'partialLineBuffer'
+        // for the next run.
+        this.partialLineBufferForTrigger = lines.pop();
+
+        let picomatch = require('picomatch');
+
+        // the rest of the array was complete lines, so test 
+        // all triggers now.
+        for (let i=0;i<lines.length;i++) {
+          for (let mName in this.customMacros) {
+            let mProps = this.customMacros[mName];
+            if (mProps.trigger != null && mProps.trigger.pattern != null && mProps.trigger.pattern.length > 0) {
+              if (this.globalVariables['matching'] == 'simple') {
+                if (lines[i] == mProps.trigger.pattern) {
+                  console.log('% TRIGGER MATCH SIMPLE PATTERN FOR \''+mName+'\'');
+                  let context = new EvaluationContext('/'+mName);
+                  context.parameters.push(lines[i]); // the triggering line is the only additional parameter
+                  context.localVariables['P0'] = lines[i]; // in addition populate the P0 variable
+                  result = this.expandMacro(new Stack(context));
+                }
+              }
+              else if (this.globalVariables['matching'] == 'glob') {
+                // pm.compileRe(pm.parse("(*) has arrived.")).exec("Gast1 has arrived.")[1] == 'Gast1'
+                let mResult = picomatch.compileRe(picomatch.parse(mProps.trigger.pattern)).exec(lines[i]);
+                if (mResult) {
+                  console.log('% TRIGGER MATCH GLOB PATTERN FOR \''+mName+'\'');
+                  let context = new EvaluationContext('/'+mName);
+                  for (let p=0;;p++) {
+                    if (!mResult[p]) break;
+                    context.parameters.push(mResult[p]);
+                    context.localVariables['P' + p] = mResult[p];
+                  }
+                  result = this.expandMacro(new Stack(context));
+                }                
+              } 
+              else if (this.globalVariables['matching'] == 'regexp') {
+                let regex = new RegExp(mProps.trigger.pattern);
+                let mResult = regex.exec(lines[i]);
+                if (mResult) {
+                  console.log('% TRIGGER MATCH REGEXP PATTERN FOR \''+mName+'\'');
+                  let context = new EvaluationContext('/'+mName);
+                  for (let p=0;;p++) {
+                    if (!mResult[p]) break;
+                    context.parameters.push(mResult[p]);
+                    context.localVariables['P' + p] = mResult[p];
+                  }
+                  result = this.expandMacro(new Stack(context));
+                }                
+              } 
+              else {
+                throw new Error("Unknown matching type!");
+              }
+            }
+          }
+        }
+      }
+
+      return result;
+     }
+
 /*   
     // Find and return an unescaped char in source from startPosition and return 
     // position or -1, if not found.'"\"'
@@ -292,33 +489,31 @@ namespace TMP {
   
     // Handle /DEF command - define a named macro, do NOT pass words array, 
     // but the whole cmd line, because char position is relevant here!
-    // Returns 3-tuple: [doSend, new command, user message]
-    private handleDEF(firstWord : string, stack : Array<EvaluationContext>) : [boolean, string, string]
-    {
-      let doSend : boolean = false;
-      let newCmd : string = '';
-      let userMessage : string = '';
+    // @returns evaluation result
+    private handleDEF(stack : Stack) : EvalResult {
+      let result = new EvalResult(false, '', '');
 
-      let topContext = stack[stack.length-1];
+      let myContext = stack.getCContext();
+      let firstWord = myContext.getFirstWord();
       let mTrigger = '';
-      let body = topContext.cmd.substr(4).trim();
+      let body = myContext.cmd.substr(4).trim();
       
       if (body.length>0 && body.charAt(0)=='-') {
         if (body.length<2) {
-          userMessage = '% '+firstWord+': missing option -\n';
-          return [doSend, newCmd, userMessage];
+          result.message = '% '+firstWord+': missing option -\n';
+          return result;
         } else if(body.charAt(1)!='t') {
-          userMessage = '% '+firstWord+': unknown option -'+body.charAt(1)+'\n';
-          return [doSend, newCmd, userMessage];
+          result.message = '% '+firstWord+': unknown option -'+body.charAt(1)+'\n';
+          return result;
         }
         mTrigger = this.getQuotedString(body.substr(2), '"');
         if (!mTrigger || mTrigger.length==0) {
-          userMessage = '% '+firstWord+': invalid/incomplete trigger option, quotes missing?\n';
-          return [doSend, newCmd, userMessage];            
+          result.message = '% '+firstWord+': invalid/incomplete trigger option, quotes missing?\n';
+          return result;            
         } 
         else if (mTrigger.length==2) {
-          userMessage = '% '+firstWord+': empty trigger found\n';
-          return [doSend, newCmd, userMessage];            
+          result.message = '% '+firstWord+': empty trigger found\n';
+          return result;            
         }
         else { // found a quoted trigger string!
           // cut trigger part off the body. +2 for the '-t' option.
@@ -335,7 +530,7 @@ namespace TMP {
         let mBody = body.substring(eqSign+1).trim();
         if (mName.length > 0) {
           if (this.customMacros[mName]!=null && this.customMacros[mName].body !== mBody) {
-            userMessage = '% '+firstWord+': redefined macro ' + mName + '\n';
+            result.message = '% '+firstWord+': redefined macro ' + mName + '\n';
           }
           let macro = new MacroProps;
           macro.body = mBody;
@@ -345,116 +540,101 @@ namespace TMP {
           this.saveSettings();
         }
         else {
-          userMessage = '% '+firstWord+': &lt;name&gt; must not be empty\n';
+          result.message = '% '+firstWord+': &lt;name&gt; must not be empty\n';
         }
       }
       else if (eqSign == 0) {
-        userMessage = '% '+firstWord+': &lt;name&gt; missing, try: /def &lt;name&gt; = &lt;body&gt;\n';
+        result.message = '% '+firstWord+': &lt;name&gt; missing, try: /def &lt;name&gt; = &lt;body&gt;\n';
       }
       else {
-        userMessage = '% '+firstWord+': \'=\' missing, try: /def &lt;name&gt; = &lt;body&gt;\n';
+        result.message = '% '+firstWord+': \'=\' missing, try: /def &lt;name&gt; = &lt;body&gt;\n';
       }
 
-      return [doSend, newCmd, userMessage];
+      return result;
     }
 
     // Handle /UNDEF command - undefine a named macro
-    // Returns 3-tuple: [doSend, new command, user message]
-    private handleUNDEF(firstWord : string, stack : Array<EvaluationContext>) : [boolean, string, string]
-    {
-      let doSend : boolean = false;
-      let newCmd : string = '';
-      let userMessage : string = '';
+    // @returns evaluation result
+    private handleUNDEF(stack : Stack) : EvalResult {
+      let result = new EvalResult(false, '', '');
 
-      let topContext = stack[stack.length-1];
-      for (let i = 1; i < topContext.parameters.length; i++) {
-        if (topContext.parameters[i].length > 0) {
-          if (!this.customMacros[topContext.parameters[i]]) {
-            userMessage += '% '+firstWord+': macro "' + topContext.parameters[i] + '" was not defined.\n';
+      let myContext = stack.getCContext();
+      let firstWord = myContext.getFirstWord();
+      for (let i = 1; i < myContext.parameters.length; i++) {
+        if (myContext.parameters[i].length > 0) {
+          if (!this.customMacros[myContext.parameters[i]]) {
+            result.message += '% '+firstWord+': macro "' + myContext.parameters[i] + '" was not defined.\n';
           } else {
-            delete this.customMacros[topContext.parameters[i]];
+            delete this.customMacros[myContext.parameters[i]];
             this.saveSettings();
           }
         }
       }
 
-      return [doSend, newCmd, userMessage];
+      return result;
     }
 
     // Handle /LIST command - display a list of macros
-    // Returns 3-tuple: [doSend, new command, user message]
-    private handleLIST(firstWord : string, stack : Array<EvaluationContext>) : [boolean, string, string]
-    {
-      let doSend : boolean = false;
-      let newCmd : string = '';
-      let userMessage : string = '';
+    // @returns evaluation result
+    private handleLIST(stack : Stack) : EvalResult {
+      let result = new EvalResult(false, '', '');
+
+      let myContext = stack.getCContext();
+      let firstWord = myContext.getFirstWord();
 
       var picomatch = null;
-      
-      let topContext = stack[stack.length-1];
-      if (topContext.parameters.length > 1) {
+
+      if (myContext.parameters.length > 1) {
         picomatch = require('picomatch');
       }
       
       var sortedKeys = Object.keys(this.customMacros).sort();
       for (var i = 0; i<sortedKeys.length; i++) {
-        if (!picomatch || picomatch.isMatch(sortedKeys[i], topContext.parameters.slice(1))) {
+        if (!picomatch || picomatch.isMatch(sortedKeys[i], myContext.parameters.slice(1))) {
           let macroProps = this.customMacros[sortedKeys[i]];
-          userMessage += '/def ';
+          result.message += '/def ';
           if (macroProps.trigger != null && macroProps.trigger.pattern!=null && macroProps.trigger.pattern.length > 0) {
-            userMessage += '-t"' + macroProps.trigger.pattern + '" ';
+            result.message += '-t"' + macroProps.trigger.pattern + '" ';
           }
-          userMessage += (sortedKeys[i]+' = '+macroProps.body+'\n');
+          result.message += (sortedKeys[i]+' = '+macroProps.body+'\n');
         }
       }
       
-      if (userMessage.length == 0) userMessage = '% '+firstWord+': no macros found.\n';
+      if (result.message.length == 0) result.message = '% '+firstWord+': no macros found.\n';
 
-      return [doSend, newCmd, userMessage];
-    }
-
-    // Search the variable in stack, beginning from the end /current. If nothing
-    // found, return null.
-    private searchVariable(stack : Array<EvaluationContext>, vName : string) : string {
-      let vValue : string = null;
-      for (let i = stack.length-1; i>=0; i--) {
-        vValue = stack[i].localVariables[vName]
-        if (vValue!=null) break;
-      }
-      return vValue;
+      return result;
     }
 
     // Substitute in 'text' in this order:
     // 1. given parameters     : %{#}, %{*}, %{0}, %{1}, %{2} and so on
     // 2. given local variables: %{whatever} in local scoped defined is
     // 3. global variables     : %{borg}, %{matching} and so on 
-    private substituteVariables(text : string, stack : Array<EvaluationContext>) : string
+    private substituteVariables(text : string, stack : Stack) : string
     {
       let oldBody = text;
       let newBody = '';
 
       let deadEndLimit = 42; // limit number of substitution loops
       
-      let topContext = stack[stack.length-1];
+      let myContext = stack.getCContext();
       let globVars = this.globalVariables;
-      var myThis = this;
 
       while (deadEndLimit--) {
         newBody = oldBody.replace(/(%{[^ -]*?})/, function(m) { 
           var strippedM = m.substr(2, m.length-3);
           
           if (strippedM == '#') {
-            return ''+topContext.parameters.length+'';
+            return ''+myContext.parameters.length+'';
           }
           else if (strippedM == '*') {
-            return ''+topContext.parameters.slice(1).join(' ')+'';
+            return ''+myContext.parameters.slice(1).join(' ')+'';
           }
           else {
             const parsedM = parseInt(strippedM);
             // if this is not a numbered parameter
             if (isNaN(parsedM)) { 
               // local variables may shadow global
-              let vValue = myThis.searchVariable(stack, strippedM);
+              let vValue = stack.searchVariable(strippedM);
               if (vValue != null) return vValue;
               // global variables as fallback
               vValue = globVars[strippedM];
@@ -464,8 +644,8 @@ namespace TMP {
             }
             // it is a numbered parameter
             else {
-              if (parsedM < topContext.parameters.length) {
-                return topContext.parameters[parsedM];
+              if (parsedM < myContext.parameters.length) {
+                return myContext.parameters[parsedM];
               }
               else {
                 return '';
@@ -484,15 +664,14 @@ namespace TMP {
 
     // Handle /SET command - set the value of a global variable, do NOT pass words array, 
     // but the whole cmd line, because spaces are relevant here!
-    // Returns 3-tuple: [doSend, new command, user message]
-    private handleSET(firstWord : string, stack : Array<EvaluationContext>) : [boolean, string, string]
-    {
-      let doSend : boolean = false;
-      let newCmd : string = '';
-      let userMessage : string = '';
+    // @returns evaluation result
+    private handleSET(stack : Stack) : EvalResult {
+      let result = new EvalResult(false, '', '');
 
-      let topContext = stack[stack.length-1];
-      let body = topContext.cmd.substr(4).trim();
+      let myContext = stack.getCContext();
+      let firstWord = myContext.getFirstWord();
+
+      let body = myContext.cmd.substr(4).trim();
       
       let wsSign = body.indexOf(" ");
       let eqSign = body.indexOf("=");
@@ -519,105 +698,89 @@ namespace TMP {
       
       if (vName.length > 0 && vValue != null) {
         if (this.globalVariables[vName]!=null && this.globalVariables[vName] !== vValue) {
-            userMessage = '% '+firstWord+': redefined variable ' + vName + '\n';
+            result.message = '% '+firstWord+': redefined variable ' + vName + '\n';
         }
         this.globalVariables[vName] = vValue;
         this.saveSettings();
       }
       else if (vName.length == 0 && vValue != null && vValue.length > 0) {
-        userMessage = '% '+firstWord+': &lt;name&gt; must not be empty\n';
+        result.message = '% '+firstWord+': &lt;name&gt; must not be empty\n';
       }
       else if (vName.length == 0) {
-        return this.handleLISTVAR('listvar', stack);
+        return this.handleLISTVAR(stack);
       }
       else {
         if (this.globalVariables[vName]!=null) {
-            userMessage = '% '+vName+'='+this.globalVariables[vName]+'\n';
+            result.message = '% '+vName+'='+this.globalVariables[vName]+'\n';
         }
         else {
-          userMessage = '% '+vName+' not set globally\n';
+          result.message = '% '+vName+' not set globally\n';
         }
       }
 
-      return [doSend, newCmd, userMessage];
+      return result;
     }
 
     // Handle /UNSET command - unset variable(s)
-    // Returns 3-tuple: [doSend, new command, user message]
-    private handleUNSET(firstWord : string, stack : Array<EvaluationContext>) : [boolean, string, string]
-    {
-      let doSend : boolean = false;
-      let newCmd : string = '';
-      let userMessage : string = '';
+    // @returns evaluation result
+    private handleUNSET(stack : Stack) : EvalResult {
+      let result = new EvalResult(false, '', '');
 
-      let topContext = stack[stack.length-1];
-      for (let i = 1; i < topContext.parameters.length; i++) {
-        if (topContext.parameters[i].length > 0) {
-          if (!this.globalVariables[topContext.parameters[i]]) {
-            userMessage += '% '+firstWord+': global variable "' + topContext.parameters[i] + '" was not defined.\n';
+      let myContext = stack.getCContext();
+      let firstWord = myContext.getFirstWord();
+
+      for (let i = 1; i < myContext.parameters.length; i++) {
+        if (myContext.parameters[i].length > 0) {
+          if (!this.globalVariables[myContext.parameters[i]]) {
+            result.message += '% '+firstWord+': global variable "' + myContext.parameters[i] + '" was not defined.\n';
           } else {
-            delete this.globalVariables[topContext.parameters[i]];
+            delete this.globalVariables[myContext.parameters[i]];
             this.saveSettings();
           }
         }
       }
 
-      return [doSend, newCmd, userMessage];
+      return result;
     }
 
     // Handle /LISTVAR command - list values of variables
-    // Returns 3-tuple: [doSend, new command, user message]
-    private handleLISTVAR(firstWord : string, stack : Array<EvaluationContext>) : [boolean, string, string]
-    {
-      let doSend : boolean = false;
-      let newCmd : string = '';
-      let userMessage : string = '';
+    // @returns evaluation result
+    private handleLISTVAR(stack : Stack) : EvalResult {
+      let result = new EvalResult(false, '', '');
 
       var picomatch = null;
       
-      let topContext = stack[stack.length-1];
-      if (topContext.parameters.length > 1) {
+      let myContext = stack.getCContext();
+      let firstWord = myContext.getFirstWord();
+
+      if (myContext.parameters.length > 1) {
         picomatch = require('picomatch');
       }
       
       var sortedKeys = Object.keys(this.globalVariables).sort();
       for (var i = 0; i<sortedKeys.length; i++) {
-        if (!picomatch || picomatch.isMatch(sortedKeys[i], topContext.parameters.slice(1))) {
+        if (!picomatch || picomatch.isMatch(sortedKeys[i], myContext.parameters.slice(1))) {
           let vValue = this.globalVariables[sortedKeys[i]];
-          userMessage += '/set '+sortedKeys[i]+'='+vValue+'\n';
+          result.message += '/set '+sortedKeys[i]+'='+vValue+'\n';
         }
       }
       
-      if (userMessage.length == 0) userMessage = '% '+firstWord+': no global variables found.\n';
+      if (result.message.length == 0) result.message = '% '+firstWord+': no global variables found.\n';
 
-      return [doSend, newCmd, userMessage];
+      return result;
     }
 
     // Handle /LET command - set the value of a local variable in the parent (!) 
     // context, because our local context will disappear after the macro expansion has finished.
-    // Returns 3-tuple: [doSend, new command, user message]
-    private handleLET(firstWord : string, stack : Array<EvaluationContext>) : [boolean, string, string]
-    {
-      let doSend : boolean = false;
-      let newCmd : string = '';
-      let userMessage : string = '';
+    // @returns evaluation result
+    private handleLET(stack : Stack) : EvalResult {
+      let result = new EvalResult(false, '', '');
 
-      let topContext = stack[stack.length-1];
+      let myContext = stack.getCContext();
+      let firstWord = myContext.getFirstWord();
 
-      // It would not make sense to create a local variable in the current (top)
-      // context, because this will only exist for this macro lifecycle. Even 
-      // sibling macros would not be able to access it. So we create the local 
-      // variable in the parent context. If there is no parent context, this 'let' 
-      // will be completely useless...
-      let parentContext : EvaluationContext = null;
-      if (stack.length > 1) {
-        parentContext = stack[stack.length-2];
-      } else {
-        parentContext = stack[stack.length-1];
-        userMessage = '% '+topContext.cmd+' is of no use in this context...\n';
-      }
-
-      let body = topContext.cmd.substr(4).trim();
+      // Create a local variable in the current context.
+      let body = myContext.cmd.substr(4).trim();
       
       let wsSign = body.indexOf(" ");
       let eqSign = body.indexOf("=");
@@ -643,48 +806,50 @@ namespace TMP {
       }
 
       if (vName.length > 0 && vValue != null) {
-        parentContext.localVariables[vName] = vValue;
+        myContext.localVariables[vName] = vValue;
       }
       else if (vName.length == 0) {
-        userMessage = '% '+firstWord+': &lt;name&gt; must not be empty\n';
+        result.message = '% '+firstWord+': &lt;name&gt; must not be empty\n';
       }
       else {
-        userMessage = '% '+firstWord+': &lt;value&gt; must not be empty\n';
+        result.message = '% '+firstWord+': &lt;value&gt; must not be empty\n';
       }
 
-      return [doSend, newCmd, userMessage];
+      return result;
     }
 
     // Handle /HELP command - display the help text
-    // Returns 3-tuple: [doSend, new command, user message]
-    private handleHELP(firstWord : string, stack : Array<EvaluationContext>) : [boolean, string, string]
-    {
-      let doSend : boolean = false;
-      let newCmd : string = '';
-      let userMessage : string = '';
+    // @returns evaluation result
+    private handleHELP(stack : Stack) : EvalResult {
+      let result = new EvalResult(false, '', '');
 
-      let topContext = stack[stack.length-1];
-      let topic = topContext.parameters.length > 1 ? topContext.parameters[1].toLowerCase() : '';
+      let myContext = stack.getCContext();
+      let topic = myContext.parameters.length > 1 ? myContext.parameters[1].toLowerCase() : '';
 
-      userMessage = new MacroHelp(topic).getHelp();
+      result.message = new MacroHelp(topic).getHelp();
 
-      return [doSend, newCmd, userMessage];
+      return result;
     }
 
+    /**
+     * Handle custom macro.
+     * @param stack stack to use
+     * @returns evaluation result
+     */
     // Handle default case, custom macro or just do nothing.
-    // Returns 3-tuple: [doSend, new command, user message]
-    private handleDEFAULT(firstWord : string, stack : Array<EvaluationContext>) : [boolean, string, string]
-    {
-      let doSend : boolean = false;
-      let newCmd : string = '';
-      let userMessage : string = '';
+    // @returns evaluation result
+    private handleCUSTOM(stack : Stack) : EvalResult {
+      let result = new EvalResult(false, '', '');
+
+      let myContext = stack.getCContext();
+      let firstWord = myContext.getFirstWord();
 
       if (this.customMacros[firstWord]!=null) {
         let body = this.customMacros[firstWord].body;
-        let steps = body.split('%;'); // split by '%;' TF separator token
+        let steps = body.split(MacroProcessor.TF_SEPARATOR_TOKEN);
         let stepNums = steps.length;
         if (stepNums > 42) {
-          userMessage = '% '+firstWord+': command list truncated to 42 for some reason, sorry\n';
+          result.message = '% '+firstWord+': command list truncated to 42 for some reason, sorry\n';
           stepNums = 42;
         }
         for (let i = 0; i < stepNums; i++) {
@@ -693,133 +858,139 @@ namespace TMP {
           // Macro calls macro? Do not check substituted 'step' here because this
           // may be (mis-)used for 'macro injection' through subsituted '/'.
           if (steps[i].length>0 && steps[i].charAt(0) == MacroProcessor.MACRO_KEY) {
-            // resolve nested macro
-            let result = this.resolveSingle(step, stack);
-            if (result[0] === true) doSend = true;
-            newCmd += result[1];
-            userMessage += result[2];
+            // create child context and resolve nested step
+            stack.push(new EvaluationContext(step));
+            let childResult = this.resolveSingle(stack);
+            if (childResult.send === true) result.send = true;
+            result.cmd += childResult.cmd;
+            result.message += childResult.message;
           }
           else {
             // otherwise just append to list of new cmd
-            newCmd += (step + '\n');
+            result.cmd += (step + '\n');
           }
         }
-        doSend = true;
+        result.send = true;
       }
       else {
-        userMessage = '% '+firstWord+': no such command or macro\n';
+        result.message = '% '+firstWord+': no such command or macro\n';
       }
-      return [doSend, newCmd, userMessage];
+      return result;
     }
 
-    private expandMacro(cmd : string, stack : Array<EvaluationContext> ) : [boolean, string, string] {
-      let result: [boolean, string, string];
 
-      // If there is no stack yet, create a new.
-      if (stack==null) stack = [];
+    /**
+     * Expand any macro, and maybe sub macros, so this may be called recursively.
+     * @param stack stack to use
+     * @returns evaluation result
+     */
+    private expandMacro(stack : Stack) : EvalResult {
+      let result : EvalResult;
 
-      if (cmd.length > 0) {
-        //console.log('MacroProcessor expand: ' + cmd);
+      // If there is no stack, we have nothing to execute.
+      if (stack==null) throw new Error("Argument 'stack' must not be null.");
 
-        // Create a context, which will be used for expansion of 
-        // the macro containing the command line, the splittet
-        // command line and the and local variables.
-        let context = new EvaluationContext();
-        context.cmd = cmd;
-        context.parameters = cmd.split(' ');
-        context.localVariables = {};
+      let myContext = stack.getCContext();
+      let firstWord = myContext.getFirstWord();
 
-        let firstWord = cmd.split(' ')[0].toLowerCase();
+      if (firstWord.length > 0) {
 
         // recursion check
-        if (stack.length <= MacroProcessor.MAX_RECUR) {
-          // push to recursion stack
-          stack.push(context);
+        if (stack.stepCount < MacroProcessor.MAX_RECUR) {
 
-          switch(firstWord) {
+          stack.stepCount++;
+
+          switch(firstWord.toLowerCase()) {
             case 'def':
-              result = this.handleDEF(firstWord, stack);
+              result = this.handleDEF(stack);
               break;
             case 'undef':
-              result = this.handleUNDEF(firstWord, stack);
+              result = this.handleUNDEF(stack);
               break;
             case 'list':
-              result = this.handleLIST(firstWord, stack);
+              result = this.handleLIST(stack);
               break;
             case 'set':
-              result = this.handleSET(firstWord, stack);
+              result = this.handleSET(stack);
               break;
             case 'unset':
-              result = this.handleUNSET(firstWord, stack);
+              result = this.handleUNSET(stack);
               break;
             case 'listvar':
-              result = this.handleLISTVAR(firstWord, stack);
+              result = this.handleLISTVAR(stack);
               break;
             case 'let':
-              result = this.handleLET(firstWord, stack);
+              result = this.handleLET(stack);
               break;
             case 'help':
-              result = this.handleHELP(firstWord, stack);
+              result = this.handleHELP(stack);
               break;
-            default: // custom macro or error
-              result = this.handleDEFAULT(firstWord, stack);
+            default: 
+              // custom macro or error
+              result = this.handleCUSTOM(stack);
+              break;
           }
 
-          // pop from recursion stack
-          stack.pop();
+          stack.stepCount--;
         }
         else {
-          result = [true, cmd + '\n', ''];
-          result[2] = '% '+firstWord+': maximum recursion reached, stack size: '+stack.length+'\n';
+          result = new EvalResult(false, '', 
+            '% '+firstWord+': maximum recursion limit ('+stack.stepCount+') reached.\n');
         }
       }
       else {
         // The first word was empty, quoted or prefixed with spaces, 
         // but was no macro nor command for sure. Bypass.
-        result = [true, cmd + '\n', ''];
+        result = new EvalResult(true, myContext.cmd + '\n', '');
       }
 
       return result;
     }
 
-    // Resolves a single user command (single line or just a command).
-    // Returns 3-tuple: [doSend, new command, user message]
-    private resolveSingle(cmd : string, stack : Array<EvaluationContext>) : [boolean, string, string] {
-      let result: [boolean, string, string];
+    /**
+     * Resolves a single user command (single line or just a command).
+     * @param stack stack to use
+     * @returns evaluation result
+     */
+    private resolveSingle(stack : Stack) : EvalResult {
+      let result : EvalResult;
   
-      if (cmd!=null && cmd.length>0 && cmd.charAt(0) == MacroProcessor.MACRO_KEY) {
-        // Chop off leading '/' and expand macro.
-        result = this.expandMacro(cmd.substr(1), stack);
+      if (!stack) throw new Error('Argument stack must not be null.');
+      if (!stack.getCContext()) throw new Error('Argument stack must not be empty.');
+
+      if (stack.getCContext().isMacro()) {
+        // Expand macro.
+        result = this.expandMacro(stack);
       }
       else {
         // No '/' prefix or just a single '/', just bypass.
-        result = [true, cmd + '\n', ''];
+        result = new EvalResult(true, stack.getCCmd() + '\n', '');
       }
   
        return result;
     }
 
-    // Function resolve() takes a user input and returns a 
-    // 3-tuple of: [alternative command, user message] 
-    // The user input may consist of multiple lines, because
-    // of copy&paste. So we split the input into separate lines
-    // and concatenate the result(s).
-    // Returns 3-tuple: [doSend, new command, user message]
-    public resolve(cmd : string) : [boolean, string, string] {
-      let doSend : boolean = false;
-      let newCmd : string = '';
-      let userMessage : string = '';
+    /**
+     * Function resolve() takes a user input and returns a 
+     * 3-tuple of: [alternative command, user message] 
+     * The user input may consist of multiple lines, because
+     * of copy&paste. So we split the input into separate lines
+     * and concatenate the result(s).
+     * @param text single or multiline string to resolve
+     * @returns evaluation result
+     */
+    public resolve(text : string) : EvalResult {
+      let result = new EvalResult(false, '', '');
 
-      let lines = cmd.split('\n');
+      let lines = text.split('\n');
       for (let i = 0; i < lines.length; i++) {
-        let result = this.resolveSingle(lines[i], []);
-        if (result[0] === true) doSend = true;
-        newCmd += result[1];
-        userMessage += result[2];
+        let singleResult = this.resolveSingle(new Stack(new EvaluationContext(text)));
+        if (singleResult.send === true) result.send = true;
+        result.cmd += singleResult.cmd;
+        result.message += singleResult.message;
       }
 
-      return [doSend, newCmd, userMessage];
+      return result;
     }
   }
-
 }
