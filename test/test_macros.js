@@ -200,7 +200,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('def a = sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/def a = sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -220,7 +220,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('def  = some body')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/def  = some body')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -241,7 +241,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('def a = ')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/def a = ')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -263,7 +263,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('def -t"{*} kommt an." greet = winke %{1}')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/def -t"{*} kommt an." greet = winke %{1}')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -280,7 +280,7 @@ describe('MacroProcessor', function () {
     it('should return a list of macros', function() {
       var macros = new MacroProcessor;
       //macros.handleDEF('def', 'def a=b');
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('list *')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/list *')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -346,7 +346,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('set a=42')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/set a=42')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -366,7 +366,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('set a=   43')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/set a=   43')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -386,7 +386,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('set a ')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/set a ')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -406,7 +406,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('set a=')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/set a=')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -426,7 +426,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('set a 53 b %{1}')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/set a 53 b %{1}')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -446,7 +446,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('set a       56 c %{1}')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/set a       56 c %{1}')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -466,7 +466,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('set borg=0')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/set borg=0')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -486,7 +486,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('set borg=egal+irgendwas')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/set borg=egal+irgendwas')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -506,7 +506,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('set matching=regexp')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/set matching=regexp')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -526,7 +526,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('set matching=glob')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/set matching=glob')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -546,7 +546,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('set matching=simple')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/set matching=simple')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -566,7 +566,7 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('set matching=nonsense')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/set matching=nonsense')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -582,7 +582,7 @@ describe('MacroProcessor', function () {
   describe('handleLISTVAR', function () {
     var macros = new MacroProcessor;
     it('should return a list of all special global variables', function() {
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('listvar')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/listvar')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -590,7 +590,7 @@ describe('MacroProcessor', function () {
       handle.message.should.have.lengthOf(31); // '/set borg=1\n/set matching=glob\n'
     });
     it('should return the special global variable \'borg\'', function() {
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('listvar *org')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/listvar *org')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -598,7 +598,7 @@ describe('MacroProcessor', function () {
       handle.message.should.have.lengthOf(12); // '/set borg=1\n'
     });
     it('should return the special global variables \'borg\' and \'matching\'', function() {
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('listvar *g')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/listvar *g')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
@@ -610,7 +610,7 @@ describe('MacroProcessor', function () {
   describe('handleLET', function () {
     it('should set a local variable in the current context of the stack', function() {
       var macros = new MacroProcessor;
-      let stack = new Stack(new EvaluationContext('let a=b'))
+      let stack = new Stack(new EvaluationContext('/let a=b'))
 
       var handle = macros.expandMacro(stack);
 
@@ -622,7 +622,7 @@ describe('MacroProcessor', function () {
     });
     it('should return an error message, if name is missing', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('let ')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/let ')));
 
       //handle.should.have.lengthOf(3);
       //handle.should.be.type('object');
@@ -630,7 +630,7 @@ describe('MacroProcessor', function () {
     });
     it('should return an error message, if value is missing', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('let a ')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/let a ')));
 
       //handle.should.have.lengthOf(3);
       //handle.should.be.type('object');
@@ -641,7 +641,7 @@ describe('MacroProcessor', function () {
   describe('handleHELP', function () {
     it('should return a help page for /help', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('help')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/help')));
 
       //handle.should.have.lengthOf(3);
       //handle.should.be.type('object');
@@ -650,7 +650,7 @@ describe('MacroProcessor', function () {
     });
     it('should return a help page for /help def', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('help def')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/help def')));
 
       //handle.should.have.lengthOf(3);
       //handle.should.be.type('object');
@@ -658,7 +658,7 @@ describe('MacroProcessor', function () {
     });
     it('should return a help page for /help undef', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('help undef')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/help undef')));
 
       //handle.should.have.lengthOf(3);
       //handle.should.be.type('object');
@@ -666,7 +666,7 @@ describe('MacroProcessor', function () {
     });
     it('should return a help page for /help list', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('help list')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/help list')));
 
       //handle.should.have.lengthOf(3);
       //handle.should.be.type('object');
@@ -674,7 +674,7 @@ describe('MacroProcessor', function () {
     });
     it('should return a help page for /help set', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('help set')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/help set')));
 
       //handle.should.have.lengthOf(3);
       //handle.should.be.type('object');
@@ -682,7 +682,7 @@ describe('MacroProcessor', function () {
     });
     it('should return a help page for /help unset', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('help unset')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/help unset')));
 
       //handle.should.have.lengthOf(3);
       //handle.should.be.type('object');
@@ -690,7 +690,7 @@ describe('MacroProcessor', function () {
     });
     it('should return a help page for /help listvar', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('help listvar')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/help listvar')));
 
       //handle.should.have.lengthOf(3);
       //handle.should.be.type('object');
@@ -698,7 +698,7 @@ describe('MacroProcessor', function () {
     });
     it('should return a help page for /help let', function() {
       var macros = new MacroProcessor;
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('help let')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/help let')));
 
       //handle.should.have.lengthOf(3);
       //handle.should.be.type('object');
@@ -721,13 +721,13 @@ describe('MacroProcessor', function () {
       };
       mod.__set__("localStorage", lsMock);
 
-      macros.expandMacro(new Stack(new EvaluationContext('def a = sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}')));
-      var handle = macros.expandMacro(new Stack(new EvaluationContext('a b x\'c\\\'\\ d\'')));
+      macros.expandMacro(new Stack(new EvaluationContext('/def a = sag %{0}, einzeln: 1:%{1} 2:%{2} 3:%{3} 4:%{4}, alle: %{*}')));
+      var handle = macros.expandMacro(new Stack(new EvaluationContext('/a b x\'c\\\'\\ d\'')));
       // [doSend, newCmd, userMessage]
       //handle.should.be.type('object');
       //handle.should.have.lengthOf(3);
       handle.cmd.should.be.type('string');
-      handle.cmd.should.eql('sag a, einzeln: 1:b 2:x\'c\\\'\\ 3:d\' 4:, alle: b x\'c\\\'\\ d\'\n');
+      handle.cmd.should.eql('sag /a, einzeln: 1:b 2:x\'c\\\'\\ 3:d\' 4:, alle: b x\'c\\\'\\ d\'\n');
       handle.message.should.be.type('string');
       handle.message.should.have.lengthOf(0); // success
     });

@@ -18,6 +18,7 @@ namespace TMP {
 
   class TriggerProps {
     public pattern : string;
+    public matching: string;
   }
 
   export class EvaluationContext {
@@ -141,6 +142,17 @@ namespace TMP {
       this.cmd = cmd;
       this.message = message;
     }
+    /**
+     * Append another EvalResult to this one
+     * @param next another EvalResult, which content should be appended
+     */
+    public append(next : EvalResult) {
+      if (next) {
+        if (next.send === true) this.send = true;
+        this.cmd += next.cmd;
+        this.message += next.message;
+      }
+    }
   }
 
   export class MacroProcessor {
@@ -185,8 +197,14 @@ namespace TMP {
         this.globalVariables['borg'] = '1';
         fixed = true;
       }
-      // 'matching' must exist, set it to 'glob', if unset or invalid value.
-      if (this.globalVariables['matching']!='simple' && this.globalVariables['matching']!='glob' && this.globalVariables['matching']!='regexp') {
+      // 'matching' must exist and be lower case ...
+      let mMatching = this.globalVariables['matching'].toLowerCase();
+      // correct regex -> regexp ...
+      if (mMatching=='regex') {
+        this.globalVariables['matching'] = 'regexp';
+      }
+      // ... or set it to 'glob', if unset or invalid value.
+      else if (mMatching!='simple' && mMatching!='glob' && mMatching!='regexp') {
         this.globalVariables['matching'] = 'glob';
         fixed = true;
       }
@@ -275,8 +293,11 @@ namespace TMP {
       return keyName;
     }
   
-    // Handle a single key-down event.
-    // @returns evaluation result
+    /**
+     * Handle a single key-down event.
+     * @param event a ```KeyboardEvent``` raised on the client
+     * @returns evaluation result
+     */
     public keyTrigger(event : KeyboardEvent) : EvalResult {
       let result = new EvalResult(false, '', '');
 
@@ -305,8 +326,19 @@ namespace TMP {
       return result;
     }
 
-    public textTrigger (text : string) : EvalResult {
+    /**
+     * Handle a single text line trigger event.
+     * @param text a single text line received from the server
+     * @returns evaluation result
+     */
+     public textTrigger (text : string) : EvalResult {
       let result = new EvalResult(false, '', '');
+
+      // triggers are switched off globally.
+      if (this.globalVariables['borg']=='0') {
+        this.partialLineBufferForTrigger = '';
+        return result;
+      }
 
       if (text.length > 0) {
         // Prefix the new text with the old buffer and reset buffer.
@@ -330,16 +362,16 @@ namespace TMP {
           for (let mName in this.customMacros) {
             let mProps = this.customMacros[mName];
             if (mProps.trigger != null && mProps.trigger.pattern != null && mProps.trigger.pattern.length > 0) {
-              if (this.globalVariables['matching'] == 'simple') {
+              if (mProps.trigger.matching == 'simple') {
                 if (lines[i] == mProps.trigger.pattern) {
                   console.log('% TRIGGER MATCH SIMPLE PATTERN FOR \''+mName+'\'');
                   let context = new EvaluationContext('/'+mName);
                   context.parameters.push(lines[i]); // the triggering line is the only additional parameter
                   context.localVariables['P0'] = lines[i]; // in addition populate the P0 variable
-                  result = this.expandMacro(new Stack(context));
+                  result.append(this.expandMacro(new Stack(context)));
                 }
               }
-              else if (this.globalVariables['matching'] == 'glob') {
+              else if (mProps.trigger.matching == 'glob') {
                 // pm.compileRe(pm.parse("(*) has arrived.")).exec("Gast1 has arrived.")[1] == 'Gast1'
                 let mResult = picomatch.compileRe(picomatch.parse(mProps.trigger.pattern)).exec(lines[i]);
                 if (mResult) {
@@ -350,10 +382,10 @@ namespace TMP {
                     context.parameters.push(mResult[p]);
                     context.localVariables['P' + p] = mResult[p];
                   }
-                  result = this.expandMacro(new Stack(context));
+                  result.append(this.expandMacro(new Stack(context)));
                 }                
               } 
-              else if (this.globalVariables['matching'] == 'regexp') {
+              else if (mProps.trigger.matching == 'regexp') {
                 let regex = new RegExp(mProps.trigger.pattern);
                 let mResult = regex.exec(lines[i]);
                 if (mResult) {
@@ -364,7 +396,7 @@ namespace TMP {
                     context.parameters.push(mResult[p]);
                     context.localVariables['P' + p] = mResult[p];
                   }
-                  result = this.expandMacro(new Stack(context));
+                  result.append(this.expandMacro(new Stack(context)));
                 }                
               } 
               else {
@@ -376,83 +408,7 @@ namespace TMP {
       }
 
       return result;
-     }
-
-/*   
-    // Find and return an unescaped char in source from startPosition and return 
-    // position or -1, if not found.'"\"'
-    private searchUnescapedChar(source : string, startPosition : number, searchChar : string) : number {
-      let foundPosition : number = -1;
-      
-      // search for the closing quote.
-      for (let i=startPosition;i<source.length;i++) {
-        if (source.charAt(i) == searchChar) {
-          // We have found one. But it must not be escaped, so
-          // count '\' chars in front of quote. If it's an uneven
-          // uneven number, it is escaped and we must continue!
-          let bs = 0;
-          for (let k = i-1;k>=startPosition;k--) {
-            if (source.charAt(k) == '\\') {
-              bs++;
-              continue;
-            }
-            break;
-          }
-          if (bs % 2 == 0) {
-            // even number of backslashes == closing quote found! 
-            foundPosition = i;
-            break;
-          }
-        }
-      }
-      
-      return foundPosition;
     }
- */  
-    /*
-     * Get all spaces separated parts of string, respect double-quotes ("")
-     * and escaped spaces/quotes, eg.:
-     * Source of    : '/def -t"bla \\" blu" abc'
-     * Should return: [ '/def', '-t', 'bla \\" blu', 'abc' ]
-     */
-/*     private getWords(source : string) : Array<string> {
-      let allWords : Array<string> = [];
-      
-      let firstSpace = this.searchUnescapedChar(source, 0, ' ');
-      let firstQuote = this.searchUnescapedChar(source, 0, '"');
-      
-      if (firstSpace > -1 && (firstQuote == -1 || firstSpace < firstQuote)) {
-        // We found a real space first
-        if (firstSpace>0) allWords.push( source.substr(0, firstSpace) );
-        allWords = allWords.concat(this.getWords(source.substr(firstSpace+1)));
-      }
-      else if (firstQuote > -1 && (firstSpace == -1 || firstQuote < firstSpace)) {
-        // We found a first quote, lets see, if there is a word in front.
-        if (firstQuote > 0) {
-          allWords.push( source.substr(0, firstQuote) );
-          allWords = allWords.concat(this.getWords(source.substr(firstQuote)));
-        }
-        else {
-          // The quote begins a [0], look for closing quote.
-          let lastQuote = this.searchUnescapedChar(source, firstQuote+1, '"');
-          if (lastQuote > -1) {
-            // We have a quoted string
-            allWords.push( source.substr(0, lastQuote+1) );
-            allWords = allWords.concat(this.getWords(source.substr(lastQuote+1)));
-          }
-          else {
-            // We found an opening quote, but no closing quote, this is an error.
-            throw {name : 'ParseError', message : 'Open quote detected, cannot continue to parse'};
-          }
-        }
-      }
-      else {
-        // We found no space and no quote
-        allWords.push( source );
-      }
-
-      return allWords;
-    } */
 
     // Find and return a double-quoted string from source.
     // Return empty string, if not found.
@@ -495,32 +451,56 @@ namespace TMP {
 
       let myContext = stack.getCContext();
       let firstWord = myContext.getFirstWord();
-      let mTrigger = '';
+      let mPattern = '';
+      let mMatching = '';
       let body = myContext.cmd.substr(4).trim();
       
-      if (body.length>0 && body.charAt(0)=='-') {
+      // collect options
+      while (body.length>0 && body.charAt(0)=='-') {
         if (body.length<2) {
           result.message = '% '+firstWord+': missing option -\n';
           return result;
-        } else if(body.charAt(1)!='t') {
+        }
+        
+        // -t trigger option
+        if (body.charAt(1)=='t') {
+          mPattern = this.getQuotedString(body.substr(2), '"');
+          if (!mPattern || mPattern.length==0) {
+            result.message = '% '+firstWord+': invalid/incomplete trigger option, quotes missing?\n';
+            return result;            
+          } 
+          else if (mPattern.length==2) {
+            result.message = '% '+firstWord+': empty trigger found\n';
+            return result;            
+          }
+          else { // found a quoted trigger string!
+            // cut trigger part off the body. +2 for the '-t' option and trim.
+            body = body.substr(mPattern.length + 2).trim();
+            // chop off the quotes off from trigger on both sides.
+            mPattern = mPattern.substr(1, mPattern.length-2);
+            //console.log('TMP '+firstWord+': found trigger:\''+mPattern+'\'.');
+          }
+        } 
+
+        // -m matching option
+        else if (body.charAt(1)=='m') {
+          if (body.indexOf('-msimple ')==0) {
+            mMatching = 'simple';
+            body = body.substr(9).trim();
+          } else if (body.indexOf('-mglob ')==0) {
+            mMatching = 'glob';
+            body = body.substr(7).trim();
+          } else if (body.indexOf('-mregexp ')==0) {
+            mMatching = 'regexp';
+            body = body.substr(9).trim();
+          } else {
+            result.message = '% '+firstWord+': matching option must be: -msimple, -mglob or -mregexp\n';
+            return result;
+          }
+        }
+        else {
           result.message = '% '+firstWord+': unknown option -'+body.charAt(1)+'\n';
           return result;
-        }
-        mTrigger = this.getQuotedString(body.substr(2), '"');
-        if (!mTrigger || mTrigger.length==0) {
-          result.message = '% '+firstWord+': invalid/incomplete trigger option, quotes missing?\n';
-          return result;            
-        } 
-        else if (mTrigger.length==2) {
-          result.message = '% '+firstWord+': empty trigger found\n';
-          return result;            
-        }
-        else { // found a quoted trigger string!
-          // cut trigger part off the body. +2 for the '-t' option.
-          body = body.substr(mTrigger.length + 2);
-          // trim the quotes off on both sides.
-          mTrigger = mTrigger.substr(1, mTrigger.length-2);
-          //console.log('TMP '+firstWord+': found trigger:\''+mTrigger+'\'.');          
         }
       }
       
@@ -529,13 +509,44 @@ namespace TMP {
         let mName = body.substring(0, eqSign).trim();
         let mBody = body.substring(eqSign+1).trim();
         if (mName.length > 0) {
+
+          // sanity checks
+          if (mPattern.length > 0) {
+            if (mMatching.length==0) mMatching = this.globalVariables['matching']; // default
+            if (mMatching == 'glob') {
+              var picomatch = require('picomatch');
+              try {
+                let regex = picomatch.compileRe(picomatch.parse(mPattern));
+              } catch (error) {
+                result.message = '% '+firstWord+': glob error: '+error+'\n';
+                return result;
+              }
+            }
+            else if (mMatching == 'regexp') {
+              try {
+                let regex = new RegExp(mPattern);
+              } catch (error) {
+                result.message = '% '+firstWord+': regexp error: '+error+'\n';
+                return result;
+              }
+            }
+            // else don't check simple
+          } else {
+            // if no pattern, no matching required
+            mMatching = '';
+          }
+
+          // wser wants to know
           if (this.customMacros[mName]!=null && this.customMacros[mName].body !== mBody) {
             result.message = '% '+firstWord+': redefined macro ' + mName + '\n';
           }
+
+          // create/update macro
           let macro = new MacroProps;
           macro.body = mBody;
           macro.trigger = new TriggerProps;
-          macro.trigger.pattern = mTrigger;
+          macro.trigger.pattern = mPattern;
+          macro.trigger.matching = mMatching;
           this.customMacros[mName] = macro;
           this.saveSettings();
         }
@@ -594,6 +605,7 @@ namespace TMP {
           let macroProps = this.customMacros[sortedKeys[i]];
           result.message += '/def ';
           if (macroProps.trigger != null && macroProps.trigger.pattern!=null && macroProps.trigger.pattern.length > 0) {
+            result.message += '-m' + macroProps.trigger.matching + ' ';
             result.message += '-t"' + macroProps.trigger.pattern + '" ';
           }
           result.message += (sortedKeys[i]+' = '+macroProps.body+'\n');

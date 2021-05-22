@@ -27,11 +27,13 @@ namespace TMP {
         case 'def': return '\n'+
           'Help on: /def\n'+
           '\n'+
-          'Usage: /def &lt;name&gt; = &lt;body&gt;\n'+
+          'Usage: /def [-m&lt;matching&gt;] [-t"&lt;pattern&gt;"] &lt;name&gt; = &lt;body&gt;\n'+
           '\n'+
-          'Defines a named macro. No options provided. The &lt;name&gt; can be anything, but must not '+
+          'Defines a named macro. The &lt;name&gt; can be anything, but must not '+
           'contain whitespaces. The &lt;body&gt; is the text to be executed as a user command. Multiple '+
-          'commands can be separated by token \'%;\'. For example, if you define a macro like:\n'+
+          'commands can be separated by token \'%;\'. An optional trigger pattern may be defined to '+
+          'automatically execute the body on a certain message. The optional matching type defines the '+
+          'pattern style. Default is \'glob\' style. Simple macro without triggers:\n'+
           '\n'+
           '  /def time_warp = :jumps to the left!%;:steps to the right!\n'+
           '\n'+
@@ -46,7 +48,7 @@ namespace TMP {
           '\n'+
           'You can execute a macro by typing \'/\' followed by the name of the macro. Macros can call '+
           'other macros, including itself, but recursion is limited to avoid eternal loops.\n\n'+
-          'See: /list, /undef, substitution\n';
+          'See: /list, /undef, substitution, triggers\n';
           break;
         case 'undef': return '\n'+
           'Help on: /undef\n'+
@@ -69,7 +71,24 @@ namespace TMP {
         case 'trigger': case 'triggers': return '\n'+
           'Help on: triggers\n'+
           '\n'+
-          'Soon!\n\n'+
+          'Example 1: /def -msimple -t"Gast1 kommt an." greet1 kicher\n'+
+          '           Defines a simple trigger macro with name \'greet1\', which body will be\n'+
+          '           evaluated, whenever the client receives a matching line, like (e.g.):\n'+
+          '           Gast1 kommt an.\n'+
+          '           As a result the player will just giggle.\n\n'+
+          'Example 2: /def -mglob -t"(*) kommt an." greet2 winke %{P1}\n'+
+          '           Defines a glob-style trigger macro with name \'greet2\', which body will be\n'+
+          '           evaluated, whenever the client receives a matching line, like (e.g.):\n'+
+          '           Gast1 kommt an. (or) Twinsen kommt an. (or) Fuchur kommt an.\n'+
+          '           As a result the player will wave Gast1, Twinsen or Fuchur.\n\n'+
+          'Example 3: /def -mregexp -t"^(\w+) geht nach (\w+)." greet3 = teile %{P1} mit Viel Spass im %{P2}!\n'+
+          '           Defines a regexp-style trigger macro with name \'greet3\', which body will\n'+
+          '           be evaluated, whenever the client receives a matching line, like (e.g.):\n'+
+          '           Elvira geht nach Osten. (or) Fiona geht nach Norden.\n'+
+          '           As a result the player will tell Elvira to have much fun in the \'Osten\'.\n'+
+          '           or Fiona to have much fun in the \'Norden\'.\n\n'+
+          '\n'+
+          'More coming soon!\n\n'+
           'See: /def, /undef, /list\n';
         case 'set': return '\n'+
           'Help on: /set\n'+
@@ -118,10 +137,16 @@ namespace TMP {
           'Global variables may be defined by /set anytime and will be stored in the localStorage of '+
           'your browser. Local variables are defined with /let and exist only during macro evaluation. '+
           'Macro parameters may be used by substitution to pass arguments to macros. Special global '+
-          'variables have default values and usually can only be set to predefined values.\n'+
+          'variables have default values and usually can only be set to predefined values.\n\n'+
+          'Special variables:\n\n'+
+          'borg=1\n'+
+          '    If set to 1, triggers are enabled, is set to 0 all triggers are disabled.\n\n'+
+          'matching=glob\n'+
+          '    Sets the default trigger matching style, when creating new triggers:\n'+
+          '    One of: \'simple\', \'glob\' (default) or \'regexp\'\n\n'+
           'NOTE: Special global variables may be reserved in the future for special purpose settings.\n'+
           'Export your client settings to save your custom macros and variables permanently!\n\n'+
-          'See: /listvar, /set, /unset, /let, substitution\n';
+          'See: /listvar, /set, /unset, /let, substitution, triggers\n';
           break;
         case 'substitution': return '\n'+
           'Help on: substitution\n'+
