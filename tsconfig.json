@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "noImplicitAny": false,
+    "noEmitOnError": true,
+    "removeComments": false,
+    "sourceMap": true,
+    "traceResolution":false,
+    "target": "es5",
+    "module": "none",
+    "outDir": "www/js/",
+    "outFile": "www/js/macros.js",
+    "newLine": "lf"
+  },
+  "include": [
+    "www/src/*",
+    "**/*"
+  ]
+}

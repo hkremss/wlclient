@@ -49,7 +49,24 @@ conf.telnet.port = parseInt(args._[1], 10);
 if(args.h) conf.telnet.host = args.h;
 if(args.w) conf.www = path.resolve(args.w);
 
-var app = express().use('/client', express.static(conf.www));
+var app = express();
+
+// debug logging
+//app.use(function (req, res, next) {
+//  console.log('Time:', Date.now(), 'req.originalUrl:', req.originalUrl, 'statusCode:', res.statusCode);
+//  next();
+//});
+
+// Setup static content folder
+app.use('/client', express.static(conf.www));
+
+// Propagate some nodes_modules to a static web uri as well
+app.use('/client/node_modules/ansi_up', express.static(__dirname + '/node_modules/ansi_up/'));
+app.use('/client/node_modules/jquery', express.static(__dirname + '/node_modules/jquery/dist/'));
+app.use('/client/node_modules/jquery-ui', express.static(__dirname + '/node_modules/jquery-ui-dist/'));
+app.use('/client/node_modules/lightbox2', express.static(__dirname + '/node_modules/lightbox2/dist/'));
+//app.use('/client/node_modules/picomatch', express.static(__dirname + '/node_modules/picomatch/lib/'));
+//app.use('/client/node_modules/ansi-regex', express.static(__dirname + '/node_modules/ansi-regex/'));
 
 var httpserver = null;
 

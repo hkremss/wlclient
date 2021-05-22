@@ -20,10 +20,10 @@ function disconnected() {
 }
 
 // Since ansi_up API 2.0 we need an instance of AnsiUp!
-var ansi_up = new AnsiUp;
+var ansi_up = null;//new AnsiUp;
 
 // Init macro processor
-var macros = new TMP.MacroProcessor;
+var macros = null;//new MacroProcessor;
 
 // `pending` stores partial telnet negotiations that cross message boundaries
 var pending = '';
@@ -239,22 +239,8 @@ function doTelnetNegotions(sock, buf) {
   return strippedBuf;
 }
 
-// Remove all backspaces and chars 'in front', called recursively.
-// Will destroy ANSI-Codes in front, if there are more '\b' than real
-// chars. But this is something, which cannot be avoided effectively.
-// We must trust the responsibility of the creators.
-function handleBackspace(str) {
-  var bs = str.indexOf('\b');
-  if (bs>=0) {
-    var newstr = str.substr(0, (bs-1)) + str.substr(bs+1);
-    return handleBackspace(newstr);
-  }
-  return str;
-}
-
 // Do ANSI conversion, before writing to screen.
 function writeServerData(buf) {
-  buf=handleBackspace(buf);
   var line = ansi_up.ansi_to_html(buf);
   writeToScreen(line);
 }
@@ -295,7 +281,7 @@ function saveSettings() {
 // Re-/Load settings from localStorage.
 function loadSettings() {
   // Macro Processor re-/load
-  macros.ReloadSettings();
+  macros.reloadSettings();
 
   // Re-/load other client settings.
   var localEchoSetting = localStorage.getItem('Client.Setting.LocalEcho');
@@ -384,6 +370,14 @@ function uploadSettingsFile(e) {
       }
       if (settings && Object.keys(settings).length>0) {
         if (settings['#VERSION'] == 1) {
+          // Remove all existing Client.* and Macros.* keys.
+          for (var i = 0; i < localStorage.length; i++){
+            var key = localStorage.key(i);
+            if (key.substr(0,7)=='Client.' || key.substr(0,7)=='Macros.') {
+              localStorage.removeItem(key);
+            }
+          }
+          // Restore keys from imported file.
           var keys = Object.keys(settings);
           for (var i = 0; i < keys.length; i++) {
             var key = keys[i];
@@ -428,7 +422,7 @@ function exportSettings(event) {
   var settingsStr = JSON.stringify(settings);
   hiddenAnchorElement.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(settingsStr));
   hiddenAnchorElement.click();
-  writeToScreen('Einstellungen (V' + settings['#VERSION'] + ', #' + localStorage.length + ') exportiert.\n');
+  writeToScreen('Einstellungen (V' + settings['#VERSION'] + ', #' + (Object.keys(settings).length - 1) + ') exportiert.\n');
   $("#cmd").focus();
 }
 
@@ -460,8 +454,23 @@ function setFocusToInput() {
 }
 
 // Called once, when UI is loaded and ready to go.
-$(document).ready(function(){
+//$(document).ready(startClientFunction);
 
+// Called once from app.js, when all required modules are loaded.
+function startClientFunction() {
+    
+  const AnsiUp = require('ansi_up').default;
+  //console.log('Found:' + AnsiUp);
+  ansi_up = new AnsiUp;
+
+  const MacroProcessor = require('js/macros');
+  //console.log('Found:' + TMP.MacroProcessor);
+  // Init macro processor
+  macros = new TMP.MacroProcessor;
+  
+  const io = require("socket.io");
+  //console.log('Found:' + io);
+    
   // need to adjust layout after resize
   window.addEventListener('resize', adjustLayout);
 
@@ -483,19 +492,21 @@ $(document).ready(function(){
   {
     if (!pwMode) {
       // If macro processor handles the key, don't continue.
-      var result = macros.HandleKey(event);
-      var doSend = result[0];
-      var msg = result[2];
+      var result = macros.keyTrigger(event);
+      var doSend = result.send;
+      var msg = result.message;
       if (doSend) {
-        var cmd = result[1];
-        send(cmd + '\n', pwMode);
+        var cmd = result.cmd;
+        // Append a LF, if the last character is not a LF yet.
+        if (cmd.length == 0 || cmd.charAt(cmd.length-1) != '\n') cmd += '\n';
+        send(cmd, pwMode);
         event.preventDefault();
         return true;
       }
       // If there is nothing to send, but the input contains '/def key_', append the 
       // pressed named key now as a convenience function.
       else {
-        var namedKey = macros.GetNamedKey(event);
+        var namedKey = macros.getNamedKey(event);
         if (namedKey.length>0) {
           var cmd = document.getElementById('cmd');
           if (cmd.value && cmd.value.substr(0, 4).toLowerCase() == '/def' && cmd.value.substr(cmd.value.length-4) == 'key_') {
@@ -562,14 +573,54 @@ $(document).ready(function(){
     }
   });
 
+  // Remove all backspaces and chars 'in front', called recursively.
+  // Will destroy ANSI-Codes in front, if there are more '\b' than real
+  // chars. But this is something, which cannot be avoided effectively.
+  // We must trust the responsibility of the creators.
+  function handleBackspace(str) {
+    var bs = str.indexOf('\b');
+    if (bs>=0) {
+      var newstr = str.substr(0, (bs-1)) + str.substr(bs+1);
+      return handleBackspace(newstr);
+    }
+    return str;
+  }
+
+  // Strip all ansi codes from string.
+  const ansiRegex = require('ansi-regex');
+  function stripAnsi(str) {
+    return str.replace(ansiRegex(), '');
+  }
+
   // websocket
   // use page location and truncate off tailing /index.html
   var baseUri = location.pathname.substring(0, location.pathname.lastIndexOf("/"))
   var sock = io.connect('', {path:baseUri+'/socket.io'});
-  sock.on('stream', function(buf){
-    buf = doTelnetNegotions(sock, buf);
+
+  // We received something!
+  sock.on('stream', function(buf) {
+    // telnet negs first (telnet!)
+    buf = doTelnetNegotions(sock, buf); 
+
+    // treat backspace (might be evil)
+    buf = handleBackspace(buf);
+
+    // write into UI (after ansi2html)
     writeServerData(buf);
+
+    // finally strip ansi and feed triggers
+    var result = macros.textTrigger(stripAnsi(buf));
+    var doSend = result.send;
+    var msg = result.message;
+    if (doSend) {
+      var cmd = result.cmd;
+      // Append a LF, if the last character is not a LF yet.
+      if (cmd.length == 0 || cmd.charAt(cmd.length-1) != '\n') cmd += '\n';
+      send(cmd, pwMode);
+    }
+    if (msg.length > 0) writeToScreen(msg);
   });
+
   sock.on('connected', function(){
     writeToScreen('Verbindung zum Wunderland hergestellt.\n');
     connected();
@@ -622,15 +673,18 @@ $(document).ready(function(){
 
     // Macro handling
     if (!pwMode) {
-      var resolvedMacro = macros.resolve(cmd);
-      doSend = resolvedMacro[0];
-      cmd = resolvedMacro[1];
-      var msg = resolvedMacro[2];
+      var result = macros.resolve(cmd);
+      doSend = result.send;
+      cmd = result.cmd;
+      var msg = result.message;
       if (msg.length > 0) writeToScreen(msg);
     }
 
+    // Append a LF, if the last character is not a LF yet.
+    if (cmd.length == 0 || cmd.charAt(cmd.length-1) != '\n') cmd += '\n';
+
     // Now send, if noone opted out.
-    if (doSend) send(cmd + '\n', pwMode);
+    if (doSend) send(cmd, pwMode);
 
     // Clear input element
     elem.val('').change();
@@ -744,4 +798,4 @@ $("#out").click();
     adjustLayout();    
     send('\n', false);
   },200)
-});
+}

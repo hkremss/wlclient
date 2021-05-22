@@ -1,6 +1,6 @@
 # WL-Client
 
-WL-Client is a client for the German MUD (multi-user dungeon) [Wunderland](https://wunderland.mud.de/). It's based on the great [WebTelnet by Raymond Xie](https://github.com/mudchina/webtelnet) as a proxy server to bridge websocket to telnet, enable visiting telnet servers with browsers. It has been adapted, bug-fixed, updated and extended as a special purpose tool. So if you are looking for a more generic approach, visit: https://github.com/mudchina/webtelnet
+WL-Client is a client for the German MUD (multi-user dungeon) [Wunderland](https://wunderland.mud.de/). It's based on the great [WebTelnet by Raymond Xie](https://github.com/mudchina/webtelnet) as a proxy server to bridge websocket to telnet, enable visiting telnet servers with browsers. It has been adapted, bug-fixed, updated and massively extended as a special purpose tool. So if you are looking for a more generic approach, visit: https://github.com/mudchina/webtelnet.
 
 ## Purpose
 
@@ -16,7 +16,7 @@ node /home/www/client.app/main.js 4716 4711 -h wl.mud.de -c iso-8859-1
 
 * This will launch the client as a web site on your machine port 4716: http://localhost:4716/client/ 
 * Socket-connection will to the MUD will use port 4711 on wl.mud.de (MUD Wunderland). 
-* To test your MUD change 'wl.mud.de' and '4711' to your parameters.
+* To test your MUD, change 'wl.mud.de' and '4711' to your parameters.
 * You can configure https to make your client more secure. 
 * You can use a reverse-proxy configuration to avoid custom ports and use 80/443.
 * For production mode: Make sure, the client browser request will reach static content on //<your-host>:<your-port>/webclient/ through your static web-server host configuration. 
@@ -33,4 +33,4 @@ Playing Wunderland with mobile browser on Android:
 
 ## Credits
 
-Created by Raymond Xie, Holger@Wunderland and Fuchur@Wunderland, published under MIT license.
+Created by Holger@Wunderland and Fuchur@Wunderland, based on work of Raymond Xie, published under MIT license.
