@@ -159,7 +159,14 @@ namespace TMP {
           ' #             - the the number of existing macro parameters\n'+
           ' 0             - the name of the current evaluated macro\n'+
           ' 1, 2, 3, etc. - positional macro parameters, e.g. %{1}\n'+
-          ' *             - selects all positional parameters (1 2 3 etc.)\n'+
+          ' *             - selects all positional parameters except 0 (1 2 3 etc.)\n'+
+          ' Pn            - Result of the last successful RegExp or Glob subexpression,\n'+
+          '                 n is a positive number. %{P0} expands to the complete text\n'+
+          '                 matched, %{P1} matches the first parenthesised subexpression,\n'+
+          '                 %{P2} the second etc. If \'n\' exceeds the number of matched\n'+
+          '                 subexpressions, it expands to an empty string.\n'+
+          ' PL            - expands to the text left of matched text (%{P0}).\n'+
+          ' PR            - expands to the text left of matched text (%{P0}).\n'+
           '\n'+
           'More selectors may be available in the future.\n\n'+
           'See: /listvar, /set, /unset, /let, variables\n';
@@ -168,12 +175,13 @@ namespace TMP {
           'Tiny Macro Processor V' + MacroProcessor.VERSION + '\n'+
           '~~~~~~~~~~~~~~~~~~~~~~~~~~\n'+
           'The macro processor is an optional and experimental component of the Wunderland '+
-          'web-client and provides tools to define and excute macros. These macros '+
+          'web-client and provides tools to define and execute macros. These macros '+
           'may define scripts to do complex or repetetive tasks. One typical use case is '+
           'the definition of long routes to walk through the MUD. The number of commands per '+
-          'macro is limited. Any feature may change anytime and the whole processor may '+
-          'disappear completely in the future, without further notice.\n'+
+          'macro and the number of recursion steps is limited. Any feature may change anytime '+
+          'and the processor may disappear completely in the future, without further notice.\n'+
           '\n'+
+          'Additional help pages: /help &lt;command/topic &gt; (without \'/\')\n\n'+
           'Commands:\n'+
           ' /def     - define a named macro\n'+
           ' /undef   - undefine a named macro\n'+
@@ -181,12 +189,14 @@ namespace TMP {
           ' /set     - set a global variable\n'+
           ' /unset   - unset a global variable\n'+
           ' /listvar - list all global variables, including special variables\n'+
-          ' /let     - set the value of a local variable\n'+
-          ' /help &lt;command&gt; - help for any command (without \'/\')\n'+
-          '\n'+
-          'The macros are stored in your browsers localStorage only. Export your client settings '+
+          ' /let     - set the value of a local variable\n\n'+
+          'Other topics:\n'+
+          ' variables    - \n'+
+          ' substitution - \n'+
+          ' triggers     - \n\n'+
+          'NOTE: The macros are stored in your browsers localStorage only. Export your client settings '+
           'to save them permanently!\n\n'+
-          'See: /def, /undef, /list, /set, /unset, /listvar, /let, variables, substitution';
+          'See: /def, /undef, /list, /set, /unset, /listvar, /let, variables, substitution, triggers\n';
       }
     }
   }

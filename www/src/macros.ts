@@ -158,7 +158,7 @@ namespace TMP {
   export class MacroProcessor {
   
     // constants
-    static readonly VERSION = '0.3';
+    static readonly VERSION = '0.4';
     static readonly MACRO_KEY = '/';
     static readonly STORAGE_KEY_LIST = 'Macros.List';
     static readonly STORAGE_KEY_LISTVAR = 'Macros.ListVar';
@@ -364,7 +364,7 @@ namespace TMP {
             if (mProps.trigger != null && mProps.trigger.pattern != null && mProps.trigger.pattern.length > 0) {
               if (mProps.trigger.matching == 'simple') {
                 if (lines[i] == mProps.trigger.pattern) {
-                  console.log('% TRIGGER MATCH SIMPLE PATTERN FOR \''+mName+'\'');
+                  console.log('% trigger match simple pattern of: '+mName);
                   let context = new EvaluationContext('/'+mName);
                   context.parameters.push(lines[i]); // the triggering line is the only additional parameter
                   context.localVariables['P0'] = lines[i]; // in addition populate the P0 variable
@@ -375,13 +375,15 @@ namespace TMP {
                 // pm.compileRe(pm.parse("(*) has arrived.")).exec("Gast1 has arrived.")[1] == 'Gast1'
                 let mResult = picomatch.compileRe(picomatch.parse(mProps.trigger.pattern)).exec(lines[i]);
                 if (mResult) {
-                  console.log('% TRIGGER MATCH GLOB PATTERN FOR \''+mName+'\'');
+                  console.log('% trigger match glob pattern of: '+mName);
                   let context = new EvaluationContext('/'+mName);
                   for (let p=0;;p++) {
                     if (!mResult[p]) break;
                     context.parameters.push(mResult[p]);
                     context.localVariables['P' + p] = mResult[p];
                   }
+                  context.localVariables['PL'] = lines[i].substr(0, mResult.index);
+                  context.localVariables['PR'] = lines[i].substr(mResult.index + mResult[0].length);
                   result.append(this.expandMacro(new Stack(context)));
                 }                
               } 
@@ -389,13 +391,16 @@ namespace TMP {
                 let regex = new RegExp(mProps.trigger.pattern);
                 let mResult = regex.exec(lines[i]);
                 if (mResult) {
-                  console.log('% TRIGGER MATCH REGEXP PATTERN FOR \''+mName+'\'');
+                  console.log('% trigger match regexp pattern of: '+mName);
                   let context = new EvaluationContext('/'+mName);
                   for (let p=0;;p++) {
                     if (!mResult[p]) break;
                     context.parameters.push(mResult[p]);
                     context.localVariables['P' + p] = mResult[p];
                   }
+                  // '   111   '
+                  context.localVariables['PL'] = lines[i].substr(0, mResult.index);
+                  context.localVariables['PR'] = lines[i].substr(mResult.index + mResult[0].length);
                   result.append(this.expandMacro(new Stack(context)));
                 }                
               } 

@@ -320,7 +320,7 @@ var TMP;
                         if (mProps.trigger != null && mProps.trigger.pattern != null && mProps.trigger.pattern.length > 0) {
                             if (mProps.trigger.matching == 'simple') {
                                 if (lines[i] == mProps.trigger.pattern) {
-                                    console.log('% TRIGGER MATCH SIMPLE PATTERN FOR \'' + mName + '\'');
+                                    console.log('% trigger match simple pattern of: ' + mName);
                                     var context = new EvaluationContext('/' + mName);
                                     context.parameters.push(lines[i]); // the triggering line is the only additional parameter
                                     context.localVariables['P0'] = lines[i]; // in addition populate the P0 variable
@@ -331,7 +331,7 @@ var TMP;
                                 // pm.compileRe(pm.parse("(*) has arrived.")).exec("Gast1 has arrived.")[1] == 'Gast1'
                                 var mResult = picomatch.compileRe(picomatch.parse(mProps.trigger.pattern)).exec(lines[i]);
                                 if (mResult) {
-                                    console.log('% TRIGGER MATCH GLOB PATTERN FOR \'' + mName + '\'');
+                                    console.log('% trigger match glob pattern of: ' + mName);
                                     var context = new EvaluationContext('/' + mName);
                                     for (var p = 0;; p++) {
                                         if (!mResult[p])
@@ -339,6 +339,8 @@ var TMP;
                                         context.parameters.push(mResult[p]);
                                         context.localVariables['P' + p] = mResult[p];
                                     }
+                                    context.localVariables['PL'] = lines[i].substr(0, mResult.index);
+                                    context.localVariables['PR'] = lines[i].substr(mResult.index + mResult[0].length);
                                     result.append(this.expandMacro(new Stack(context)));
                                 }
                             }
@@ -346,7 +348,7 @@ var TMP;
                                 var regex = new RegExp(mProps.trigger.pattern);
                                 var mResult = regex.exec(lines[i]);
                                 if (mResult) {
-                                    console.log('% TRIGGER MATCH REGEXP PATTERN FOR \'' + mName + '\'');
+                                    console.log('% trigger match regexp pattern of: ' + mName);
                                     var context = new EvaluationContext('/' + mName);
                                     for (var p = 0;; p++) {
                                         if (!mResult[p])
@@ -354,6 +356,9 @@ var TMP;
                                         context.parameters.push(mResult[p]);
                                         context.localVariables['P' + p] = mResult[p];
                                     }
+                                    // '   111   '
+                                    context.localVariables['PL'] = lines[i].substr(0, mResult.index);
+                                    context.localVariables['PR'] = lines[i].substr(mResult.index + mResult[0].length);
                                     result.append(this.expandMacro(new Stack(context)));
                                 }
                             }
@@ -901,7 +906,7 @@ var TMP;
             return result;
         };
         // constants
-        MacroProcessor.VERSION = '0.3';
+        MacroProcessor.VERSION = '0.4';
         MacroProcessor.MACRO_KEY = '/';
         MacroProcessor.STORAGE_KEY_LIST = 'Macros.List';
         MacroProcessor.STORAGE_KEY_LISTVAR = 'Macros.ListVar';
@@ -1078,7 +1083,14 @@ var TMP;
                         ' #             - the the number of existing macro parameters\n' +
                         ' 0             - the name of the current evaluated macro\n' +
                         ' 1, 2, 3, etc. - positional macro parameters, e.g. %{1}\n' +
-                        ' *             - selects all positional parameters (1 2 3 etc.)\n' +
+                        ' *             - selects all positional parameters except 0 (1 2 3 etc.)\n' +
+                        ' Pn            - Result of the last successful RegExp or Glob subexpression,\n' +
+                        '                 n is a positive number. %{P0} expands to the complete text\n' +
+                        '                 matched, %{P1} matches the first parenthesised subexpression,\n' +
+                        '                 %{P2} the second etc. If \'n\' exceeds the number of matched\n' +
+                        '                 subexpressions, it expands to an empty string.\n' +
+                        ' PL            - expands to the text left of matched text (%{P0}).\n' +
+                        ' PR            - expands to the text left of matched text (%{P0}).\n' +
                         '\n' +
                         'More selectors may be available in the future.\n\n' +
                         'See: /listvar, /set, /unset, /let, variables\n';
@@ -1087,12 +1099,13 @@ var TMP;
                     'Tiny Macro Processor V' + TMP.MacroProcessor.VERSION + '\n' +
                     '~~~~~~~~~~~~~~~~~~~~~~~~~~\n' +
                     'The macro processor is an optional and experimental component of the Wunderland ' +
-                    'web-client and provides tools to define and excute macros. These macros ' +
+                    'web-client and provides tools to define and execute macros. These macros ' +
                     'may define scripts to do complex or repetetive tasks. One typical use case is ' +
                     'the definition of long routes to walk through the MUD. The number of commands per ' +
-                    'macro is limited. Any feature may change anytime and the whole processor may ' +
-                    'disappear completely in the future, without further notice.\n' +
+                    'macro and the number of recursion steps is limited. Any feature may change anytime ' +
+                    'and the processor may disappear completely in the future, without further notice.\n' +
                     '\n' +
+                    'Additional help pages: /help &lt;command/topic &gt; (without \'/\')\n\n' +
                     'Commands:\n' +
                     ' /def     - define a named macro\n' +
                     ' /undef   - undefine a named macro\n' +
@@ -1100,12 +1113,14 @@ var TMP;
                     ' /set     - set a global variable\n' +
                     ' /unset   - unset a global variable\n' +
                     ' /listvar - list all global variables, including special variables\n' +
-                    ' /let     - set the value of a local variable\n' +
-                    ' /help &lt;command&gt; - help for any command (without \'/\')\n' +
-                    '\n' +
-                    'The macros are stored in your browsers localStorage only. Export your client settings ' +
+                    ' /let     - set the value of a local variable\n\n' +
+                    'Other topics:\n' +
+                    ' variables    - \n' +
+                    ' substitution - \n' +
+                    ' triggers     - \n\n' +
+                    'NOTE: The macros are stored in your browsers localStorage only. Export your client settings ' +
                     'to save them permanently!\n\n' +
-                    'See: /def, /undef, /list, /set, /unset, /listvar, /let, variables, substitution';
+                    'See: /def, /undef, /list, /set, /unset, /listvar, /let, variables, substitution, triggers\n';
             }
         };
         return MacroHelp;

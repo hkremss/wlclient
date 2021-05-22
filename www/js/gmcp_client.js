@@ -27,7 +27,7 @@ function numberWithDots(x) {
 
 // New: GMCP support (Holger)
 function getGMCPHello(){
-  return 'Core.Hello { \"client\": \"WL@Web\", \"version\": \"1.1.0\" }';
+  return 'Core.Hello { \"client\": \"WL@Web\", \"version\": \"1.2.0\" }';
 }
 
 function doGMCPReceive(sock, data) {

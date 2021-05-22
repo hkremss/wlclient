@@ -31,12 +31,12 @@ console.log(MacroHelp);
 describe('MacroProcessor', function () {
 
   describe('getVersion', function () {
-    it('should return version 0.2 as string', function () {
+    it('should return version 0.4 as string', function () {
       var macros = new MacroProcessor;
       var version = macros.getVersion();
       version.should.be.type('string');
       version.should.have.lengthOf(3);
-      version.should.eql('0.3');
+      version.should.eql('0.4');
     });
   });
 
