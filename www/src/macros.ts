@@ -999,12 +999,11 @@ namespace TMP {
     public resolve(text : string) : EvalResult {
       let result = new EvalResult(false, '', '');
 
-      let lines = text.split('\n');
+      // Split text into lines. (no matter if LF or CRLF)
+      let lines = text.split(/\r?\n/);
       for (let i = 0; i < lines.length; i++) {
-        let singleResult = this.resolveSingle(new Stack(new EvaluationContext(text)));
-        if (singleResult.send === true) result.send = true;
-        result.cmd += singleResult.cmd;
-        result.message += singleResult.message;
+        // resolve every single line and append results
+        result.append(this.resolveSingle(new Stack(new EvaluationContext(lines[i]))));
       }
 
       return result;

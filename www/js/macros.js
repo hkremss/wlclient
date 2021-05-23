@@ -895,13 +895,11 @@ var TMP;
          */
         MacroProcessor.prototype.resolve = function (text) {
             var result = new EvalResult(false, '', '');
-            var lines = text.split('\n');
+            // Split text into lines. (no matter if LF or CRLF)
+            var lines = text.split(/\r?\n/);
             for (var i = 0; i < lines.length; i++) {
-                var singleResult = this.resolveSingle(new Stack(new EvaluationContext(text)));
-                if (singleResult.send === true)
-                    result.send = true;
-                result.cmd += singleResult.cmd;
-                result.message += singleResult.message;
+                // resolve every single line and append results
+                result.append(this.resolveSingle(new Stack(new EvaluationContext(lines[i]))));
             }
             return result;
         };
