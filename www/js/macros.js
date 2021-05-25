@@ -363,7 +363,7 @@ var TMP;
                                 }
                             }
                             else {
-                                throw new Error("Unknown matching type!");
+                                console.log('MacroProcessor macro \'' + mName + '\' invalid trigger matching: ' + mProps.trigger.matching + ' detected');
                             }
                         }
                     }
