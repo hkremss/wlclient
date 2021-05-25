@@ -81,7 +81,7 @@ namespace TMP {
           '           evaluated, whenever the client receives a matching line, like (e.g.):\n'+
           '           Gast1 kommt an. (or) Twinsen kommt an. (or) Fuchur kommt an.\n'+
           '           As a result the player will wave Gast1, Twinsen or Fuchur.\n\n'+
-          'Example 3: /def -mregexp -t"^(\w+) geht nach (\w+)." greet3 = teile %{P1} mit Viel Spass im %{P2}!\n'+
+          'Example 3: /def -mregexp -t"^(\\w+) geht nach (\\w+)." greet3 = teile %{P1} mit Viel Spass im %{P2}!\n'+
           '           Defines a regexp-style trigger macro with name \'greet3\', which body will\n'+
           '           be evaluated, whenever the client receives a matching line, like (e.g.):\n'+
           '           Elvira geht nach Osten. (or) Fiona geht nach Norden.\n'+

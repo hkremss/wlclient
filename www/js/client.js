@@ -34,6 +34,47 @@ var tty_neg_index = 0;
 // pwMode + pw store local input, if cmd is in 'password' mode
 var pwMode = false;
 
+// Initial command buttons.
+var cmdButtons = {
+  "cmdbt8" : {
+    type : 1,
+    cmds : {'1': {'label':'wer', 'cmd':'wer', 'send':true}}
+  },
+  "cmdbt7" : {
+    type : 1,
+    cmds : {'1': {'label':'schau', 'cmd':'schau', 'send':true}}
+  },
+  "cmdbt6" : {
+    type : 1,
+    cmds : {'1': {'label':'inventar', 'cmd':'inv', 'send':true}}
+  },
+  "cmdbt5" : {
+    type : 1,
+    cmds : {'1': {'label':'info', 'cmd':'info', 'send':true}}
+  },
+  "cmdbt4" : {
+    type : 1,
+    cmds : {'1': {'label':'- ...', 'cmd':'- ', 'send':false}}
+  },
+  "cmdbt3" : {
+    type : 1,
+    cmds : {'1': {'label':'oben', 'cmd':'oben', 'send':true}}
+  },
+  "cmdbt2" : {
+    type : 4,
+    cmds : {
+      '1': {'label':'n', 'cmd':'n', 'send':true},
+      '2': {'label':'s', 'cmd':'s', 'send':true},
+      '3': {'label':'o', 'cmd':'o', 'send':true},
+      '4': {'label':'w', 'cmd':'w', 'send':true},
+    }
+  },
+  "cmdbt1" : {
+    type : 1,
+    cmds : {'1': {'label':'unten', 'cmd':'unten', 'send':true}}
+  },
+};
+
 /// Split the query-string into key-value pairs and return a map.
 // Stolen from: http://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
 function parseQuery(qstr) {
@@ -253,7 +294,7 @@ function adjustLayout() {
 
   var w = page_elem.width(), h = page_elem.height();
   var w0 = in_elem.width();
-  var w1 = $('button#send').outerWidth(true);
+//  var w1 = $('button#send').outerWidth(true);
   var w2 = $('div#menu').outerWidth(true)+25;
   var w3 = $('div#info').width();
 
@@ -399,7 +440,7 @@ function uploadSettingsFile(e) {
     else {
       writeToScreen('Einstellungen konnten nicht importiert werden.\n');
     }
-    $("#cmd").focus();
+    setFocusToInput();
   }
   reader.readAsText(file)
 }
@@ -423,7 +464,7 @@ function exportSettings(event) {
   hiddenAnchorElement.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(settingsStr));
   hiddenAnchorElement.click();
   writeToScreen('Einstellungen (V' + settings['#VERSION'] + ', #' + (Object.keys(settings).length - 1) + ') exportiert.\n');
-  $("#cmd").focus();
+  setFocusToInput();
 }
 
 // Call to enter into pw mode.
@@ -442,7 +483,7 @@ function leavePWMode() {
   $("#pwd").hide();
   $(".dropbtn").show();
   $("#cmd").show();
-  $("#cmd").focus();
+  setFocusToInput();
 }
 
 // Give the focus to the input field.
@@ -451,6 +492,14 @@ function setFocusToInput() {
     document.getElementById('pwd').focus();
   else 
     document.getElementById('cmd').focus();
+}
+
+// Give the focus to the input field.
+function setInput(cmd) {
+  if (pwMode)
+    document.getElementById('pwd').value = cmd;
+  else 
+    document.getElementById('cmd').value = cmd;
 }
 
 // Called once, when UI is loaded and ready to go.
@@ -628,7 +677,7 @@ function startClientFunction() {
   sock.on('disconnected', function(){
     writeToScreen('Verbindung zum Wunderland verloren. (Enter: neu verbinden)\n');
     leavePWMode();
-    $('#prompt').html('&gt; ');
+    document.getElementById('prompt').innerHTML('&gt; ');
     disconnected();
   });
 
@@ -656,8 +705,8 @@ function startClientFunction() {
   // Get user input from UI elements (either cmd or pwd),
   // add it to the history and call send(). See above.
   function sendInput() {
-    var elem = (pwMode === true ? $('#pwd') : $('#cmd'));
-    var cmd = elem.val();
+    var elem = (pwMode === true ? document.getElementById('pwd') : document.getElementById('cmd'));
+    var cmd = elem.value;
 
     // Push this line to the history, if it's not a pwd
     if(cmd.length>0 && history.indexOf(cmd)!=0) {
@@ -687,14 +736,105 @@ function startClientFunction() {
     if (doSend) send(cmd, pwMode);
 
     // Clear input element
-    elem.val('').change();
+    elem.value = '';
+    elem.dispatchEvent(new Event('change'));
+  }
+
+  // Create and configure the game command buttons from 'cmdButtons'.
+  function configureCmdButtons() {
+    var buttonKeys = Object.keys(cmdButtons).sort();
+    var mainDropdown = document.querySelector('div#mainDropdown');
+    for (var i=0; i < buttonKeys.length; i++) {
+      if (cmdButtons[buttonKeys[i]].type == 1) {
+        // <button id="who" class="drp">wer</button>;
+        var newButton = document.createElement("button");
+        newButton.id = buttonKeys[i] + '.1';
+        newButton.className = 'drp';
+        newButton.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['1'].label;
+        newButton.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['1'].send;
+        newButton.dataset.cmd = cmdButtons[buttonKeys[i]]['cmds']['1'].cmd;
+        newButton.addEventListener('click', function(e) { 
+          setInput(this.dataset.cmd); 
+          if (this.dataset.send == 'true') sendInput(); 
+          setFocusToInput(); 
+        });
+      }
+      else if (cmdButtons[buttonKeys[i]].type == 4) {
+        // <div class="drp nohover" style="white-space: nowrap;overflow:hidden;">
+        //   <button id="north" class="drp" style="float: left;width:24px;padding:0px;margin-left:0px;">n</button>
+        //   <button id="south" class="drp" style="float: left;width:23px;padding:0px;margin-left:2px;">s</button>
+        //   <button id="east" class="drp" style="float: left;width:23px;padding:0px;margin-left:2px;">o</button>
+        //   <button id="west" class="drp" style="float: left;width:24px;padding:0px;margin-left:2px;">w</button>
+        // </div>
+        var newButton = document.createElement("div");
+        newButton.className = 'drp nohover';
+        newButton.style = 'white-space: nowrap;overflow:hidden;';
+        // Sub button 1
+        var subButton1 = document.createElement("button");
+        subButton1.id = buttonKeys[i] + '.1';
+        subButton1.className = 'drp';
+        subButton1.style = 'float: left;width:24px;padding:0px;margin-left:0px;';
+        subButton1.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['1'].label;
+        subButton1.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['1'].send;
+        subButton1.dataset.cmd = cmdButtons[buttonKeys[i]]['cmds']['1'].cmd;
+        newButton.insertBefore(subButton1, null);
+        subButton1.addEventListener('click', function(e) { 
+          setInput(this.dataset.cmd); 
+          if (this.dataset.send == 'true') sendInput(); 
+          setFocusToInput(); 
+        });
+        // Sub button 2
+        var subButton2 = document.createElement("button");
+        subButton2.id = buttonKeys[i] + '.2';
+        subButton2.className = 'drp';
+        subButton2.style = 'float: left;width:23px;padding:0px;margin-left:2px;';
+        subButton2.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['2'].label;
+        subButton2.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['2'].send;
+        subButton2.dataset.cmd = cmdButtons[buttonKeys[i]]['cmds']['2'].cmd;
+        newButton.insertBefore(subButton2, null);
+        subButton2.addEventListener('click', function(e) { 
+          setInput(this.dataset.cmd); 
+          if (this.dataset.send == 'true') sendInput(); 
+          setFocusToInput(); 
+        });
+        // Sub button 3
+        var subButton3 = document.createElement("button");
+        subButton3.id = buttonKeys[i] + '.3';
+        subButton3.className = 'drp';
+        subButton3.style = 'float: left;width:23px;padding:0px;margin-left:2px;';
+        subButton3.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['3'].label;
+        subButton3.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['3'].send;
+        subButton3.dataset.cmd = cmdButtons[buttonKeys[i]]['cmds']['3'].cmd;
+        newButton.insertBefore(subButton3, null);
+        subButton3.addEventListener('click', function(e) { 
+          setInput(this.dataset.cmd); 
+          if (this.dataset.send == 'true') sendInput(); 
+          setFocusToInput(); 
+        });
+        // Sub button 4
+        var subButton4 = document.createElement("button");
+        subButton4.id = buttonKeys[i] + '.4';
+        subButton4.className = 'drp';
+        subButton4.style = 'float: left;width:24px;padding:0px;margin-left:2px;';
+        subButton4.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['4'].label;
+        subButton4.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['4'].send;
+        subButton4.dataset.cmd = cmdButtons[buttonKeys[i]]['cmds']['4'].cmd;
+        newButton.insertBefore(subButton4, null);
+        subButton4.addEventListener('click', function(e) { 
+          setInput(this.dataset.cmd); 
+          if (this.dataset.send == 'true') sendInput(); 
+          setFocusToInput(); 
+        });
+      }
+      mainDropdown.insertBefore(newButton, mainDropdown.firstChild);
+    }
   }
 
   // Show cookie popup
   doCookiePopup();
 
   // Initially it's always #cmd
-  $("#cmd").focus();
+  setFocusToInput();
 
   // UI events
   $('#cmd, #pwd').keypress(function(e) {
@@ -741,22 +881,10 @@ function startClientFunction() {
   });
 
   // 'Enter'
-  $('button#send').click(function(e) { sendInput(); setFocusToInput(); });
+  //document.querySelector('button#send').addEventListener('click', function(e) { sendInput(); setFocusToInput(); });
 
-  // some basic commands
-  $('button#channel').click(function(e) { $('#cmd').val('- '); $("#cmd").focus(); });
-  $('button#who').click(function(e) { $('#cmd').val('wer'); sendInput(); $("#cmd").focus(); });
-  $('button#look').click(function(e) { $('#cmd').val('schau'); sendInput(); $("#cmd").focus(); });
-  $('button#inv').click(function(e) { $('#cmd').val('inv'); sendInput(); $("#cmd").focus(); });
-  $('button#score').click(function(e) { $('#cmd').val('info'); sendInput(); $("#cmd").focus(); });
-
-  // some basic move commands
-  $('button#up').click(function(e) { $('#cmd').val('o'); sendInput(); $("#cmd").focus(); });
-  $('button#north').click(function(e) { $('#cmd').val('n'); sendInput(); $("#cmd").focus(); });
-  $('button#east').click(function(e) { $('#cmd').val('o'); sendInput(); $("#cmd").focus(); });
-  $('button#south').click(function(e) { $('#cmd').val('s'); sendInput(); $("#cmd").focus(); });
-  $('button#west').click(function(e) { $('#cmd').val('w'); sendInput(); $("#cmd").focus(); });
-  $('button#down').click(function(e) { $('#cmd').val('u'); sendInput(); $("#cmd").focus(); });
+  // Create configurable command buttons.
+  configureCmdButtons();
 
   // Settings
 
@@ -765,22 +893,26 @@ function startClientFunction() {
   document.querySelector('button#exportButton').addEventListener('click', exportSettings);
 
   // colors dialog
-  $('button#colors').click(function(e) { writeToScreen('Farbeinstellungen: (geht noch nicht)\n'); $("#cmd").focus(); });
+  document.querySelector('button#colors').addEventListener('click', function(e) { writeToScreen('Farbeinstellungen: (geht noch nicht)\n'); setFocusToInput(); });
 
   // toggle local echo
-  $('button#localecho').click(function(e) {
+  document.querySelector('button#localecho').addEventListener('click', function(e) {
     localEcho = !localEcho;
     saveSettings();
     writeToScreen('Lokales Echo ist jetzt '+(localEcho==true ? 'an' : 'aus')+'.\n'); 
-    $('button#localecho').html('Local Echo: ' + (localEcho==true ? 'an' : 'aus') + '');
-    $("#cmd").focus(); 
+    document.querySelector('button#localecho').innerHTML('Local Echo: ' + (localEcho==true ? 'an' : 'aus') + '');
+    setFocusToInput(); 
   });
 
   // open help in new tab
-  $('button#helpButton').click(function(e) { window.open('/webclient/help.html','_blank'); });
+  document.querySelector('button#helpButton').addEventListener('click', function(e) { window.open('/webclient/help.html','_blank'); });
 
   // clear screen
-  $('button#clear').click(function(e) { $('div#out').html(''); $("#cmd").focus(); });
+  document.querySelector('button#clear').addEventListener('click', function(e) { 
+    var out = document.getElementById('out'); 
+    while(out.firstChild) out.removeChild(out.lastChild);
+    setFocusToInput(); 
+  });
 
   $( "#infoDialog" ).dialog({
       modal: true,
@@ -792,7 +924,7 @@ function startClientFunction() {
       }
     });
 
-$("#out").click(); 
+  document.getElementById('out').click(); 
 
   setTimeout(function(){
     adjustLayout();    
