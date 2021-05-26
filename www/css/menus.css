@@ -118,3 +118,16 @@ div#settingsDropdown.dropdown-content button.drp {
 .dropdown a:hover {background-color: #ddd}
 
 .dropshow {display:block;}
+
+button.ctx {
+  font-family:inherit;
+  /*font-size:inherit;*/
+  width: 100px;
+  border: solid 1px black;
+  /*border-radius: 10px;*/
+  background-color: rgb(255, 255, 255);
+  color: rgb(0, 0, 0);
+  height:1.95em;
+  padding: 5px;
+  margin: 0px;
+}

@@ -42,6 +42,7 @@
     "jquery": "^1.12.4",
     "jquery-ui-dist": "^1.12.1",
     "lightbox2": "^2.11.3",
+    "micromodal": "^0.4.6",
     "minimist": "^1.2.5",
     "requirejs": "^2.3.6",
     "socket.io": "3.1.1",

@@ -35,45 +35,50 @@ var tty_neg_index = 0;
 var pwMode = false;
 
 // Initial command buttons.
-var cmdButtons = {
-  "cmdbt8" : {
-    type : 1,
-    cmds : {'1': {'label':'wer', 'cmd':'wer', 'send':true}}
-  },
-  "cmdbt7" : {
-    type : 1,
-    cmds : {'1': {'label':'schau', 'cmd':'schau', 'send':true}}
-  },
-  "cmdbt6" : {
-    type : 1,
-    cmds : {'1': {'label':'inventar', 'cmd':'inv', 'send':true}}
-  },
-  "cmdbt5" : {
-    type : 1,
-    cmds : {'1': {'label':'info', 'cmd':'info', 'send':true}}
-  },
-  "cmdbt4" : {
-    type : 1,
-    cmds : {'1': {'label':'- ...', 'cmd':'- ', 'send':false}}
-  },
-  "cmdbt3" : {
-    type : 1,
-    cmds : {'1': {'label':'oben', 'cmd':'oben', 'send':true}}
-  },
-  "cmdbt2" : {
-    type : 4,
-    cmds : {
-      '1': {'label':'n', 'cmd':'n', 'send':true},
-      '2': {'label':'s', 'cmd':'s', 'send':true},
-      '3': {'label':'o', 'cmd':'o', 'send':true},
-      '4': {'label':'w', 'cmd':'w', 'send':true},
-    }
-  },
-  "cmdbt1" : {
-    type : 1,
-    cmds : {'1': {'label':'unten', 'cmd':'unten', 'send':true}}
-  },
+function initDefaultCmdButtons() {
+  return {
+    "cmdbt8" : {
+      type : 1,
+      cmds : {'1': {'label':'wer', 'cmd':'wer', 'send':true}}
+    },
+    "cmdbt7" : {
+      type : 1,
+      cmds : {'1': {'label':'schau', 'cmd':'schau', 'send':true}}
+    },
+    "cmdbt6" : {
+      type : 1,
+      cmds : {'1': {'label':'inventar', 'cmd':'inv', 'send':true}}
+    },
+    "cmdbt5" : {
+      type : 1,
+      cmds : {'1': {'label':'info', 'cmd':'info', 'send':true}}
+    },
+    "cmdbt4" : {
+      type : 1,
+      cmds : {'1': {'label':'- ...', 'cmd':'- ', 'send':false}}
+    },
+    "cmdbt3" : {
+      type : 1,
+      cmds : {'1': {'label':'oben', 'cmd':'oben', 'send':true}}
+    },
+    "cmdbt2" : {
+      type : 4,
+      cmds : {
+        '1': {'label':'n', 'cmd':'n', 'send':true},
+        '2': {'label':'s', 'cmd':'s', 'send':true},
+        '3': {'label':'o', 'cmd':'o', 'send':true},
+        '4': {'label':'w', 'cmd':'w', 'send':true},
+      }
+    },
+    "cmdbt1" : {
+      type : 1,
+      cmds : {'1': {'label':'unten', 'cmd':'unten', 'send':true}}
+    },
+  }
 };
+
+// Try loading buttons first, see loadSettings()
+var cmdButtons = {};
 
 /// Split the query-string into key-value pairs and return a map.
 // Stolen from: http://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
@@ -317,6 +322,7 @@ function adjustLayout() {
 // Save settings to localStorage.
 function saveSettings() {
   localStorage.setItem('Client.Setting.LocalEcho', JSON.stringify(localEcho));
+  localStorage.setItem('Client.Setting.CmdButtons', JSON.stringify(cmdButtons));
 }
 
 // Re-/Load settings from localStorage.
@@ -327,9 +333,27 @@ function loadSettings() {
   // Re-/load other client settings.
   var localEchoSetting = localStorage.getItem('Client.Setting.LocalEcho');
   if (localEchoSetting) {
-    localEcho = JSON.parse(localEchoSetting);
+    try {
+      localEcho = JSON.parse(localEchoSetting);
+    } catch (error) {
+      writeToScreen('' + error.name + ' beim Verarbeiten der LocalEcho Einstellung: ' + error.message + '\n');
+      localEcho = false;
+    }
   } else {
+    console.log('Verwende Standard-Einstellungen für LocalEcho.');
     localEcho = false;
+  }
+  var cmdButtonsSetting = localStorage.getItem('Client.Setting.CmdButtons');
+  if (cmdButtonsSetting) {
+    try {
+      cmdButtons = JSON.parse(cmdButtonsSetting);
+    } catch (error) {
+      writeToScreen('' + error.name + ' beim Verarbeiten der CmdButtons Einstellungen: ' + error.message + '\n');
+      cmdButtons = initDefaultCmdButtons();
+    }
+  } else {
+    console.log('Verwende Standard-Einstellungen für CmdButtons.');
+    cmdButtons = initDefaultCmdButtons();
   }
 
   // Refresh UI
@@ -366,7 +390,7 @@ function processQueryParams() {
     $('div#info').get(0).style.visibility = 'visible'
   else
     $('div#info').get(0).style.visibility = 'hidden'
-  console.log('infoPanel = ' + infoPanel);
+  console.log('URL-Paramters for infoPanel = ' + infoPanel);
 }
 
 // Popup the cookie warning.
@@ -508,6 +532,9 @@ function setInput(cmd) {
 // Called once from app.js, when all required modules are loaded.
 function startClientFunction() {
     
+  const MicroModal = require('micromodal');
+  MicroModal.init();
+
   const AnsiUp = require('ansi_up').default;
   //console.log('Found:' + AnsiUp);
   ansi_up = new AnsiUp;
@@ -677,7 +704,7 @@ function startClientFunction() {
   sock.on('disconnected', function(){
     writeToScreen('Verbindung zum Wunderland verloren. (Enter: neu verbinden)\n');
     leavePWMode();
-    document.getElementById('prompt').innerHTML('&gt; ');
+    document.getElementById('prompt').innerHTML = '&gt; ';
     disconnected();
   });
 
@@ -744,12 +771,18 @@ function startClientFunction() {
   function configureCmdButtons() {
     var buttonKeys = Object.keys(cmdButtons).sort();
     var mainDropdown = document.querySelector('div#mainDropdown');
+    // remove existing buttons first.
+    while (mainDropdown.firstChild != null && mainDropdown.firstChild.id != 'settings') {
+      mainDropdown.removeChild(mainDropdown.firstChild);
+    }
+    // add new buttons.
     for (var i=0; i < buttonKeys.length; i++) {
       if (cmdButtons[buttonKeys[i]].type == 1) {
         // <button id="who" class="drp">wer</button>;
         var newButton = document.createElement("button");
         newButton.id = buttonKeys[i] + '.1';
         newButton.className = 'drp';
+        newButton.addEventListener('contextmenu', cmdButtonContextFunction, false);
         newButton.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['1'].label;
         newButton.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['1'].send;
         newButton.dataset.cmd = cmdButtons[buttonKeys[i]]['cmds']['1'].cmd;
@@ -773,6 +806,7 @@ function startClientFunction() {
         var subButton1 = document.createElement("button");
         subButton1.id = buttonKeys[i] + '.1';
         subButton1.className = 'drp';
+        subButton1.addEventListener('contextmenu', cmdButtonContextFunction, false);
         subButton1.style = 'float: left;width:24px;padding:0px;margin-left:0px;';
         subButton1.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['1'].label;
         subButton1.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['1'].send;
@@ -787,6 +821,7 @@ function startClientFunction() {
         var subButton2 = document.createElement("button");
         subButton2.id = buttonKeys[i] + '.2';
         subButton2.className = 'drp';
+        subButton2.addEventListener('contextmenu', cmdButtonContextFunction, false);
         subButton2.style = 'float: left;width:23px;padding:0px;margin-left:2px;';
         subButton2.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['2'].label;
         subButton2.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['2'].send;
@@ -801,6 +836,7 @@ function startClientFunction() {
         var subButton3 = document.createElement("button");
         subButton3.id = buttonKeys[i] + '.3';
         subButton3.className = 'drp';
+        subButton3.addEventListener('contextmenu', cmdButtonContextFunction, false);
         subButton3.style = 'float: left;width:23px;padding:0px;margin-left:2px;';
         subButton3.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['3'].label;
         subButton3.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['3'].send;
@@ -815,6 +851,7 @@ function startClientFunction() {
         var subButton4 = document.createElement("button");
         subButton4.id = buttonKeys[i] + '.4';
         subButton4.className = 'drp';
+        subButton4.addEventListener('contextmenu', cmdButtonContextFunction, false);
         subButton4.style = 'float: left;width:24px;padding:0px;margin-left:2px;';
         subButton4.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['4'].label;
         subButton4.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['4'].send;
@@ -829,6 +866,9 @@ function startClientFunction() {
       mainDropdown.insertBefore(newButton, mainDropdown.firstChild);
     }
   }
+
+    // make sure, contextmenu gets closed, if clicked somewhere else
+    window.addEventListener('click', closeCmdButtonContextFunction);
 
   // Show cookie popup
   doCookiePopup();
@@ -900,7 +940,7 @@ function startClientFunction() {
     localEcho = !localEcho;
     saveSettings();
     writeToScreen('Lokales Echo ist jetzt '+(localEcho==true ? 'an' : 'aus')+'.\n'); 
-    document.querySelector('button#localecho').innerHTML('Local Echo: ' + (localEcho==true ? 'an' : 'aus') + '');
+    document.querySelector('button#localecho').innerHTML = 'Local Echo: ' + (localEcho==true ? 'an' : 'aus') + '';
     setFocusToInput(); 
   });
 
@@ -913,16 +953,6 @@ function startClientFunction() {
     while(out.firstChild) out.removeChild(out.lastChild);
     setFocusToInput(); 
   });
-
-  $( "#infoDialog" ).dialog({
-      modal: true,
-      autoOpen: false,
-      buttons: {
-        Ok: function() {
-          $(this).dialog("close");
-        }
-      }
-    });
 
   document.getElementById('out').click(); 
 

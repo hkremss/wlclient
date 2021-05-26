@@ -27,7 +27,7 @@ function numberWithDots(x) {
 
 // New: GMCP support (Holger)
 function getGMCPHello(){
-  return 'Core.Hello { \"client\": \"WL@Web\", \"version\": \"1.2.0\" }';
+  return 'Core.Hello { \"client\": \"WL@Web\", \"version\": \"1.2.1\" }';
 }
 
 function doGMCPReceive(sock, data) {
@@ -294,10 +294,10 @@ function HandleGMCP_WL_File_List(sock, module, payload) {
 
   // Now let the user know, if there is an issue with the window
   if (!editorWindow || editorWindow.closed) {
-     $( "#infoDialog" ).dialog( "option", "title", "Fehler" );
-     $( "#infoDialog" ).html( "Editor-Fenster konnte nicht ge&ouml;ffnet werden oder ist " +
-       "nicht sichtbar! Pr&uuml;fe Deinen Browser oder Popup-Blocker!" );
-     $( "#infoDialog" ).dialog( "open" );
+    document.getElementById('infoModalDlg-title').innerHTML = 'Fehler!';
+    document.getElementById('infoModalDlg-content').innerHTML = 'Editor-Fenster konnte nicht '+
+      'ge&ouml;ffnet werden oder ist nicht sichtbar! Pr&uuml;fe Deinen Browser oder Popup-Blocker!';
+    MicroModal.show('infoModalDlg');
   }
 }
 
@@ -386,10 +386,10 @@ function HandleGMCP_WL_File_Transfer(sock, module, payload) {
 
   // Now let the user know, if there is an issue with the window
   if (!editorWindow || editorWindow.closed) {
-     $( "#infoDialog" ).dialog( "option", "title", "Fehler" );
-     $( "#infoDialog" ).html( "Editor-Fenster konnte nicht ge&ouml;ffnet werden oder ist " +
-       "nicht sichtbar! Pr&uuml;fe Deinen Browser oder Popup-Blocker!" );
-     $( "#infoDialog" ).dialog( "open" );
+    document.getElementById('infoModalDlg-title').innerHTML = 'Fehler!';
+    document.getElementById('infoModalDlg-content').innerHTML = 'Editor-Fenster konnte nicht '+
+      'ge&ouml;ffnet werden oder ist nicht sichtbar! Pr&uuml;fe Deinen Browser oder Popup-Blocker!';
+    MicroModal.show('infoModalDlg');
   }
 }
 
