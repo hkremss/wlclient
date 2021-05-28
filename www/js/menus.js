@@ -35,16 +35,32 @@ function closeAllDropDowns() {
 }
 
 function cmdButtonContextFunction(event) {
+  // put the event target into the editButton data to use it later
+  document.getElementById('cmdEdit').dataset.cmdButtonId = event.target.id;
+  document.getElementById('cmdRemove').dataset.cmdButtonId = event.target.id;
+  document.getElementById('cmdAdd1').dataset.cmdButtonId = event.target.id;
+  document.getElementById('cmdAdd4').dataset.cmdButtonId = event.target.id;
+  // open the context menu
   var ctxMenu = document.getElementById('cmdButtonsCtxMenu');
   ctxMenu.style.left = (event.pageX - 150)+"px";
-  ctxMenu.style.top = (event.pageY - 10)+"px";
+  ctxMenu.style.top = (event.pageY - 40)+"px";
   ctxMenu.classList.toggle('dropshow');
-  writeToScreen('Kontext-Menue! '+event+'\n');
-  MicroModal.show('cmd1ButtonEditModalDlg', {'debugMode':true});
   event.preventDefault();
 }
 
-function closeCmdButtonContextFunction() {
-  var ctxMenu = document.getElementById('cmdButtonsCtxMenu');
-  ctxMenu.classList.remove('dropshow');
+function settingsButtonContextFunction(event) {
+  // put the event target into the editButton data to use it later
+  document.getElementById('settingsAdd1').dataset.cmdButtonId = event.target.id;
+  document.getElementById('settingsAdd4').dataset.cmdButtonId = event.target.id;
+  // open the context menu
+  var ctxMenu = document.getElementById('settingsButtonsCtxMenu');
+  ctxMenu.style.left = (event.pageX - 150)+"px";
+  ctxMenu.style.top = (event.pageY - 40)+"px";
+  ctxMenu.classList.toggle('dropshow');
+  event.preventDefault();
+}
+
+function closeAllButtonContextFunction() {
+  document.getElementById('cmdButtonsCtxMenu').classList.remove('dropshow');
+  document.getElementById('settingsButtonsCtxMenu').classList.remove('dropshow');
 }

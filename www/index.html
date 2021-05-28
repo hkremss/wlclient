@@ -25,7 +25,6 @@
     }
   </script>
 
-  <link  href="node_modules/jquery-ui/jquery-ui.min.css" rel="stylesheet">
   <link  href="node_modules/lightbox2/css/lightbox.css" rel="stylesheet">
   <link  href="css/menus.css" rel="stylesheet">
   <link  href="css/client.css" rel="stylesheet">
@@ -84,20 +83,20 @@
       <div id="prompt">&gt;&nbsp;</div>
       <div class="cmdwrapper">
         <div id="menu" class="dropdown">
-          <button onclick="mainDropDownFunction()" class="dropbtn">...</button>
+          <button onclick="mainDropDownFunction()" class="dropbtn" oncontextmenu="return false;">...</button>
           <div id="mainDropdown" class="dropdown-content">
             <!-- the rest of the buttons is created in client.configureCmdButtons() -->
-            <button id="settings" onclick="settingsDropDownFunction()" class="drp">&lt; </span>Optionen</button>
+            <button id="settings" class="drp">&lt; </span>Optionen</button>
           </div>
           <div id="settingsDropdown" class="dropdown-content">
-            <button id="importButton" class="drp"><span class="iconimport"></span>Import Einst.</button>
+            <button id="importButton" class="drp" oncontextmenu="return false;"><span class="iconimport"></span>Import Einst.</button>
               <input id="importButtonHiddenInput" type='file' style="display: none;" />
-            <button id="exportButton" class="drp"><span class="iconexport"></span>Export Einst.</button>
+            <button id="exportButton" class="drp" oncontextmenu="return false;"><span class="iconexport"></span>Export Einst.</button>
               <a id="exportButtonHiddenAnchor" href="data:text/plain;charset=utf-8,gna" download="wlclient-settings.txt" style="display: none;"></a>
-            <button id="colors" class="drp"><span class="iconpalette"></span>Farbschema</button>
-            <button id="localecho" class="drp">Lokales Echo: ?</button>
-            <button id="helpButton" class="drp"><span class="iconhelp"></span>Hilfe</button>
-            <button id="clear" class="drp"><span class="iconscreen"></span>Bild löschen</button>
+            <button id="colors" class="drp" oncontextmenu="return false;"><span class="iconpalette"></span>Farbschema</button>
+            <button id="localecho" class="drp" oncontextmenu="return false;">Lokales Echo: ?</button>
+            <button id="helpButton" class="drp" oncontextmenu="return false;"><span class="iconhelp"></span>Hilfe</button>
+            <button id="clear" class="drp" oncontextmenu="return false;"><span class="iconscreen"></span>Bild löschen</button>
           </div>
         </div>
         <!--button id="send" class="cmd">Senden</button-->
@@ -110,10 +109,16 @@
 
     <!-- Button Contextmenu -->
     <div id="cmdButtonsCtxMenu" class="dropdown-content" display="none">
-      <button id="cmdEdit" class="ctx">Bearbeiten</button>
       <button id="cmdRemove" class="ctx">Entfernen</button>
+      <button id="cmdEdit" class="ctx">Bearbeiten</button>
       <button id="cmdAdd1" class="ctx">Neuer 1-er</button>
       <button id="cmdAdd4" class="ctx">Neuer 4-er</button>
+    </div>
+
+    <!-- Button Contextmenu -->
+    <div id="settingsButtonsCtxMenu" class="dropdown-content" display="none">
+      <button id="settingsAdd1" class="ctx">Neuer 1-er</button>
+      <button id="settingsAdd4" class="ctx">Neuer 4-er</button>
     </div>
 
     <!-- Micromodal info dialog -->
@@ -135,42 +140,47 @@
           </div>
       </div>
     </div>
-    <!-- Micromodal 1-Button Edit Dialog -->
-    <div class="modal micromodal-slide" id="cmd1ButtonEditModalDlg" aria-hidden="true">
+    <!-- Micromodal yes/no dialog -->
+    <div class="modal micromodal-slide" id="yesnoModalDlg" aria-hidden="true">
       <div class="modal__overlay" tabindex="-1" data-micromodal-close>
-        <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="cmd1ButtonEditModalDlg-title" >
+        <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="yesnoModalDlg-title" >
           <header class="modal__header">
-            <h2 class="modal__title" id="cmd1ButtonEditModalDlg-title">
-              Modal Title
+            <h2 class="modal__title" id="yesnoModalDlg-title">
+              Yes/No Title
             </h2>
             <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
           </header>
-          <div class="modal__content" id="cmd1ButtonEditModalDlg-content">
-            Modal Content
+          <div class="modal__content" id="yesnoModalDlg-content">
+            Yes/No Content
           </div>
           <footer class="modal__footer">
-            <button class="modal__btn">Continue</button>
-            <button class="modal__btn" aria-label="Close this dialog window">Close</button>
+            <button class="modal__btn" aria-label="Ja" id="yesnoModalDlg-yesButton">Ja</button>
+            <button class="modal__btn modal__btn-primary" aria-label="Nein" data-micromodal-close>Nein</button>
           </footer>
           </div>
       </div>
     </div>
-    <!-- Micromodal 4-Button Edit Dialog -->
-    <div class="modal micromodal-slide" id="cmd4ButtonEditModalDlg" aria-hidden="true">
+    <!-- Micromodal CmdButton Edit Dialog -->
+    <div class="modal micromodal-slide" id="cmdButtonEditModalDlg" aria-hidden="true">
       <div class="modal__overlay" tabindex="-1" data-micromodal-close>
-        <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="cmd4ButtonEditModalDlg-title" >
+        <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="cmdButtonEditModalDlg-title" >
           <header class="modal__header">
-            <h2 class="modal__title" id="cmd4ButtonEditModalDlg-title">
-              Modal Title
+            <h2 class="modal__title" id="cmdButtonEditModalDlg-title">
+              Edit Command Button
             </h2>
             <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
           </header>
-          <div class="modal__content" id="cmd4ButtonEditModalDlg-content">
-            Modal Content
+          <div class="modal__content" id="cmdButtonEditModalDlg-content">
+            <label for="fname">Name:</label>
+            <input type="text" id="buttonName" name="buttonName"><br><br>
+            <label for="lname">Befehl:</label>
+            <input type="text" id="buttonCmd" name="buttonCmd"><br><br>
+            <label for="lname">Sofort senden:</label>
+            <input type="checkbox" id="buttonSend" name="buttonSend"><br><br>
           </div>
           <footer class="modal__footer">
-            <button class="modal__btn">Continue</button>
-            <button class="modal__btn" aria-label="Close this dialog window">Close</button>
+            <button class="modal__btn modal__btn-primary" aria-label="Speichern" id="cmdButtonEditModalDlg-saveButton">Speichern</button>
+            <button class="modal__btn" aria-label="Abbrechen" data-micromodal-close>Abbrechen</button>
           </footer>
           </div>
       </div>

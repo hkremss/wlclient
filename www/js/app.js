@@ -16,7 +16,6 @@ requirejs.config({
     // Also, the path should NOT include
     // the '.js' file extension.
     'jquery': 'node_modules/jquery/jquery.min',
-    'jquery-ui': 'node_modules/jquery-ui/jquery-ui.min',
     'lightbox2': 'node_modules/lightbox2/js/lightbox.min',
     'micromodal': 'node_modules/micromodal/micromodal',
     'socket.io': 'socket.io/socket.io.min', // socket.io serves it's own client(s)
@@ -32,7 +31,7 @@ requirejs.config({
 
 /* Load dependencies and start client. */
 require([
-  'jquery', 'jquery-ui', 'lightbox2', 'micromodal', 'socket.io', 'ansi_up',
+  'jquery', 'lightbox2', 'micromodal', 'socket.io', 'ansi_up',
   'constants','scan','parse','utils','picomatch',
   'ansi-regex',
   'js/menus','js/macros','js/gmcp_client','js/client'], function() {

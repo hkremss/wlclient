@@ -21,6 +21,28 @@ button.drp {
   padding: 5px;
   margin: 0px 0px 2px 0px;
 }
+button.drpssub41 { float: left;width:24px;padding:0px;margin-left:0px; }
+button.drpssub42 { float: left;width:23px;padding:0px;margin-left:2px; }
+button.drpssub43 { float: left;width:23px;padding:0px;margin-left:2px; }
+button.drpssub44 { float: left;width:24px;padding:0px;margin-left:2px; }
+div.fakedrp {
+  box-sizing: border-box;
+  display: inline-block;
+  float:none;
+  font-family:inherit;
+  width: 100px;
+  border: none;
+  background-color: #ccc;
+  color: #000;
+  height:1.95em;
+  padding: 5px;
+  margin: 0px 0px 2px 0px;
+  text-align: center;
+}
+div.fakedrpssub41 { float: left;width:24px;padding:0px;margin-left:0px; }
+div.fakedrpssub42 { float: left;width:23px;padding:0px;margin-left:2px; }
+div.fakedrpssub43 { float: left;width:23px;padding:0px;margin-left:2px; }
+div.fakedrpssub44 { float: left;width:24px;padding:0px;margin-left:2px; }
 
 button.drp span.iconsettings {
     background: url(../images/settings-12.png) no-repeat;
@@ -78,7 +100,7 @@ button.drp span.iconpalette {
   font-family:inherit;
   font-size:inherit;
   position: relative;
-  display: inline-block;
+  /*display: inline-block;*/
   margin: 0px;
   padding: 0px;
   float: right;

@@ -39,30 +39,37 @@ function initDefaultCmdButtons() {
   return {
     "cmdbt8" : {
       type : 1,
+      order: 0,
       cmds : {'1': {'label':'wer', 'cmd':'wer', 'send':true}}
     },
     "cmdbt7" : {
       type : 1,
+      order: 1,
       cmds : {'1': {'label':'schau', 'cmd':'schau', 'send':true}}
     },
     "cmdbt6" : {
       type : 1,
+      order: 2,
       cmds : {'1': {'label':'inventar', 'cmd':'inv', 'send':true}}
     },
     "cmdbt5" : {
       type : 1,
+      order: 3,
       cmds : {'1': {'label':'info', 'cmd':'info', 'send':true}}
     },
     "cmdbt4" : {
       type : 1,
+      order: 4,
       cmds : {'1': {'label':'- ...', 'cmd':'- ', 'send':false}}
     },
     "cmdbt3" : {
       type : 1,
+      order: 5,
       cmds : {'1': {'label':'oben', 'cmd':'oben', 'send':true}}
     },
     "cmdbt2" : {
       type : 4,
+      order: 6,
       cmds : {
         '1': {'label':'n', 'cmd':'n', 'send':true},
         '2': {'label':'s', 'cmd':'s', 'send':true},
@@ -72,10 +79,134 @@ function initDefaultCmdButtons() {
     },
     "cmdbt1" : {
       type : 1,
+      order: 7,
       cmds : {'1': {'label':'unten', 'cmd':'unten', 'send':true}}
     },
   }
 };
+
+function getCmdButtonLabels(buttonId) {
+  var primaryId = buttonId.split('.')[0];
+  if (cmdButtons[primaryId] != null) {
+    return Object.keys(cmdButtons[primaryId].cmds).map(
+      function(cmdId) { 
+        return cmdButtons[primaryId].cmds[cmdId].label; 
+      });
+  } else {
+    return [];
+  }
+}
+
+// remove button from model
+function removeCmdButton(buttonId) {
+  var primaryId = buttonId.split('.')[0];
+  var secondaryId = buttonId.split('.')[1];
+  if (cmdButtons[primaryId] != null && cmdButtons[primaryId].cmds[secondaryId]!=null) {
+    //delete cmdButtons[primaryId].cmds[secondaryId];
+    //if (Object.keys(cmdButtons[primaryId].cmds).length==0) {
+      delete cmdButtons[primaryId];
+    //}
+    saveSettings();
+  } else {
+    console.log('Unknown button to remove: ' + buttonId + '');
+  }
+}
+
+// edit button in model
+function editCmdButton(buttonId, label, cmd, send) {
+  var primaryId = buttonId.split('.')[0];
+  var secondaryId = buttonId.split('.')[1];
+  if (cmdButtons[primaryId] != null && cmdButtons[primaryId].cmds[secondaryId]!=null) {
+    cmdButtons[primaryId].cmds[secondaryId].label = label;
+    cmdButtons[primaryId].cmds[secondaryId].cmd = cmd;
+    cmdButtons[primaryId].cmds[secondaryId].send = send;
+    saveSettings();
+  } else {
+    console.log('Unknown button to edit: ' + buttonId + ' ('+label+','+cmd+','+send+')');
+  }
+}
+
+// get the highest (last) order value from cmdButtons
+function getHighestCmdButtonOrderValue() {
+  var highest = 0;
+  // find free id and add new button at end of the list.
+  var cmdIds = Object.keys(cmdButtons);
+  for (var i = 0; i < cmdIds.length; i++) {
+    var tmpOrder = cmdButtons[cmdIds[i]].order;
+    if (tmpOrder > highest) highest = tmpOrder;
+  }
+  return highest;
+}
+
+// get a new order number, which can be inserted 'before' previousCmdButtonId
+function getInsertableCmdButtonOrderValue(followingCmdButtonId) {
+  var primaryId = followingCmdButtonId.split('.')[0];
+  var insOrder = -1;
+  // find free id and add new button at end of the list. Sort it first, ascending.
+  var cmdIds = Object.keys(cmdButtons).sort((c1, c2) => cmdButtons[c1].order - cmdButtons[c2].order);
+  for (var i = 0; i < cmdIds.length; i++) {
+    if (cmdIds[i]==primaryId) {
+      // found!
+      insOrder = cmdButtons[primaryId].order;
+    }
+    // increment order number of all following buttons
+    if (insOrder >= 0) cmdButtons[cmdIds[i]].order++;
+  }
+  // make sure, its never below 0
+  if (insOrder<0) insOrder=0;
+  return insOrder;
+}
+
+// add 1-cmd button in model
+function add1CmdButton(selectedButtonId) {
+  var num = 1;
+  // find free id and add new button at end of the list.
+  while (cmdButtons['cmdbt'+num] != null) num++;
+  var newId = 'cmdbt'+num;
+  var order = 1000;
+  if (selectedButtonId == 'settings') {
+    // easy case append button to the list
+    order = getHighestCmdButtonOrderValue() + 1;
+  }
+  else {
+    // insert new button(s) before selectedButtonId
+    order = getInsertableCmdButtonOrderValue(selectedButtonId);
+  }
+  cmdButtons[newId] = {
+    type : 1,
+    order: order,
+    cmds : {'1': {'label':'neu', 'cmd':'neu', 'send':true}}
+  };
+  saveSettings();
+}
+
+// add 4-cmd button in model
+function add4CmdButton(selectedButtonId) {
+  var num = 1;
+  // find free id and add new button at end of the list.
+  while (cmdButtons['cmdbt'+num] != null) num++;
+  var newId = 'cmdbt'+num;
+  var order = 1000;
+  if (selectedButtonId == 'settings') {
+    // easy case append button to the list
+    order = getHighestCmdButtonOrderValue() + 1;
+  }
+  else {
+    // insert new button(s) before selectedButtonId
+    order = getInsertableCmdButtonOrderValue(selectedButtonId);
+  }
+  cmdButtons[newId] = {
+    type : 4,
+    order: order,
+    cmds : {
+      '1': {'label':'n', 'cmd':'n', 'send':true},
+      '2': {'label':'s', 'cmd':'s', 'send':true},
+      '3': {'label':'o', 'cmd':'o', 'send':true},
+      '4': {'label':'w', 'cmd':'w', 'send':true},
+    }
+  };
+  saveSettings();
+}
 
 // Try loading buttons first, see loadSettings()
 var cmdButtons = {};
@@ -566,6 +697,9 @@ function startClientFunction() {
   // and only care about the rest.
   function handleKeyDown(event)
   {
+    // if a modal dialog is shown, don't intercept anything.
+    if (document.querySelector('.modal.is-open') != null) return;
+
     if (!pwMode) {
       // If macro processor handles the key, don't continue.
       var result = macros.keyTrigger(event);
@@ -627,6 +761,9 @@ function startClientFunction() {
   // if mouse is released and nothing is marked, set 
   // the focus to the input element(s)
   window.addEventListener('mouseup', function (e) {
+    // if a modal dialog is shown, don't intercept anything.
+    if (document.querySelector('.modal.is-open') != null) return;
+
     if (!window.getSelection() || window.getSelection().toString().length == 0) {
       setFocusToInput();
     }
@@ -769,12 +906,13 @@ function startClientFunction() {
 
   // Create and configure the game command buttons from 'cmdButtons'.
   function configureCmdButtons() {
-    var buttonKeys = Object.keys(cmdButtons).sort();
-    var mainDropdown = document.querySelector('div#mainDropdown');
     // remove existing buttons first.
+    var mainDropdown = document.querySelector('div#mainDropdown');
     while (mainDropdown.firstChild != null && mainDropdown.firstChild.id != 'settings') {
       mainDropdown.removeChild(mainDropdown.firstChild);
     }
+    // sort button keys by order descending, because they are inserted bottom->top
+    var buttonKeys = Object.keys(cmdButtons).sort((c1, c2) => cmdButtons[c2].order - cmdButtons[c1].order);
     // add new buttons.
     for (var i=0; i < buttonKeys.length; i++) {
       if (cmdButtons[buttonKeys[i]].type == 1) {
@@ -794,10 +932,10 @@ function startClientFunction() {
       }
       else if (cmdButtons[buttonKeys[i]].type == 4) {
         // <div class="drp nohover" style="white-space: nowrap;overflow:hidden;">
-        //   <button id="north" class="drp" style="float: left;width:24px;padding:0px;margin-left:0px;">n</button>
-        //   <button id="south" class="drp" style="float: left;width:23px;padding:0px;margin-left:2px;">s</button>
-        //   <button id="east" class="drp" style="float: left;width:23px;padding:0px;margin-left:2px;">o</button>
-        //   <button id="west" class="drp" style="float: left;width:24px;padding:0px;margin-left:2px;">w</button>
+        //   <button id="north" class="drp drpssub41">n</button>
+        //   <button id="south" class="drp drpssub42">s</button>
+        //   <button id="east"  class="drp drpssub43">o</button>
+        //   <button id="west"  class="drp drpssub44">w</button>
         // </div>
         var newButton = document.createElement("div");
         newButton.className = 'drp nohover';
@@ -805,9 +943,8 @@ function startClientFunction() {
         // Sub button 1
         var subButton1 = document.createElement("button");
         subButton1.id = buttonKeys[i] + '.1';
-        subButton1.className = 'drp';
+        subButton1.className = 'drp drpssub41';
         subButton1.addEventListener('contextmenu', cmdButtonContextFunction, false);
-        subButton1.style = 'float: left;width:24px;padding:0px;margin-left:0px;';
         subButton1.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['1'].label;
         subButton1.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['1'].send;
         subButton1.dataset.cmd = cmdButtons[buttonKeys[i]]['cmds']['1'].cmd;
@@ -820,9 +957,8 @@ function startClientFunction() {
         // Sub button 2
         var subButton2 = document.createElement("button");
         subButton2.id = buttonKeys[i] + '.2';
-        subButton2.className = 'drp';
+        subButton2.className = 'drp drpssub42';
         subButton2.addEventListener('contextmenu', cmdButtonContextFunction, false);
-        subButton2.style = 'float: left;width:23px;padding:0px;margin-left:2px;';
         subButton2.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['2'].label;
         subButton2.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['2'].send;
         subButton2.dataset.cmd = cmdButtons[buttonKeys[i]]['cmds']['2'].cmd;
@@ -835,9 +971,8 @@ function startClientFunction() {
         // Sub button 3
         var subButton3 = document.createElement("button");
         subButton3.id = buttonKeys[i] + '.3';
-        subButton3.className = 'drp';
+        subButton3.className = 'drp drpssub43';
         subButton3.addEventListener('contextmenu', cmdButtonContextFunction, false);
-        subButton3.style = 'float: left;width:23px;padding:0px;margin-left:2px;';
         subButton3.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['3'].label;
         subButton3.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['3'].send;
         subButton3.dataset.cmd = cmdButtons[buttonKeys[i]]['cmds']['3'].cmd;
@@ -850,9 +985,8 @@ function startClientFunction() {
         // Sub button 4
         var subButton4 = document.createElement("button");
         subButton4.id = buttonKeys[i] + '.4';
-        subButton4.className = 'drp';
+        subButton4.className = 'drp drpssub44';
         subButton4.addEventListener('contextmenu', cmdButtonContextFunction, false);
-        subButton4.style = 'float: left;width:24px;padding:0px;margin-left:2px;';
         subButton4.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['4'].label;
         subButton4.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['4'].send;
         subButton4.dataset.cmd = cmdButtons[buttonKeys[i]]['cmds']['4'].cmd;
@@ -868,7 +1002,7 @@ function startClientFunction() {
   }
 
     // make sure, contextmenu gets closed, if clicked somewhere else
-    window.addEventListener('click', closeCmdButtonContextFunction);
+    window.addEventListener('click', closeAllButtonContextFunction);
 
   // Show cookie popup
   doCookiePopup();
@@ -923,8 +1057,97 @@ function startClientFunction() {
   // 'Enter'
   //document.querySelector('button#send').addEventListener('click', function(e) { sendInput(); setFocusToInput(); });
 
+  // Configure 'settings' button.
+  document.querySelector('button#settings').addEventListener('click', settingsDropDownFunction, false);
+  document.querySelector('button#settings').addEventListener('contextmenu', settingsButtonContextFunction, false);
+
   // Create configurable command buttons.
   configureCmdButtons();
+
+  function cmdEditButtonClicked(params) {
+    var ctxMenuButton = params.target;
+    var cmdButtonId = ctxMenuButton.dataset.cmdButtonId;
+    document.getElementById('cmdButtonEditModalDlg-saveButton').dataset.cmdButtonId = cmdButtonId;
+    var cmdButton = document.getElementById(cmdButtonId);
+    document.querySelector('input#buttonName').value = cmdButton.innerHTML;
+    document.querySelector('input#buttonCmd').value = cmdButton.dataset.cmd;
+    document.querySelector('input#buttonSend').checked = (cmdButton.dataset.send == 'true');
+    MicroModal.show('cmdButtonEditModalDlg');
+  }
+
+  function cmdRemoveButtonClicked(params) {
+    var ctxMenuButton = params.target;
+    var cmdButtonId = ctxMenuButton.dataset.cmdButtonId;
+    if (cmdButtonId != "settings") {
+      //var cmdButton = document.getElementById(cmdButtonId);
+      var labels = getCmdButtonLabels(cmdButtonId);
+      if (labels.length == 1) {
+        document.getElementById('yesnoModalDlg-title').innerHTML = 'Kommando-Button entfernen?';
+        document.getElementById('yesnoModalDlg-content').innerHTML = 'Willst Du den Button <br><div class="fakedrp">'+labels[0]+'</div><br> wirklich entfernen?';
+      } else {
+        document.getElementById('yesnoModalDlg-title').innerHTML = 'Kommando-Buttons entfernen?';
+        var content = 'Willst Du die Button-Zeile<br><div class="fakedrp" style="white-space: nowrap;overflow:hidden;background-color:transparent;width: auto;">'
+        for (var i=0;i<labels.length;i++) {
+          content += '<div class="fakedrp fakedrpssub4'+(i+1)+'">'+labels[i]+'</div>';
+        }
+        content += '</div><br>wirklich entfernen?';
+        document.getElementById('yesnoModalDlg-content').innerHTML = content;
+      }
+      var yesButton = document.getElementById('yesnoModalDlg-yesButton');
+      yesButton.dataset.cmdButtonId = cmdButtonId;
+      yesButton.addEventListener('click', function name(params) {
+        var yesButton = params.target;
+        var cmdButtonId = yesButton.dataset.cmdButtonId;
+        removeCmdButton(cmdButtonId);
+        configureCmdButtons();
+        MicroModal.close('yesnoModalDlg');
+      });
+    
+      MicroModal.show('yesnoModalDlg');
+    }
+    else {
+      document.getElementById('infoModalDlg-title').innerHTML = 'Hinweis';
+      document.getElementById('infoModalDlg-content').innerHTML = 'Der \'Optionen\' Button darf nicht entfernt werden.';
+      MicroModal.show('infoModalDlg');
+    }
+  }
+
+  function cmdAdd1ButtonClicked(params) {
+    var ctxMenuButton = params.target;
+    var cmdButtonId = ctxMenuButton.dataset.cmdButtonId;
+    add1CmdButton(cmdButtonId);
+    configureCmdButtons();
+  }
+
+  function cmdAdd4ButtonClicked(params) {
+    var ctxMenuButton = params.target;
+    var cmdButtonId = ctxMenuButton.dataset.cmdButtonId;
+    add4CmdButton(cmdButtonId);
+    configureCmdButtons();
+  }
+
+  // Register cmdButtons context menu actions
+  document.getElementById('cmdEdit').addEventListener('click', cmdEditButtonClicked, false);
+  document.getElementById('cmdRemove').addEventListener('click', cmdRemoveButtonClicked, false);
+  document.getElementById('cmdAdd1').addEventListener('click', cmdAdd1ButtonClicked, false);
+  document.getElementById('cmdAdd4').addEventListener('click', cmdAdd4ButtonClicked, false);
+  document.getElementById('settingsAdd1').addEventListener('click', cmdAdd1ButtonClicked, false);
+  document.getElementById('settingsAdd4').addEventListener('click', cmdAdd4ButtonClicked, false);
+
+  // Register action for cmdButtonEditDlg dialog save button
+  document.getElementById('cmdButtonEditModalDlg-saveButton').addEventListener('click', function name(params) {
+    var dlgSaveButton = params.target;
+    var cmdButtonId = dlgSaveButton.dataset.cmdButtonId;
+    var cmdButton = document.getElementById(cmdButtonId);
+    var label = document.querySelector('input#buttonName').value;
+    cmdButton.innerHTML = label;
+    var cmd = document.querySelector('input#buttonCmd').value;
+    cmdButton.dataset.cmd = cmd;
+    var send = document.querySelector('input#buttonSend').checked;
+    cmdButton.dataset.send = send;
+    editCmdButton(cmdButtonId, label, cmd, send);
+    MicroModal.close('cmdButtonEditModalDlg');
+  });
 
   // Settings
 
