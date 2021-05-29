@@ -301,7 +301,7 @@ function doTelnetNegotions(sock, buf) {
           if (startOfPrompt<0) strippedBuf = '';
           else strippedBuf = strippedBuf.substr(0, startOfPrompt+1);
           //console.log('PRMPT [' + prmpt+']\n');
-          $('#prompt').html(ansi_up.ansi_to_html(prmpt));
+          setPrompt(ansi_up.ansi_to_html(prmpt));
         }
         // Skip the IAC+EOR in the buffer
         oldIacIdx = newIacIdx+2;
@@ -649,12 +649,17 @@ function setFocusToInput() {
     document.getElementById('cmd').focus();
 }
 
-// Give the focus to the input field.
+// Set the content of the input field.
 function setInput(cmd) {
   if (pwMode)
     document.getElementById('pwd').value = cmd;
   else 
     document.getElementById('cmd').value = cmd;
+}
+
+// Set the prompt value.
+function setPrompt(prompt) {
+  document.getElementById('prompt').innerHTML = prompt;
 }
 
 // Called once, when UI is loaded and ready to go.
@@ -841,7 +846,7 @@ function startClientFunction() {
   sock.on('disconnected', function(){
     writeToScreen('Verbindung zum Wunderland verloren. (Enter: neu verbinden)\n');
     leavePWMode();
-    document.getElementById('prompt').innerHTML = '&gt; ';
+    setPrompt('&gt; ');
     disconnected();
   });
 
