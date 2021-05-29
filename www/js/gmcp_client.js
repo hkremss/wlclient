@@ -86,13 +86,13 @@ function HandleGMCP_Core_Goodbye(sock, module, payload) {
   var value = JSON.parse(payload);
 
   if(value!=0) {
-    $('span#room_name').text(value);
+    document.querySelector('span#room_name').textContent = value;
   }
 
-  $('img#room_image').attr('src', staticContentBase + 'img/aaa_no_signal.jpg');
-  $('img#room_image').attr('alt', 'Bildstoerung');
-  $('a#room_image_a').attr('href', staticContentBase + 'img/aaa_no_signal.jpg');
-  $('a#room_image_a').attr('data-title', 'Bildstoerung');
+  document.querySelector('img#room_image').setAttribute('src', staticContentBase + 'img/aaa_no_signal.jpg');
+  document.querySelector('img#room_image').setAttribute('alt', 'Bildstoerung');
+  document.querySelector('a#room_image_a').setAttribute('href', staticContentBase + 'img/aaa_no_signal.jpg');
+  document.querySelector('a#room_image_a').setAttribute('data-title', 'Bildstoerung');
 
   // if editor is open (for wizards), update the client window/socket
   if (editorWindow && !editorWindow.closed) {
@@ -106,86 +106,86 @@ function HandleGMCP_Char_Vitals(sock, module, payload) {
 
   // if dead
   if('ghost' in values && values['ghost']=='1'){
-    var img_a = $('a#room_image_a');
-    var img = $('img#room_image');
-    img.attr('src', staticContentBase + 'img/std/tod.jpg');
-    img.attr('alt', 'DU BIST TOT!');
-    img_a.attr('href', staticContentBase + 'img/std/tod.jpg');
-    img_a.attr('data-title', 'DU BIST TOT!');
-    $('span#room_name').text('DU BIST TOT!');
+    var img_a = document.querySelector('a#room_image_a');
+    var img = document.querySelector('img#room_image');
+    img.setAttribute('src', staticContentBase + 'img/std/tod.jpg');
+    img.setAttribute('alt', 'DU BIST TOT!');
+    img_a.setAttribute('href', staticContentBase + 'img/std/tod.jpg');
+    img_a.setAttribute('data-title', 'DU BIST TOT!');
+    document.querySelector('span#room_name').textContent = 'DU BIST TOT!';
   }
 
   // if alive again
   if('ghost' in values && values['ghost']=='0'){
-    var img_a = $('a#room_image_a');
-    var img = $('img#room_image');
+    var img_a = document.querySelector('a#room_image_a');
+    var img = document.querySelector('img#room_image');
     if(living_room_image == '') {
-      img.attr('src', staticContentBase + 'img/aaa_no_signal.jpg');
-      img.attr('alt', 'Bildstoerung');
-      img_a.attr('href', staticContentBase + 'img/aaa_no_signal.jpg');
-      img_a.attr('data-title', 'Bildstoerung');
+      img.setAttribute('src', staticContentBase + 'img/aaa_no_signal.jpg');
+      img.setAttribute('alt', 'Bildstoerung');
+      img_a.setAttribute('href', staticContentBase + 'img/aaa_no_signal.jpg');
+      img_a.setAttribute('data-title', 'Bildstoerung');
     }
     else {
-      img.attr('src', staticContentBase + living_room_image);
-      img.attr('alt', living_room_name);
-      img_a.attr('href', staticContentBase + living_room_image);
-      img_a.attr('data-title', living_room_name);
+      img.setAttribute('src', staticContentBase + living_room_image);
+      img.setAttribute('alt', living_room_name);
+      img_a.setAttribute('href', staticContentBase + living_room_image);
+      img_a.setAttribute('data-title', living_room_name);
     }
-    $('span#room_name').text(living_room_name);
+    document.querySelector('span#room_name').textContent = living_room_name;
   }
 
   // XP
   if('xp' in values){
-    $('span#xp.info').text(numberWithDots(values['xp']));
+    document.querySelector('span#xp.info').textContent = numberWithDots(values['xp']);
   }
 
   // HP
   if('hp' in values){
-    $('span#hp.info').text(values['hp']);
+    document.querySelector('span#hp.info').textContent = values['hp'];
   }
   if('max_hp' in values){
-    $('span#max_hp.info').text(values['max_hp']);
+    document.querySelector('span#max_hp.info').textContent = values['max_hp'];
   }
 
   // SP
   if('sp' in values){
-    $('span#sp.info').text(values['sp']);
+    document.querySelector('span#sp.info').textContent = values['sp'];
   }
   if('max_sp' in values){
-    $('span#max_sp.info').text(values['max_sp']);
+    document.querySelector('span#max_sp.info').textContent = values['max_sp'];
   }
 
   // QP
   if('questpoints' in values){
-    $('span#questpoints.info').text(values['questpoints']);
+    document.querySelector('span#questpoints.info').textContent = values['questpoints'];
   }
   if('max_questpoints' in values){
-    $('span#max_questpoints.info').text(values['max_questpoints']);
+    document.querySelector('span#max_questpoints.info').textContent = values['max_questpoints'];
   }
 
   // Wimpy
   if('wimpy' in values){
-    $('span#wimpy.info').text(values['wimpy']);
+    document.querySelector('span#wimpy.info').textContent = values['wimpy'];
   }
   if('wimpy_dir' in values){
     if(values['wimpy_dir']=='' || values['wimpy_dir']=='0')
-      $('span#wimpy_dir.info').text('keine');
+    document.querySelector('span#wimpy_dir.info').textContent = 'keine';
     else
-      $('span#wimpy_dir.info').text(values['wimpy_dir']);
+    document.querySelector('span#wimpy_dir.info').textContent = values['wimpy_dir'];
   }
 
   // INT, STR, DEX, CON
   if('int' in values){
-    $('span#int.info').text(values['int']);
+    document.querySelector('span#int.info').textContent = values['int'];
   }
   if('str' in values){
-    $('span#str.info').text(values['str']);
+    document.querySelector('span#str.info').textContent = values['str'];
   }
   if('dex' in values){
-    $('span#dex.info').text(values['dex']);
+    document.querySelector('span#dex.info').textContent = values['dex'];
   }
   if('con' in values){
-    $('span#con.info').text(values['con']);
+    document.querySelector('span#con.info').textContent = values['con'];
   }
 }
 
@@ -196,26 +196,26 @@ function HandleGMCP_Room_Info(sock, module, payload) {
   // name
   if('name' in values){
     living_room_name = values['name'];
-    $('span#room_name').text(living_room_name);
+    document.querySelector('span#room_name').textContent = living_room_name;
   }
 
   // image
   if('image' in values){
     living_room_image = values['image'];
-    var img_a = $('a#room_image_a');
-    var img = $('img#room_image');
+    var img_a = document.querySelector('a#room_image_a');
+    var img = document.querySelector('img#room_image');
     if(living_room_image == '') {
-      img.attr('src', staticContentBase + 'img/aaa_no_signal.jpg');
-      img.attr('alt', 'Bildstoerung');
-      img_a.attr('href', staticContentBase + 'img/aaa_no_signal.jpg');
-      img_a.attr('data-title', 'Bildstoerung');
+      img.setAttribute('src', staticContentBase + 'img/aaa_no_signal.jpg');
+      img.setAttribute('alt', 'Bildstoerung');
+      img_a.setAttribute('href', staticContentBase + 'img/aaa_no_signal.jpg');
+      img_a.setAttribute('data-title', 'Bildstoerung');
     }
     else {
-      img.attr('src', staticContentBase + living_room_image);
-      img_a.attr('href', staticContentBase + living_room_image);
+      img.setAttribute('src', staticContentBase + living_room_image);
+      img_a.setAttribute('href', staticContentBase + living_room_image);
       if('name' in values) {
-        img.attr('alt', living_room_name);
-        img_a.attr('data-title', living_room_name);
+        img.setAttribute('alt', living_room_name);
+        img_a.setAttribute('data-title', living_room_name);
       }
     }
   }
@@ -411,10 +411,10 @@ const popupCenter = ({url, title, w, h}) => {
       `
       toolbar=no,
       scrollbars=yes,
-      width=${w / systemZoom},
-      height=${h / systemZoom},
-      top=${top},
-      left=${left}
+      width=w / systemZoom,
+      height=h / systemZoom,
+      top=top,
+      left=left
       `
     )
 

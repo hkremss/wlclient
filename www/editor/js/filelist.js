@@ -67,15 +67,17 @@ function refresh_filetree() {
   var path = localStorage.getItem('WL.File.List path');
   var list = localStorage.getItem('WL.File.List list');
 
-  var currentFilename = path.replace(/^.*[\\\/]/, '');
-  currentPath = path.substring(0, (path.length-currentFilename.length)-1);
-
+  if (path!=null) {
+    var currentFilename = path.replace(/^.*[\\\/]/, '');
+    currentPath = path.substring(0, (path.length-currentFilename.length)-1);
+  }
+  
   // from messagelist.js
   log_message("Received WL.File.List update for: " + path);
 
   $('ul#fileslist').empty();
 
-  if (list.length > 0) {
+  if (list != null && list.length > 0) {
     var fileList = JSON.parse(list);
 
     // sort by name

@@ -225,14 +225,14 @@ function parseQuery(qstr) {
 
 // Handle image loading errors here!
 function bildstoerung(){
-  var img_a = $('a#room_image_a');
-  var img = $('img#room_image');
-  var brokenPath = img.attr('src');
-  if(brokenPath!='img/aaa_no_signal.jpg') {
-    img.attr('src', 'img/aaa_no_signal.jpg');
-    img.attr('alt', 'Bildstoerung: ' + brokenPath + ' is broken!');
-    img_a.attr('href', 'img/aaa_no_signal.jpg');
-    img_a.attr('data-title', 'Bildstoerung: ' + brokenPath + ' is broken!');
+  var img_a = document.querySelector('a#room_image_a');
+  var img = document.querySelector('img#room_image');
+  var brokenPath = img.getAttribute('src');
+  if(brokenPath != 'img/aaa_no_signal.jpg') {
+    img.setAttribute('src', 'img/aaa_no_signal.jpg');
+    img.setAttribute('alt', 'Bildstoerung: ' + brokenPath + ' is broken!');
+    img_a.setAttribute('href', 'img/aaa_no_signal.jpg');
+    img_a.setAttribute('data-title', 'Bildstoerung: ' + brokenPath + ' is broken!');
   }
 }
 
@@ -424,30 +424,25 @@ function writeServerData(buf) {
 
 // Adjust the UI layout.
 function adjustLayout() {
-  var page_elem = $('div#page');
-  var out_elem = $('div#out');
-  var in_elem = $('div#in');
+  var thePage = document.getElementById('page');
+  var theOut = document.getElementById('out');
+  var theInfo = document.getElementById('info');
+  var theIn = document.getElementById('in');
 
-  var w = page_elem.width(), h = page_elem.height();
-  var w0 = in_elem.width();
-//  var w1 = $('button#send').outerWidth(true);
-  var w2 = $('div#menu').outerWidth(true)+25;
-  var w3 = $('div#info').width();
+  var page_width = thePage.clientWidth;
+  var page_height = thePage.clientHeight;
+  var info_width = theInfo.clientWidth;
 
   /* update input div width */
-  in_elem.css({
-    width: (w-(w3+6)) + 'px',
-  });
+  theIn.style.width = (page_width-(info_width+6)) + 'px';
 
   /* update output div size */
-  var h0 = in_elem.outerHeight(true);
-  out_elem.css({
-    width: (w-(w3+6)) + 'px',
-    height: (h - h0 -2) + 'px',
-  });
+  var in_outerheight = theIn.clientHeight;
+  theOut.style.width = (page_width-(info_width+6)) + 'px';
+  theOut.style.height = (page_height - in_outerheight - 10) + 'px';
 
   /* scroll to bottom, important for mobile and virtual keyboard */
-  out_elem.scrollTop(out_elem.prop("scrollHeight"));
+  theOut.scrollTo(0, theOut.scrollHeight);
 }
 
 // Save settings to localStorage.
@@ -488,7 +483,7 @@ function loadSettings() {
   }
 
   // Refresh UI
-  $('button#localecho').html('Local Echo: ' + (localEcho==true ? 'an' : 'aus') + '');
+  document.querySelector('button#localecho').innerHTML = 'Local Echo: ' + (localEcho==true ? 'an' : 'aus');
 }
 
 // Maybe the user wants other colors? Here we go.
@@ -499,35 +494,35 @@ function processQueryParams() {
   if (debugGMCP=='true') debug_GMCP = true;
 
   var bgColor = queryParams['bg'];
-  if(bgColor!=null) { $(document).get(0).body.style.backgroundColor='#'+bgColor; }
+  if(bgColor!=null) { document.body.style.backgroundColor = '#'+bgColor; }
 
   var fgColor = queryParams['fg'];
-  if(fgColor!=null){ $(document).get(0).body.style.color='#'+fgColor; }
+  if(fgColor!=null){ document.body.style.color = '#'+fgColor; }
 
   var infoBgColor = queryParams['ibg'];
-  if(infoBgColor!=null) { $('div#info').get(0).style.backgroundColor='#'+infoBgColor; }
+  if(infoBgColor!=null) { document.querySelector('div#info').style.backgroundColor = '#'+infoBgColor; }
 
   var infoFgColor = queryParams['ifg'];
   if(infoFgColor!=null) { 
-    $('div#info').get(0).style.color='#'+infoFgColor; 
-    $('div#info').get(0).style.borderColor='#'+infoFgColor; 
+    document.querySelector('div#info').style.color = '#'+infoFgColor; 
+    document.querySelector('div#info').style.borderColor = '#'+infoFgColor; 
   }
 
   var infoBorderColor = queryParams['ibc'];
-  if(infoBorderColor!=null) { $('div#info').get(0).style.borderColor='#'+infoBorderColor; }
+  if(infoBorderColor!=null) { document.querySelector('div#info').style.borderColor = '#'+infoBorderColor; }
 
   var infoPanel = queryParams['infopanel'];
   if (infoPanel==null || infoPanel!='hidden') 
-    $('div#info').get(0).style.visibility = 'visible'
+    document.querySelector('div#info').style.visibility = 'visible'
   else
-    $('div#info').get(0).style.visibility = 'hidden'
+    document.querySelector('div#info').style.visibility = 'hidden'
   console.log('URL-Paramters for infoPanel = ' + infoPanel);
 }
 
 // Popup the cookie warning.
 function doCookiePopup() {
   if (!document.cookie.split('; ').find(row => row.startsWith('didAcceptCookies'))) {
-    $(".cookie-bar").css("display", "inline-block");
+    document.querySelector('.cookie-bar').style.display = 'inline-block';
   }
 }
 
@@ -625,19 +620,19 @@ function exportSettings(event) {
 // Call to enter into pw mode.
 function enterPWMode() {
   pwMode = true;
-  $("#cmd").hide();
   closeAllDropDowns();
-  $(".dropbtn").hide();
-  $("#pwd").show();
-  $("#pwd").focus();
+  document.getElementById('cmd').style.display = 'none'; // hide
+  document.querySelector('.dropbtn').style.display = 'none'; // hide
+  document.getElementById('pwd').style.display = 'block'; // show
+  setFocusToInput();
 }
 
 // Call to leave pw mode.
 function leavePWMode() {
   pwMode = false;
-  $("#pwd").hide();
-  $(".dropbtn").show();
-  $("#cmd").show();
+  document.getElementById('pwd').style.display = 'none'; // hide
+  document.querySelector('.dropbtn').style.display = 'block'; // show
+  document.getElementById('cmd').style.display = 'block'; // show
   setFocusToInput();
 }
 
@@ -661,9 +656,6 @@ function setInput(cmd) {
 function setPrompt(prompt) {
   document.getElementById('prompt').innerHTML = prompt;
 }
-
-// Called once, when UI is loaded and ready to go.
-//$(document).ready(startClientFunction);
 
 // Called once from app.js, when all required modules are loaded.
 function startClientFunction() {
@@ -738,7 +730,7 @@ function startClientFunction() {
     if (event.key == 'c' && (event.ctrlKey || event.metaKey)) return true;
   
     // Don't intercept control/meta/function keys
-    if ($.inArray(event.key, [
+    if ([
       'CapsLock', /* Caps lock */
       'Shift',    /* Shift */
       'Tab',      /* Tab */
@@ -752,7 +744,7 @@ function startClientFunction() {
       'Insert',   /* Insert Key */
       'F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12','F13','F14','F15','F16','F17','F18','F19','F20', /* F1 - F20 */
       'NumLock','ScrollLock' /* Num Lock, Scroll Lock */
-      ]) != -1) return true;
+      ].indexOf(event.key) != -1) return true;
   
     // Everything else is supposed to be input, so focus to the right place.
     setFocusToInput();
@@ -1006,8 +998,8 @@ function startClientFunction() {
     }
   }
 
-    // make sure, contextmenu gets closed, if clicked somewhere else
-    window.addEventListener('click', closeAllButtonContextFunction);
+  // make sure, contextmenu gets closed, if clicked somewhere else
+  window.addEventListener('click', closeAllButtonContextFunction);
 
   // Show cookie popup
   doCookiePopup();
@@ -1015,16 +1007,8 @@ function startClientFunction() {
   // Initially it's always #cmd
   setFocusToInput();
 
-  // UI events
-  $('#cmd, #pwd').keypress(function(e) {
-    if(e.key == 'Enter') {
-      e.preventDefault();
-      sendInput();
-    }
-  });
-
-  $('#cmd, #pwd').keydown(function(e) {
-
+  // Handle history (cursor buttons) and Input 'Enter'.
+  function handleInputKeyDowns(e) {
     // cursor up/down history
     // keypress event does not work in IE/Edge!
     switch (e.key) {
@@ -1034,9 +1018,9 @@ function startClientFunction() {
       case 'ArrowUp':
         // Go back in history
         if(history.length>=0 && (history_idx+1)<history.length) {
-          if(history_idx<0) { history_tmp = $(this).val().trim(); }
+          if(history_idx<0) { history_tmp = this.value; }
           history_idx++;
-          $(this).val(history[history_idx]);
+          this.value = history[history_idx];
         }
         break;
       case 'ArrowRight':
@@ -1047,17 +1031,25 @@ function startClientFunction() {
         if(history_idx>=0) {
           history_idx--;
           if(history_idx<0) {
-            $(this).val(history_tmp);
+            this.value = history_tmp;
           }
           else {
             if(history_idx<history.length) {
-              $(this).val(history[history_idx]);
+              this.value = history[history_idx];
             }
           }
         }
         break;
-    }
-  });
+      case 'Enter':
+        e.preventDefault();
+        sendInput();
+        break;
+      }
+  }
+
+  // Both cmd and pwd can be active input elements.
+  document.getElementById('cmd').addEventListener('keydown', handleInputKeyDowns, false);
+  document.getElementById('pwd').addEventListener('keydown', handleInputKeyDowns, false);
 
   // 'Enter'
   //document.querySelector('button#send').addEventListener('click', function(e) { sendInput(); setFocusToInput(); });
