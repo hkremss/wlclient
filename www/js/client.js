@@ -937,62 +937,22 @@ function startClientFunction() {
         var newButton = document.createElement("div");
         newButton.className = 'drp nohover';
         newButton.style = 'white-space: nowrap;overflow:hidden;';
-        // Sub button 1
-        var subButton1 = document.createElement("button");
-        subButton1.id = buttonKeys[i] + '.1';
-        subButton1.className = 'drp drpssub41';
-        subButton1.addEventListener('contextmenu', cmdButtonContextFunction, false);
-        subButton1.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['1'].label;
-        subButton1.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['1'].send;
-        subButton1.dataset.cmd = cmdButtons[buttonKeys[i]]['cmds']['1'].cmd;
-        newButton.insertBefore(subButton1, null);
-        subButton1.addEventListener('click', function(e) { 
-          setInput(this.dataset.cmd); 
-          if (this.dataset.send == 'true') sendInput(); 
-          setFocusToInput(); 
-        });
-        // Sub button 2
-        var subButton2 = document.createElement("button");
-        subButton2.id = buttonKeys[i] + '.2';
-        subButton2.className = 'drp drpssub42';
-        subButton2.addEventListener('contextmenu', cmdButtonContextFunction, false);
-        subButton2.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['2'].label;
-        subButton2.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['2'].send;
-        subButton2.dataset.cmd = cmdButtons[buttonKeys[i]]['cmds']['2'].cmd;
-        newButton.insertBefore(subButton2, null);
-        subButton2.addEventListener('click', function(e) { 
-          setInput(this.dataset.cmd); 
-          if (this.dataset.send == 'true') sendInput(); 
-          setFocusToInput(); 
-        });
-        // Sub button 3
-        var subButton3 = document.createElement("button");
-        subButton3.id = buttonKeys[i] + '.3';
-        subButton3.className = 'drp drpssub43';
-        subButton3.addEventListener('contextmenu', cmdButtonContextFunction, false);
-        subButton3.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['3'].label;
-        subButton3.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['3'].send;
-        subButton3.dataset.cmd = cmdButtons[buttonKeys[i]]['cmds']['3'].cmd;
-        newButton.insertBefore(subButton3, null);
-        subButton3.addEventListener('click', function(e) { 
-          setInput(this.dataset.cmd); 
-          if (this.dataset.send == 'true') sendInput(); 
-          setFocusToInput(); 
-        });
-        // Sub button 4
-        var subButton4 = document.createElement("button");
-        subButton4.id = buttonKeys[i] + '.4';
-        subButton4.className = 'drp drpssub44';
-        subButton4.addEventListener('contextmenu', cmdButtonContextFunction, false);
-        subButton4.innerHTML = cmdButtons[buttonKeys[i]]['cmds']['4'].label;
-        subButton4.dataset.send = cmdButtons[buttonKeys[i]]['cmds']['4'].send;
-        subButton4.dataset.cmd = cmdButtons[buttonKeys[i]]['cmds']['4'].cmd;
-        newButton.insertBefore(subButton4, null);
-        subButton4.addEventListener('click', function(e) { 
-          setInput(this.dataset.cmd); 
-          if (this.dataset.send == 'true') sendInput(); 
-          setFocusToInput(); 
-        });
+        for (var k=1;k<=4;k++) {
+          // Sub button k (1-4)
+          var subButton = document.createElement("button");
+          subButton.id = buttonKeys[i] + '.'+k;
+          subButton.className = 'drp drpssub4'+k;
+          subButton.addEventListener('contextmenu', cmdButtonContextFunction, false);
+          subButton.innerHTML = cmdButtons[buttonKeys[i]]['cmds'][''+k].label;
+          subButton.dataset.send = cmdButtons[buttonKeys[i]]['cmds'][''+k].send;
+          subButton.dataset.cmd = cmdButtons[buttonKeys[i]]['cmds'][''+k].cmd;
+          newButton.insertBefore(subButton, null);
+          subButton.addEventListener('click', function(e) { 
+            setInput(this.dataset.cmd); 
+            if (this.dataset.send == 'true') sendInput(); 
+            setFocusToInput(); 
+          });
+        }
       }
       mainDropdown.insertBefore(newButton, mainDropdown.firstChild);
     }
