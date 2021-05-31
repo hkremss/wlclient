@@ -805,7 +805,8 @@ function startClientFunction() {
   // websocket
   // use page location and truncate off tailing /index.html
   var baseUri = location.pathname.substring(0, location.pathname.lastIndexOf("/"))
-  var sock = io.connect('', {path:baseUri+'/socket.io'});
+  var sock = io.connect('', {path:baseUri+'/socket.io',closeOnBeforeunload:false});
+  // see: https://github.com/socketio/socket.io-client/issues/1451 (with lower 'u')
 
   // We received something!
   sock.on('stream', function(buf) {

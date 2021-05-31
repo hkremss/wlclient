@@ -39,13 +39,13 @@
     "codemirror": "^5.60.0",
     "express": "^4.17.1",
     "iconv-lite": "^0.4.13",
-    "jquery": "^1.12.4",
+    "jquery": "^3.6.0",
     "jquery-ui-dist": "^1.12.1",
     "lightbox2": "^2.11.3",
     "micromodal": "^0.4.6",
     "minimist": "^1.2.5",
     "requirejs": "^2.3.6",
-    "socket.io": "3.1.1",
+    "socket.io": "^4.1.0",
     "text-encoding": "^0.5.5"
   },
   "devDependencies": {
