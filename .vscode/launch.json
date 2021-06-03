@@ -5,11 +5,17 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "command": "npm run build",
+            "name": "npm run build",
+            "request": "launch",
+            "type": "node-terminal"
+        },
+        {
             "args": [
                 "--build"
             ],
             "internalConsoleOptions": "openOnSessionStart",
-            "name": "npm run build",
+            "name": "Compile",
             "program": "${workspaceFolder}/node_modules/typescript/bin/tsc",
             "request": "launch",
             "skipFiles": [
@@ -25,7 +31,7 @@
                 "${workspaceFolder}/test"
             ],
             "internalConsoleOptions": "openOnSessionStart",
-            "name": "npm run test",
+            "name": "Mocha tests",
             "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
             "request": "launch",
             "skipFiles": [

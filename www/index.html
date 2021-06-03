@@ -27,6 +27,7 @@
 
   <link  href="node_modules/lightbox2/css/lightbox.css" rel="stylesheet">
   <link  href="css/menus.css" rel="stylesheet">
+  <link  href="css/dialogs.css" rel="stylesheet">
   <link  href="css/client.css" rel="stylesheet">
   <link  href="css/tty-schemes.css" rel="stylesheet">
 
@@ -42,7 +43,7 @@
     <div id="info">
       <p><span class="info_heading" id="room_name">--== Bildstoerung ==--</span></p>
       <a id="room_image_a" href="img/aaa_no_signal.jpg" data-lightbox="Images" data-title="--== Bildstoerung ==--">
-        <img id="room_image" src="img/aaa_no_signal.jpg" onerror="bildstoerung();" alt="Bildstoerung" style="width:calc(100% - 4px);height:auto;border-width:2px;border-color:#fff;border-style:inset;">
+        <img id="room_image" src="img/aaa_no_signal.jpg" alt="Bildstoerung" style="width:calc(100% - 4px);height:auto;border-width:2px;border-color:#fff;border-style:inset;">
       </a>
       <div class="rTbl" style="margin:13px auto;">
         <div class="rTblRow">
@@ -83,7 +84,7 @@
       <div id="prompt">&gt;&nbsp;</div>
       <div class="cmdwrapper">
         <div id="menu" class="dropdown">
-          <button onclick="mainDropDownFunction()" class="dropbtn" oncontextmenu="return false;">...</button>
+          <button class="dropbtn" oncontextmenu="return false;">...</button>
           <div id="mainDropdown" class="dropdown-content">
             <!-- the rest of the buttons is created in client.configureCmdButtons() -->
             <button id="settings" class="drp">&lt; </span>Optionen</button>
@@ -187,7 +188,7 @@
     </div>
 
     <!-- Cookie banner -->
-    <input class="checkbox-cb" id="checkbox-cb" type="checkbox" onclick="doCookieAccept()"/>
+    <input class="checkbox-cb" id="checkbox-cb" type="checkbox"/>
     <div class="cookie-bar" style="display:none">
       <span class="message">Diese Seite ben&ouml;tigt zwingend Cookies. Wenn Du diese Seite verwendest,
         stimmst Du den <a href="/mud/datenschutz.html" target="_blank">Bedingungen</a> zu.</span>

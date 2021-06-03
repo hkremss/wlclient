@@ -1,6 +1,5 @@
-// register mouse handling for resizing bars
-document.addEventListener('DOMContentLoaded', function() {
-    const resizable = function(resizer) {
+function initialize_resizing() {
+  const resizable = function(resizer) {
         const direction = resizer.getAttribute('data-direction') || 'horizontal';
         const prevSibling = resizer.previousElementSibling;
         const nextSibling = resizer.nextElementSibling;
@@ -86,10 +85,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.resizer').forEach(function(ele) {
         resizable(ele);
     });
-});
 
-// called on any window resize
-$(window).resize(adjustLayout);
+    // called on any window resize
+    window.addEventListener('resize', adjustLayout);
+
+}
 
 // adjust layout (especially editor div sizes)
 function adjustLayout() {

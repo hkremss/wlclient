@@ -8,19 +8,18 @@
 var rewire = require('rewire');
 var should = require('should');
 
-const mod = rewire('../www/js/macros.js');
-//const mod_help = rewire('../www/js/macros_help.js');
+const mod = rewire('../www/js/client.js');
 
 // Expose module functions for testing
-var TMP = mod.__get__('TMP');
-var MacroProcessor = mod.__get__('TMP.MacroProcessor');
-var Stack = mod.__get__('TMP.Stack');
-var EvaluationContext = mod.__get__('TMP.EvaluationContext');
-var EvalResult = mod.__get__('TMP.EvalResult');
-var MacroHelp = mod.__get__('TMP.MacroHelp');
+//var wlMacros = mod.__get__('wlMacros');
+var MacroProcessor = mod.__get__('wlMacros.MacroProcessor');
+var Stack = mod.__get__('wlMacros.Stack');
+var EvaluationContext = mod.__get__('wlMacros.EvaluationContext');
+var EvalResult = mod.__get__('wlMacros.EvalResult');
+var MacroHelp = mod.__get__('wlMacros.MacroHelp');
 
 //console.log("==========");
-//console.log(TMP);
+//console.log(wlMacros);
 console.log(MacroProcessor);
 console.log(Stack);
 console.log(EvaluationContext);

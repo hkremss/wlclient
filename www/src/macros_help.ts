@@ -8,7 +8,7 @@
  * 
  */
 
-namespace TMP {
+namespace wlMacros {
 
   export class MacroHelp {
 

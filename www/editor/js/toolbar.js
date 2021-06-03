@@ -2,7 +2,7 @@
 
 // see: view-source:https://jqueryui.com/resources/demos/controlgroup/toolbar.html
 
-$( function() {
+function initialize_toolbar() {
 
   // Redo button
   $( "#connectionStatus" ).button({
@@ -19,18 +19,18 @@ $( function() {
   // New button
   $( "#new" ).on("click", 
     function() {
-     $( "#messageDialog" ).dialog( "option", "title", "News..." );
-     $( "#messageDialog" ).html( "Not implemented yet!" );
-     $( "#messageDialog" ).dialog( "open" );
-    }
+     document.getElementById('infoModalDlg-title').innerHTML = 'New...';
+     document.getElementById('infoModalDlg-content').innerHTML = 'Not implemented yet!';
+     micromodal.show('infoModalDlg');
+   }
   );
 
   // Open button
   $( "#open" ).on("click", 
     function() {
-     $( "#messageDialog" ).dialog( "option", "title", "Open..." );
-     $( "#messageDialog" ).html( "Not implemented yet!" );
-     $( "#messageDialog" ).dialog( "open" );
+      document.getElementById('infoModalDlg-title').innerHTML = 'Open...';
+      document.getElementById('infoModalDlg-content').innerHTML = 'Not implemented yet!';
+      micromodal.show('infoModalDlg');
     }
   );
 
@@ -46,9 +46,9 @@ $( function() {
   // Save as... button
   $( "#saveas" ).on("click", 
     function() {
-     $( "#messageDialog" ).dialog( "option", "title", "Save as..." );
-     $( "#messageDialog" ).html( "Not implemented yet!" );
-     $( "#messageDialog" ).dialog( "open" );
+      document.getElementById('infoModalDlg-title').innerHTML = 'Save as...';
+      document.getElementById('infoModalDlg-content').innerHTML = 'Not implemented yet!';
+      micromodal.show('infoModalDlg');
     }
   );
 
@@ -105,5 +105,4 @@ $( function() {
   $( "form" ).on( "submit", function( event ) {
     event.preventDefault();
   });
-} );
-
+}

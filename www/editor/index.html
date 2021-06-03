@@ -3,57 +3,25 @@
   <meta charset="utf-8" />
   <title>WL Magier Editor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="css/jquery-ui.min.css">
-  <link rel="stylesheet" href="css/jquery-ui.theme.min.css">
-  <link rel="stylesheet" href="css/jquery-ui.structure.min.css">
-  <script src="../node_modules/jquery/jquery.min.js"></script>
-  <script src="../node_modules/jquery-ui/jquery-ui.min.js"></script>
-
-  <!-- GMCP handling -->
-  <script src="js/gmcp_editor.js"></script>
-
-  <!-- Toolbar -->
-  <script src="js/toolbar.js"></script>
-
-  <!-- Codemirror -->
+  <link rel="stylesheet" href="../node_modules/jquery-ui/jquery-ui.min.css">
+  <link rel="stylesheet" href="../node_modules/jquery-ui/jquery-ui.theme.min.css">
+  <link rel="stylesheet" href="../node_modules/jquery-ui/jquery-ui.structure.min.css">
   <link rel="stylesheet" href="lib/codemirror.css">
-  <script src="lib/codemirror.js"></script>
-  <script src="addon/edit/matchbrackets.js"></script>
   <link rel="stylesheet" href="addon/hint/show-hint.css">
-  <script src="addon/hint/show-hint.js"></script>
-  <script src="mode/clike/clike.js"></script>
-  <script src="mode/xml/xml.js"></script>
-  <script src="mode/css/css.js"></script>
-  <script src="mode/javascript/javascript.js"></script>
-  <script src="mode/htmlmixed/htmlmixed.js"></script>
-  <style>
-  .CodeMirror {
-    height: auto;
-  }
-  </style>
-  
-  <!-- resizer / areas -->
+
+  <link rel="stylesheet" href="css/editor.css">
   <link rel="stylesheet" href="css/resizing.css">
-
-  <!-- filetree list-->
   <link rel="stylesheet" href="css/prettytable.css">
-  <style> 
-  #feedback { font-size: 1.4em; }
-  #fileslist .ui-selecting { background: #FECA40; }
-  #fileslist .ui-selected { background: #F39814; color: white; }
-  #fileslist { list-style-type: none; margin: 0; padding: 0; width: 90%; }
-  #fileslist li { margin: 0px; padding: 0em; height: 18px; }
-  </style>
+  <link rel="stylesheet" href="../css/dialogs.css">
 
-  <script src="js/webtoolkit.md5.js"></script>
-  <script src="js/filelist.js"></script>
-  <script src="js/editpart.js"></script>
-  <script src="js/messagelist.js"></script>
+  <!-- data-main attribute tells require.js to load
+      scripts/main.js after require.js loads. -->
+  <script data-main="js/app" src="js/require.js"></script>
 
 </head>
-<body style="margin:0;padding:0">
+<body>
 
-  <div class="toolbar ui-widget-header" style="width:100%;overflow-x:hidden;padding:3px 0 3px;border:0;margin:0">
+  <div class="toolbar ui-widget-header">
     <button id="connectionStatus">Status</button>
     <button id="new" style="margin-left:5px;">Neu...</button>
     <button id="open" style="margin-left:5px;">&Ouml;ffnen</button>
@@ -106,7 +74,7 @@
     <div style="display:flex;flex: 1 1 0%;flex-direction:column;min-width:280px">
 
 <!-- Editor-Tabs: -->
-        <div id="tabs" style="height:90vh;min-height:10rem;border:0;margin:0;padding:0;">
+        <div id="tabs">
           <ul style="margin:0;padding:1px;">
              <!--
                <li style="margin-top:0"><a id="editor-fname-1" href="#editor-tab-1">One</a><span class="ui-icon ui-icon-close" role="presentation">Close</span></li>
@@ -129,37 +97,31 @@
 
         <div class="resizer" data-direction="vertical"></div>
 
-<!-- Messages: -->
+  <!-- Messages: -->
         <div id="messages" class="ui-widget" 
 	  style="flex: 1 1 0%;white-space:pre;overflow-x:auto;overflow-y:scroll;min-height:2rem"></div>
     </div>
   <!--/div-->
 
-  <!-- Handle tabs interaction  -->
-  <script>
-    initialize_editpart();
-  </script>
-  <script src="js/resizing.js"></script>
-  <script src="js/storage_event.js"></script>
-
-  <!-- dialogs -->
-  <script>
-  $( function() {
-    $( "#messageDialog" ).dialog({
-      modal: true,
-      autoOpen: false,
-	  position: { my: "center", at: "center", of: "#tabs" },
-      buttons: {
-        Ok: function() {
-          $(this).dialog("close");
-        }
-      }
-    });
-  });
-  </script>
-  <div id="messageDialog" title="Message..." style="display:none;">
-    <p>Not implemented yet!.</p>
-  </div>
+    <!-- Micromodal info dialog -->
+    <div class="modal micromodal-slide" id="infoModalDlg" aria-hidden="true">
+      <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+        <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="infoModalDlg-title" >
+          <header class="modal__header">
+            <h2 class="modal__title" id="infoModalDlg-title">
+              Info Title
+            </h2>
+            <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+          </header>
+          <div class="modal__content" id="infoModalDlg-content">
+            Info Content
+          </div>
+          <footer class="modal__footer">
+            <button class="modal__btn modal__btn-primary" aria-label="OK" data-micromodal-close>OK</button>
+          </footer>
+          </div>
+      </div>
+    </div>
 
 </body>
 </html>

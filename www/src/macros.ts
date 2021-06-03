@@ -9,7 +9,7 @@
  *  Fuchur: Fuchur denkt .o( makros mit / im Namen sind auch doof ) <- Holger: zumindest am Anfang!
  */
 
-namespace TMP {
+namespace wlMacros {
 
   class MacroProps {
     public body : string;

@@ -33,8 +33,9 @@ require([
   'lightbox2', 'micromodal', 'socket.io', 'ansi_up',
   'constants','scan','parse','utils','picomatch',
   'ansi-regex',
-  'js/menus','js/macros','js/gmcp_client','js/client'], function() {
+  'js/client'], function() {
     //This function is called when scripts are loaded.
     console.log('Start client...');
-    startClientFunction();
+    var client = new wlClient.WLClient();
+    client.startClient();
 });
