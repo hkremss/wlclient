@@ -1,18 +1,16 @@
 {
   "compilerOptions": {
-    "noImplicitAny": false,
+    "noImplicitAny": false, // true,
+    "strictNullChecks": false, // true,
     "noEmitOnError": true,
     "removeComments": false,
     "sourceMap": true,
     "traceResolution":false,
     "target": "es5",
     "module": "none",
-    "outDir": "www/js/",
-    "outFile": "www/js/client.js",
-    "newLine": "lf"
+    "newLine": "lf",
   },
   "include": [
-    "www/src/*",
-    "**/*"
+    "www/src"
   ]
 }

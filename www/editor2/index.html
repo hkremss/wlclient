@@ -1,0 +1,120 @@
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>WL Magier Editor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="lib/codemirror.css">
+  <link rel="stylesheet" href="addon/hint/show-hint.css">
+
+  <link rel="stylesheet" href="css/editor.css">
+  <link rel="stylesheet" href="css/resizing.css">
+  <link rel="stylesheet" href="css/tabs.css">
+  <link rel="stylesheet" href="css/prettytable.css">
+  <link rel="stylesheet" href="../css/dialogs.css">
+
+  <!-- data-main attribute tells require.js to load
+      scripts/main.js after require.js loads. -->
+  <script data-main="js/app" src="js/require.js"></script>
+
+</head>
+<body>
+
+  <div class="toolbar ui-widget-header">
+    <button id="connectionStatus">Status</button>
+    <button id="new" style="margin-left:5px;">Neu...</button>
+    <button id="open" style="margin-left:5px;">&Ouml;ffnen</button>
+    <button id="save" style="margin-left:5px;">Speichern</button>
+    <button id="saveas" style="margin-left:5px;">Speichern unter...</button>
+
+    <button id="undo">Undo</button>
+    <button id="redo">Redo</button>
+    <!--button id="print">Print</button>
+
+    <select id="zoom">
+      <option selected disabled>Zoom</option>
+      <option>50%</option>
+      <option>100%</option>
+      <option>150%</option>
+      <option>200%</option>
+    </select -->
+  </div>
+
+  <div id="page" style="display:flex;flex:1 1 100%;border-width:1px;position:absolute;top:33px;width:100%;height:calc(100% - 33px)">
+
+<!-- File list: -->
+    <!--div class="flex" id="filetree" style="width:12rem;min-width:6rem;overflow-x:auto;overflow-y:scroll">
+      <table id="filetable" style="ui-widget-content;white-space:nowrap">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Size</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="ui-widget-content>Cell 2</td><td>Cell 3</td><td>Cell 4</td></tr>
+          <tr><td>Cell 2</td><td>Cell 3</td><td>Cell 4</td></tr>
+          <tr><td>Cell 2</td><td>Cell 3</td><td>Cell 4</td></tr>
+        </tbody>
+      </table>
+    </div-->
+
+      <div id="filetree" class="ui-widget" style="width:120px;min-width:80px;overflow-x:hidden;white-space:nowrap;overflow-y:scroll;">
+        <ul id="fileslist">
+          <li class="ui-widget-content">If you see this</li>
+          <li class="ui-widget-content">something</li>
+          <li class="ui-widget-content">went wrong!</li>
+        </ul>
+      </div>
+
+    <div class="resizer" data-direction="horizontal"></div>
+
+    <div style="display:flex;flex: 1 1 0%;flex-direction:column;min-width:280px">
+
+<!-- Editor-Tabs: -->
+        <div id="tabs" class="container--tabs" style="background-color: red;">
+          <section class="row">
+            <ul class="nav nav-tabs">
+              <li class="active"><a href="#editor-tab-0">Tab 1</a><span title="File is modified"></span><span class="ui-icon ui-icon-close" title="Close tab">Close</span></li>
+            </ul>
+            <div class="tab-content">
+              <div id="editor-tab-0" class="tab-pane active"> 
+                <span class="glyphicon glyphicon-leaf glyphicon--home--feature two columns text-center"></span>
+                <span class="col-md-10">
+                  <h3>Feature 1</h3>
+                  <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
+                </span>
+              </div> 
+            </div>
+          </section>
+        </div>
+
+        <div class="resizer" data-direction="vertical"></div>
+
+  <!-- Messages: -->
+        <div id="messages" class="ui-widget" style="flex: 1 1 0%;white-space:pre;overflow-x:auto;overflow-y:scroll;min-height:2rem"></div>
+    </div>
+  <!--/div-->
+
+    <!-- Micromodal info dialog -->
+    <div class="modal micromodal-slide" id="infoModalDlg" aria-hidden="true">
+      <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+        <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="infoModalDlg-title" >
+          <header class="modal__header">
+            <h2 class="modal__title" id="infoModalDlg-title">
+              Info Title
+            </h2>
+            <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+          </header>
+          <div class="modal__content" id="infoModalDlg-content">
+            Info Content
+          </div>
+          <footer class="modal__footer">
+            <button class="modal__btn modal__btn-primary" aria-label="OK" data-micromodal-close>OK</button>
+          </footer>
+          </div>
+      </div>
+    </div>
+
+</body>
+</html>

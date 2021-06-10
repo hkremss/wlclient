@@ -71,6 +71,9 @@ app.use('/client/node_modules/micromodal', express.static(__dirname + '/node_mod
 app.use('/client/editor/lib', express.static(__dirname + '/node_modules/codemirror/lib/'));
 app.use('/client/editor/mode', express.static(__dirname + '/node_modules/codemirror/mode/'));
 app.use('/client/editor/addon', express.static(__dirname + '/node_modules/codemirror/addon/'));
+app.use('/client/editor2/lib', express.static(__dirname + '/node_modules/codemirror/lib/'));
+app.use('/client/editor2/mode', express.static(__dirname + '/node_modules/codemirror/mode/'));
+app.use('/client/editor2/addon', express.static(__dirname + '/node_modules/codemirror/addon/'));
 
 var httpserver = null;
 

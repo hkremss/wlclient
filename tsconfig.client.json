@@ -1,0 +1,10 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "outDir": "www/js/",
+        "outFile": "www/js/client.js",
+    },
+    "exclude": [
+        "www/src/editor"
+    ]
+}

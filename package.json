@@ -10,9 +10,10 @@
   "scripts": {
     "start": "node ./main.js",
     "test": "mocha",
-    "build": "tsc --build && npm run minify",
+    "build": "tsc --build tsconfig.client.json && npm run minifyclient && tsc --build tsconfig.editor.json  && npm run minifyeditor",
     "clean": "tsc --build --clean",
-    "minify": "jsmin -o www/js/client.min.js www/js/client.js"
+    "minifyclient": "jsmin -o www/js/client.min.js www/js/client.js",
+    "minifyeditor": "jsmin -o www/editor2/js/editor.min.js www/editor2/js/editor.js"
   },
   "repository": {
     "type": "git",

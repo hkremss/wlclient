@@ -12,19 +12,6 @@
         },
         {
             "args": [
-                "--build"
-            ],
-            "internalConsoleOptions": "openOnSessionStart",
-            "name": "Compile",
-            "program": "${workspaceFolder}/node_modules/typescript/bin/tsc",
-            "request": "launch",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "type": "pwa-node"
-        },
-        {
-            "args": [
                 "--timeout",
                 "999999",
                 "--colors",
