@@ -34,7 +34,7 @@ namespace wlClient {
                 myContentPanes[i].classList.remove("active");
             }
             let anchorReference = tabClickEvent.target;
-            let activePaneId = anchorReference.getAttribute("href");
+            let activePaneId = anchorReference.getAttribute("href") || anchorReference.children[0].getAttribute("href"); // clicked tab or link
             let activePane = document.querySelector(activePaneId);
             activePane.classList.add("active");
 
@@ -83,7 +83,7 @@ namespace wlClient {
             }
     
             // store tabs variable
-            let myTabs = document.querySelectorAll("ul.nav-tabs > li > a");
+            let myTabs = document.querySelectorAll("ul.nav-tabs > li");
 
             for (let i = 0; i < myTabs.length; i++) {
                 myTabs[i].addEventListener("click", this.myTabClicks.bind(this));
@@ -295,10 +295,11 @@ namespace wlClient {
                     //</div> 
                     let tabDiv = document.createElement<"div">('div');
                     tabDiv.id = "editor-tab-" + allIDs[i];
-                    tabDiv.classList.add("tab-pane");
-                    tabDiv.style.padding = "0 0 0 1px";
-                    tabDiv.style.height = "height:calc(100% - 32px)";
-                    tabDiv.style.fontSize = "1.1em";
+                    tabDiv.classList.add('tab-pane');
+                    if (i===0) tabDiv.classList.add('active');
+                    //tabDiv.style.padding = "0 0 0 1px";
+                    //tabDiv.style.height = "height:calc(100% - 32px)";
+                    //tabDiv.style.fontSize = "1.1em";
                     //var span1 = document.createElement('span');
                     //span1.className = "glyphicon glyphicon-leaf glyphicon--home--feature two columns text-center";
                     //tabDiv.appendChild(span1);
@@ -315,11 +316,14 @@ namespace wlClient {
                     //  <li class=""><a href="#tab-3">Tab 3</a></li>
                     //</ul>
                     let tabLi = document.createElement<"li">('li');
-                    tabLi.className = "";
+                    if (i===0)
+                        tabLi.className = 'active';
+                    else
+                        tabLi.className = '';
 
                     let tabLiA = document.createElement<'a'>('a');
                     tabLi.appendChild(tabLiA);
-                    tabLiA.addEventListener("click", this.myTabClicks.bind(this));
+                    tabLi.addEventListener("click", this.myTabClicks.bind(this));
                     tabLiA.href="#editor-tab-" + allIDs[i];
                     tabLiA.appendChild(document.createTextNode(fname));
                     tabLiA.title = path;
@@ -361,16 +365,18 @@ namespace wlClient {
                     editor.changeGeneration();
                     editor.on("change", function (cm, change) {
                         var activeTab = this.getActiveTab();
-                        if (!this.editpart_changes[activeTab.id])
-                            this.editpart_changes[activeTab.id]=1;
-                        else
-                            this.editpart_changes[activeTab.id]+=1;
-                        if (cm.getDoc().isClean()) {
-                            //document.querySelector('tabs .ui-tabs-active span:first').textContent = "";
-                            document.querySelector('ul.nav.nav-tabs > li.active > span:first-of-type').textContent = "";
-                        } else {
-                            //document.querySelector('#tabs .ui-tabs-active span:first').textContent = "*";
-                            document.querySelector('ul.nav.nav-tabs > li.active > span:first-of-type').textContent = "*";
+                        if (activeTab) {
+                            if (!this.editpart_changes[activeTab.id])
+                                this.editpart_changes[activeTab.id]=1;
+                            else
+                                this.editpart_changes[activeTab.id]+=1;
+                            if (cm.getDoc().isClean()) {
+                                //document.querySelector('tabs .ui-tabs-active span:first').textContent = "";
+                                document.querySelector('ul.nav.nav-tabs > li.active > span:first-of-type').textContent = "";
+                            } else {
+                                //document.querySelector('#tabs .ui-tabs-active span:first').textContent = "*";
+                                document.querySelector('ul.nav.nav-tabs > li.active > span:first-of-type').textContent = "*";
+                            }
                         }
                     }.bind(this));
                     editor.getDoc().setValue(content);

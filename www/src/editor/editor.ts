@@ -75,8 +75,12 @@ namespace wlClient {
         }
 
         public logMessage(msg: string) {
-            document.getElementById('messages').append( "<span style=\"display: block;\">" + new Date().toJSON() + ": "+msg + "</span>");
-            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+            let msgPanel = document.getElementById('messages');
+            let newLine = document.createElement<'span'>('span');
+            newLine.style.display = "block";
+            newLine.appendChild(document.createTextNode(new Date().toJSON() + ": " + msg));
+            msgPanel.appendChild(newLine);
+            msgPanel.scrollTop = msgPanel.scrollHeight;
         }
     }
 }

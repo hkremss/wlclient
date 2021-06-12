@@ -28,23 +28,33 @@
     border-color: #eee #eee #ddd;
     background-color: white;
 }
-.container--tabs .nav-tabs > li.active > a, .container--tabs .nav-tabs > li.active > a:hover, .container--tabs .nav-tabs > li.active > a:focus {
+.container--tabs .nav-tabs > li.active {
     color: #555;
     cursor: default;
     background-color: #fff;
     border: 1px solid #ddd;
     border-bottom-color: transparent;
 }
+.container--tabs .nav-tabs > li.active > a, 
+.container--tabs .nav-tabs > li.active > a:hover, 
+.container--tabs .nav-tabs > li.active > a:focus {
+    color: #555;
+    cursor: default;
+    background-color: #fff;
+}
 .container--tabs .tab-content {
     float: left;
+    height: calc(100% - 40px);
     width: 100%;
 }
 .container--tabs .tab-content > .tab-pane {
     display: none;
+    padding: 0 0 0 1px;
+    font-size: 1.1em;
 }
 .container--tabs .tab-content > .tab-pane.active {
     display: block;
-    padding: 2.5% 3.5%;
+    /*padding: 2.5% 3.5%;*/
     background-color: #efefef;
 }
 .container--tabs .tab-content > .active {

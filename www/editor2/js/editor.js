@@ -68,8 +68,12 @@ var wlClient;
             window.addEventListener('storage', this.handle_storage, false);
         };
         WLEditor.prototype.logMessage = function (msg) {
-            document.getElementById('messages').append("<span style=\"display: block;\">" + new Date().toJSON() + ": " + msg + "</span>");
-            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+            var msgPanel = document.getElementById('messages');
+            var newLine = document.createElement('span');
+            newLine.style.display = "block";
+            newLine.appendChild(document.createTextNode(new Date().toJSON() + ": " + msg));
+            msgPanel.appendChild(newLine);
+            msgPanel.scrollTop = msgPanel.scrollHeight;
         };
         return WLEditor;
     }());
@@ -412,7 +416,7 @@ var wlClient;
                 myContentPanes[i].classList.remove("active");
             }
             var anchorReference = tabClickEvent.target;
-            var activePaneId = anchorReference.getAttribute("href");
+            var activePaneId = anchorReference.getAttribute("href") || anchorReference.children[0].getAttribute("href"); // clicked tab or link
             var activePane = document.querySelector(activePaneId);
             activePane.classList.add("active");
             var cm = this.getActiveTabCM();
@@ -457,7 +461,7 @@ var wlClient;
                 this.micromodal.init();
             }
             // store tabs variable
-            var myTabs = document.querySelectorAll("ul.nav-tabs > li > a");
+            var myTabs = document.querySelectorAll("ul.nav-tabs > li");
             for (var i = 0; i < myTabs.length; i++) {
                 myTabs[i].addEventListener("click", this.myTabClicks.bind(this));
                 //tabs.on( "click", "span.ui-icon-close", this.tabCloseIconClicked()
@@ -641,10 +645,12 @@ var wlClient;
                     //</div> 
                     var tabDiv = document.createElement('div');
                     tabDiv.id = "editor-tab-" + allIDs[i];
-                    tabDiv.classList.add("tab-pane");
-                    tabDiv.style.padding = "0 0 0 1px";
-                    tabDiv.style.height = "height:calc(100% - 32px)";
-                    tabDiv.style.fontSize = "1.1em";
+                    tabDiv.classList.add('tab-pane');
+                    if (i === 0)
+                        tabDiv.classList.add('active');
+                    //tabDiv.style.padding = "0 0 0 1px";
+                    //tabDiv.style.height = "height:calc(100% - 32px)";
+                    //tabDiv.style.fontSize = "1.1em";
                     //var span1 = document.createElement('span');
                     //span1.className = "glyphicon glyphicon-leaf glyphicon--home--feature two columns text-center";
                     //tabDiv.appendChild(span1);
@@ -661,10 +667,13 @@ var wlClient;
                     //  <li class=""><a href="#tab-3">Tab 3</a></li>
                     //</ul>
                     var tabLi = document.createElement('li');
-                    tabLi.className = "";
+                    if (i === 0)
+                        tabLi.className = 'active';
+                    else
+                        tabLi.className = '';
                     var tabLiA = document.createElement('a');
                     tabLi.appendChild(tabLiA);
-                    tabLiA.addEventListener("click", this.myTabClicks.bind(this));
+                    tabLi.addEventListener("click", this.myTabClicks.bind(this));
                     tabLiA.href = "#editor-tab-" + allIDs[i];
                     tabLiA.appendChild(document.createTextNode(fname));
                     tabLiA.title = path_1;
@@ -717,17 +726,19 @@ var wlClient;
                     editor.changeGeneration();
                     editor.on("change", function (cm, change) {
                         var activeTab = this.getActiveTab();
-                        if (!this.editpart_changes[activeTab.id])
-                            this.editpart_changes[activeTab.id] = 1;
-                        else
-                            this.editpart_changes[activeTab.id] += 1;
-                        if (cm.getDoc().isClean()) {
-                            //document.querySelector('tabs .ui-tabs-active span:first').textContent = "";
-                            document.querySelector('ul.nav.nav-tabs > li.active > span:first-of-type').textContent = "";
-                        }
-                        else {
-                            //document.querySelector('#tabs .ui-tabs-active span:first').textContent = "*";
-                            document.querySelector('ul.nav.nav-tabs > li.active > span:first-of-type').textContent = "*";
+                        if (activeTab) {
+                            if (!this.editpart_changes[activeTab.id])
+                                this.editpart_changes[activeTab.id] = 1;
+                            else
+                                this.editpart_changes[activeTab.id] += 1;
+                            if (cm.getDoc().isClean()) {
+                                //document.querySelector('tabs .ui-tabs-active span:first').textContent = "";
+                                document.querySelector('ul.nav.nav-tabs > li.active > span:first-of-type').textContent = "";
+                            }
+                            else {
+                                //document.querySelector('#tabs .ui-tabs-active span:first').textContent = "*";
+                                document.querySelector('ul.nav.nav-tabs > li.active > span:first-of-type').textContent = "*";
+                            }
                         }
                     }.bind(this));
                     editor.getDoc().setValue(content_1);

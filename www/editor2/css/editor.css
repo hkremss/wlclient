@@ -17,17 +17,25 @@ body {
   font-size: 0.8em;
 }
 #tabs {
-  font-family: Tahoma, Geneva, sans-serif;
+  /*font-family: Tahoma, Geneva, sans-serif;
   font-size: 0.8em;
-  height:90vh;
+  height:90vh;*/
   min-height:10rem;
   border:0;
   margin:0;
   padding:0;
 }
 .CodeMirror {
-  height: auto;
+  height: 100%;
 }
+#messages {
+  flex: 1 1 0%;
+  white-space:pre;
+  overflow-x:auto;
+  overflow-y:scroll;
+  min-height:2rem;
+}
+
 
 .ui-icon {
   display: inline-block;
