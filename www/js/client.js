@@ -240,10 +240,10 @@ var wlClient;
                 while (out.childNodes.length > 1000)
                     out.childNodes[0].remove();
                 // if inactive, count new messages received
-                if (this.isInactive)
+                if (this.isInactive) {
                     this.messagesReceivedWhileInactive++;
-                // update client title (to update messages received counter)
-                this.updateClientTitle();
+                    this.updateClientTitle();
+                }
             }
         };
         // Do telnet negotiations for 'buf' and return the plain text only.

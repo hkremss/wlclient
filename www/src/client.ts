@@ -258,9 +258,10 @@ namespace wlClient {
                 out.scrollTop = out.scrollHeight;
                 while(out.childNodes.length > 1000) out.childNodes[0].remove();
                 // if inactive, count new messages received
-                if (this.isInactive) this.messagesReceivedWhileInactive++;
-                // update client title (to update messages received counter)
-                this.updateClientTitle();
+                if (this.isInactive) {
+                    this.messagesReceivedWhileInactive++;
+                    this.updateClientTitle();
+                }
             }
         }
 
