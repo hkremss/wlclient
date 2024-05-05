@@ -2,6 +2,9 @@
 
 "use strict";
 
+// micromodal = require('micromodal')
+var micromodal = null; // MicroModal
+
 /* helper to extract number from ids, eg. editor-tab-3, editor-fname-3 would return 3 */
 function getNumFromId(id) {
   return id.replace(/^.*[-]/, '');
@@ -52,6 +55,11 @@ function getActiveFileNum() {
 
 function initialize_editpart() {
   var tabs = $( "#tabs" ).tabs();
+
+  if (micromodal == null) {
+    micromodal = require('micromodal');
+    micromodal.init();
+  }
 
   // Close icon: removing the tab on click
   tabs.on( "click", "span.ui-icon-close", function() {
@@ -118,10 +126,11 @@ function transferActiveTabFileToServer() {
     var oldMD5 = localFileList[num][2];
     var newMD5 = md5(content);
 
+
     //if (oldMD5 == newMD5) {
-    //  $( "#messageDialog" ).dialog( "option", "title", "No changes" );
-    //  $( "#messageDialog" ).html( "No need to save." );
-    //  $( "#messageDialog" ).dialog( "open" );
+    //document.getElementById('infoModalDlg-title').innerHTML = 'Hinweis!';
+    //document.getElementById('infoModalDlg-content').innerHTML = 'Es wurden keine Änderungen festgestellt.';
+    //micromodal.show('infoModalDlg');
     //}
 
     //  localFileList[freeID] = [ path, content.length, md5(content) ];
@@ -129,9 +138,10 @@ function transferActiveTabFileToServer() {
 
     SendGMCP_WL_File_Transfer(path, content);
 
-    $( "#messageDialog" ).dialog( "option", "title", "Not implemented yet" );
-    $( "#messageDialog" ).html( "Sorry, not yet." );
-    $( "#messageDialog" ).dialog( "open" );
+    document.getElementById('infoModalDlg-title').innerHTML = 'Hinweis!';
+    document.getElementById('infoModalDlg-content').innerHTML = 'Datei wurde gesendet, aber keine Empfangsbestätigung empfangen! '+
+      'Hier ist etwas noch nicht ganz fertig.<br>Oder kaputt? :-/';
+    micromodal.show('infoModalDlg');
   }
 }
 
@@ -169,10 +179,10 @@ function refresh_editpart() {
       localStorage.removeItem('WL.File.Transfer content');
       log_message("Can't transfer new file to free slot! (max "+MAX_SLOTS+" allowed)");
 
-      $( "#messageDialog" ).dialog( "option", "title", "Zu viele offene Dateien!" );
-      $( "#messageDialog" ).html( "Es sind bereits " + MAX_SLOTS + " Dateien ge&ouml;ffnet! Du musst erst " +
-	    "eine schlie&szlig;en, bevor Du eine weitere &ouml;ffnen kannst." );
-      $( "#messageDialog" ).dialog( "open" );
+      document.getElementById('infoModalDlg-title').innerHTML = 'Zu viele offene Dateien!';
+      document.getElementById('infoModalDlg-content').innerHTML = 'Es sind bereits ' + MAX_SLOTS + ' Dateien ge&ouml;ffnet! Du musst erst ' +
+	        'eine schlie&szlig;en, bevor Du eine weitere &ouml;ffnen kannst.';
+      micromodal.show('infoModalDlg');
     }
   }
 
@@ -249,6 +259,7 @@ function refresh_editpart() {
       }
 
       // finally create CodeMirror in this div and fill it's content
+      const CodeMirror = require('lib/codemirror');
       var editor = CodeMirror(document.querySelector('div#editor-tab-'+allIDs[i]), {
         height: "100%",
         lineNumbers: true,

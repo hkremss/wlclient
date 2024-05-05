@@ -1,0 +1,36 @@
+
+body {
+  font-family: Tahoma, Geneva, sans-serif;
+  margin: 0px;
+  padding: 0px;
+}
+.toolbar {
+  width: 100%;
+  overflow-x: hidden;
+  /*padding: 3px 0 3px;*/
+  border: 0;
+  margin: 0;
+  line-height: normal;
+}
+.ui-widget {
+  font-family: Tahoma, Geneva, sans-serif;
+  font-size: 0.8em;
+}
+#tabs {
+  font-family: Tahoma, Geneva, sans-serif;
+  font-size: 0.8em;
+  height:90vh;
+  min-height:10rem;
+  border:0;
+  margin:0;
+  padding:0;
+}
+.CodeMirror {
+  height: auto;
+}
+
+#feedback { font-size: 1.4em; }
+#fileslist .ui-selecting { background: #FECA40; }
+#fileslist .ui-selected { background: #F39814; color: white; }
+#fileslist { list-style-type: none; margin: 0; padding: 0; width: 90%; font-size:small; }
+#fileslist li { margin: 0px; padding: 0em; height: 18px; }

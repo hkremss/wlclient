@@ -151,7 +151,6 @@ button:hover {background-color: #CEF}
 .rTblFoot    { display: table-footer-group; }
 .rTblCell, .rTblHead  { display: table-cell; }
 
-
 /* cookie bar stuff below, see: https://codepen.io/natewiley/pen/uGtcD */
 .cookie-bar {
   position: fixed;

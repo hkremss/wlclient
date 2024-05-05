@@ -15,9 +15,8 @@ requirejs.config({
     // the file, relative to baseUrl.
     // Also, the path should NOT include
     // the '.js' file extension.
-    'jquery': 'node_modules/jquery/jquery.min',
-    'jquery-ui': 'node_modules/jquery-ui/jquery-ui.min',
-    'lightbox2': 'node_modules/lightbox2/js/lightbox.min',
+    'lightbox2': 'node_modules/lightbox2/js/lightbox-plus-jquery.min',
+    'micromodal': 'node_modules/micromodal/micromodal',
     'socket.io': 'socket.io/socket.io.min', // socket.io serves it's own client(s)
     'ansi_up': 'node_modules/ansi_up/ansi_up',
     'constants': 'js/picomatch/constants',
@@ -31,11 +30,12 @@ requirejs.config({
 
 /* Load dependencies and start client. */
 require([
-  'jquery', 'jquery-ui', 'lightbox2', 'socket.io', 'ansi_up',
+  'lightbox2', 'micromodal', 'socket.io', 'ansi_up',
   'constants','scan','parse','utils','picomatch',
   'ansi-regex',
-  'js/dropdown','js/macros','js/gmcp_client','js/client'], function() {
+  'js/client'], function() {
     //This function is called when scripts are loaded.
-    console.log('DONE!');
-    startClientFunction();
+    console.log('Start client...');
+    var client = new wlClient.WLClient();
+    client.startClient();
 });

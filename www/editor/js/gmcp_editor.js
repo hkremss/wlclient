@@ -11,23 +11,18 @@ var SE   = '\xf0'; // 240 end sub negotiation
 // TELNET options (WL relevant)
 var TELOPT_GMCP     = '\xc9'; // 201 -> http://www.gammon.com.au/gmcp
 
-// New: GMCP support (Holger)
-function getGMCP_WL_File_List(path){
-  return 'WL.File.List { \"client\": \"WL@Web\", \"version\": \"1.0.1\" }';
-}
-
 // We need to know the client window and socket
 var clientWindow;
-var clientSocket;
+var clientInstance;
 
 // Update client window/socket to use
-function updateClient(win, sock) {
-  this.clientWindow = win;
-  this.clientSocket = sock;
+function updateClient(clientWin, clientInst) {
+  clientWindow = clientWin;
+  clientInstance = clientInst;
 }
 
 function isClientConnected() {
-  return clientWindow && clientSocket && clientSocket.connected && clientWindow.isConnected;
+  return clientWindow && clientInstance && clientInstance.getSocket().connected;
 }
 
 function tryBringClientToFront() {
@@ -43,11 +38,11 @@ function tryBringClientToFront() {
 function SendGMCP_WL_File_List(path) {
   if (isClientConnected()) {
     var msg = 'WL.File.List { \"path\":' + JSON.stringify(path) +' }' ;
-    clientSocket.emit('stream', IAC+SB+TELOPT_GMCP+msg+IAC+SE);
+    clientInstance.getSocket().emit('stream', IAC+SB+TELOPT_GMCP+msg+IAC+SE);
   } else {
-    $( "#messageDialog" ).dialog( "option", "title", "Verbindungsfehler!" );
-    $( "#messageDialog" ).html( "Es besteht momentan keine Verbindung zum MUD, melde Dich erst wieder an!" );
-    $( "#messageDialog" ).dialog( "open" );
+    document.getElementById('infoModalDlg-title').innerHTML = 'Verbindungsfehler!';
+    document.getElementById('infoModalDlg-content').innerHTML = 'Es besteht momentan keine Verbindung zum MUD, melde Dich erst wieder an!';
+    micromodal.show('infoModalDlg');
   }
 }
 
@@ -56,12 +51,12 @@ function SendGMCP_WL_File_Transfer(path, content) {
     if (!content) {
       // Request a file
       var msg = 'WL.File.Transfer { \"path\":' + JSON.stringify(path) +' }' ;
-      clientSocket.emit('stream', IAC+SB+TELOPT_GMCP+msg+IAC+SE);
+      clientInstance.getSocket().emit('stream', IAC+SB+TELOPT_GMCP+msg+IAC+SE);
     } else if (content.length < 2000) {
       // Send a file at once, offset is always 0, eof always 1 (true).
       var msg = 'WL.File.Transfer {\"path\":' + JSON.stringify(path) +',\"offset\":0,\"content\":' + 
         JSON.stringify(content) + ',\"eof\":1}' ;
-      clientSocket.emit('stream', IAC+SB+TELOPT_GMCP+msg+IAC+SE);
+        clientInstance.getSocket().emit('stream', IAC+SB+TELOPT_GMCP+msg+IAC+SE);
     } else {
       // The mud cannot handle messages bigger 5000, because this is the 
       // maximum array size. Because we do not know about the used encoding
@@ -74,13 +69,13 @@ function SendGMCP_WL_File_Transfer(path, content) {
           ',\"offset\":' + JSON.stringify(i) + 
           ',\"content\":' + JSON.stringify(content.substring(i, i+2000)) + 
           ',\"eof\":' + isEof + '}' ;
-        clientSocket.emit('stream', IAC+SB+TELOPT_GMCP+msg+IAC+SE);
+          clientInstance.getSocket().emit('stream', IAC+SB+TELOPT_GMCP+msg+IAC+SE);
       }
     }
   } else {
-    $( "#messageDialog" ).dialog( "option", "title", "Verbindungsfehler!" );
-    $( "#messageDialog" ).html( "Es besteht momentan keine Verbindung zum MUD, melde Dich erst wieder an!" );
-    $( "#messageDialog" ).dialog( "open" );
+    document.getElementById('infoModalDlg-title').innerHTML = 'Verbindungsfehler!';
+    document.getElementById('infoModalDlg-content').innerHTML = 'Es besteht momentan keine Verbindung zum MUD, melde Dich erst wieder an!';
+    micromodal.show('infoModalDlg');
   }
 }
 

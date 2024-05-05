@@ -9,9 +9,3 @@ var handle_storage = function (event) {
 
 // react on storage events
 window.addEventListener('storage', handle_storage, false);
-
-// full refresh after page load
-$(document).ready(function(){
-  refresh_filetree();
-  refresh_editpart();
-});

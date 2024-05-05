@@ -25,9 +25,9 @@
     }
   </script>
 
-  <link  href="node_modules/jquery-ui/jquery-ui.min.css" rel="stylesheet">
   <link  href="node_modules/lightbox2/css/lightbox.css" rel="stylesheet">
-  <link  href="css/dropdown.css" rel="stylesheet">
+  <link  href="css/menus.css" rel="stylesheet">
+  <link  href="css/dialogs.css" rel="stylesheet">
   <link  href="css/client.css" rel="stylesheet">
   <link  href="css/tty-schemes.css" rel="stylesheet">
 
@@ -43,7 +43,7 @@
     <div id="info">
       <p><span class="info_heading" id="room_name">--== Bildstoerung ==--</span></p>
       <a id="room_image_a" href="img/aaa_no_signal.jpg" data-lightbox="Images" data-title="--== Bildstoerung ==--">
-        <img id="room_image" src="img/aaa_no_signal.jpg" onerror="bildstoerung();" alt="Bildstoerung" style="width:calc(100% - 4px);height:auto;border-width:2px;border-color:#fff;border-style:inset;">
+        <img id="room_image" src="img/aaa_no_signal.jpg" alt="Bildstoerung" style="width:calc(100% - 4px);height:auto;border-width:2px;border-color:#fff;border-style:inset;">
       </a>
       <div class="rTbl" style="margin:13px auto;">
         <div class="rTblRow">
@@ -84,37 +84,23 @@
       <div id="prompt">&gt;&nbsp;</div>
       <div class="cmdwrapper">
         <div id="menu" class="dropdown">
-          <button onclick="mainDropDownFunction()" class="dropbtn">...</button>
+          <button class="dropbtn" oncontextmenu="return false;">...</button>
           <div id="mainDropdown" class="dropdown-content">
-            <button id="who" class="drp I18N" i18n="who">wer</button>
-            <button id="look" class="drp I18N" i18n="look">schau</button>
-            <button id="inv" class="drp I18N" i18n="inv">inventar</button>
-            <button id="score" class="drp I18N" i18n="score">info</button>
-            <button id="channel" class="drp I18N" i18n="who">- ...</button>
-            <div>
-              <button id="up" class="drp I18N" i18n="up">oben</button>
-              <div class="drp nohover" style="white-space: nowrap;overflow:hidden;">
-                <button id="north" class="drp I18N" i18n="n" style="float: left;width:24px;padding:0px;margin-left:0px;">n</button>
-                <button id="south" class="drp I18N" i18n="s" style="float: left;width:23px;padding:0px;margin-left:2px;">s</button>
-                <button id="east" class="drp I18N" i18n="e" style="float: left;width:23px;padding:0px;margin-left:2px;">o</button>
-                <button id="west" class="drp I18N" i18n="w" style="float: left;width:24px;padding:0px;margin-left:2px;">w</button>
-              </div>
-              <button id="down" class="drp I18N" i18n="down">unten</button>          
-            </div>
-            <button id="settings" onclick="settingsDropDownFunction()" class="drp I18N" i18n="settings">&lt; </span>Optionen</button>
+            <!-- the rest of the buttons is created in client.configureCmdButtons() -->
+            <button id="settings" class="drp">&lt; </span>Optionen</button>
           </div>
           <div id="settingsDropdown" class="dropdown-content">
-            <button id="importButton" class="drp I18N" i18n="import"><span class="iconimport"></span>Import Einst.</button>
+            <button id="importButton" class="drp" oncontextmenu="return false;"><span class="iconimport"></span>Import Einst.</button>
               <input id="importButtonHiddenInput" type='file' style="display: none;" />
-            <button id="exportButton" class="drp I18N" i18n="export"><span class="iconexport"></span>Export Einst.</button>
+            <button id="exportButton" class="drp" oncontextmenu="return false;"><span class="iconexport"></span>Export Einst.</button>
               <a id="exportButtonHiddenAnchor" href="data:text/plain;charset=utf-8,gna" download="wlclient-settings.txt" style="display: none;"></a>
-            <button id="colors" class="drp I18N" i18n="colors"><span class="iconpalette"></span>Farbschema</button>
-            <button id="localecho" class="drp I18N" i18n="localecho">Lokales Echo: ?</button>
-            <button id="helpButton" class="drp I18N" i18n="help"><span class="iconhelp"></span>Hilfe</button>
-            <button id="clear" class="drp I18N" i18n="clear"><span class="iconscreen"></span>Bild löschen</button>
+            <button id="colors" class="drp" oncontextmenu="return false;"><span class="iconpalette"></span>Farbschema</button>
+            <button id="localecho" class="drp" oncontextmenu="return false;">Lokales Echo: ?</button>
+            <button id="helpButton" class="drp" oncontextmenu="return false;"><span class="iconhelp"></span>Hilfe</button>
+            <button id="clear" class="drp" oncontextmenu="return false;"><span class="iconscreen"></span>Bild löschen</button>
           </div>
         </div>
-        <!--button id="send" class="cmd I18N" i18n="send">Senden</button-->
+        <!--button id="send" class="cmd">Senden</button-->
         <div class="cmdwrapper" style="overflow:hidden">
           <textarea id="cmd" rows="1"></textarea>
           <input id="pwd" type="password" style="display:none;">
@@ -122,11 +108,87 @@
       </div>
     </div>
 
-    <div id="infoDialog" title="Information!" style="display:none;">
-      <p>Das ist ein Informationsdialog.</p>
+    <!-- Button Contextmenu -->
+    <div id="cmdButtonsCtxMenu" class="dropdown-content" display="none">
+      <button id="cmdRemove" class="ctx">Entfernen</button>
+      <button id="cmdEdit" class="ctx">Bearbeiten</button>
+      <button id="cmdAdd1" class="ctx">Neuer 1-er</button>
+      <button id="cmdAdd4" class="ctx">Neuer 4-er</button>
     </div>
 
-    <input class="checkbox-cb" id="checkbox-cb" type="checkbox" onclick="doCookieAccept()"/>
+    <!-- Button Contextmenu -->
+    <div id="settingsButtonsCtxMenu" class="dropdown-content" display="none">
+      <button id="settingsAdd1" class="ctx">Neuer 1-er</button>
+      <button id="settingsAdd4" class="ctx">Neuer 4-er</button>
+    </div>
+
+    <!-- Micromodal info dialog -->
+    <div class="modal micromodal-slide" id="infoModalDlg" aria-hidden="true">
+      <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+        <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="infoModalDlg-title" >
+          <header class="modal__header">
+            <h2 class="modal__title" id="infoModalDlg-title">
+              Info Title
+            </h2>
+            <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+          </header>
+          <div class="modal__content" id="infoModalDlg-content">
+            Info Content
+          </div>
+          <footer class="modal__footer">
+            <button class="modal__btn modal__btn-primary" aria-label="OK" data-micromodal-close>OK</button>
+          </footer>
+          </div>
+      </div>
+    </div>
+    <!-- Micromodal yes/no dialog -->
+    <div class="modal micromodal-slide" id="yesnoModalDlg" aria-hidden="true">
+      <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+        <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="yesnoModalDlg-title" >
+          <header class="modal__header">
+            <h2 class="modal__title" id="yesnoModalDlg-title">
+              Yes/No Title
+            </h2>
+            <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+          </header>
+          <div class="modal__content" id="yesnoModalDlg-content">
+            Yes/No Content
+          </div>
+          <footer class="modal__footer">
+            <button class="modal__btn" aria-label="Ja" id="yesnoModalDlg-yesButton">Ja</button>
+            <button class="modal__btn modal__btn-primary" aria-label="Nein" data-micromodal-close>Nein</button>
+          </footer>
+          </div>
+      </div>
+    </div>
+    <!-- Micromodal CmdButton Edit Dialog -->
+    <div class="modal micromodal-slide" id="cmdButtonEditModalDlg" aria-hidden="true">
+      <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+        <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="cmdButtonEditModalDlg-title" >
+          <header class="modal__header">
+            <h2 class="modal__title" id="cmdButtonEditModalDlg-title">
+              Edit Command Button
+            </h2>
+            <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+          </header>
+          <div class="modal__content" id="cmdButtonEditModalDlg-content">
+            <label for="fname">Name:</label>
+            <input type="text" id="buttonName" name="buttonName"><br><br>
+            <label for="lname">Befehl:</label>
+            <input type="text" id="buttonCmd" name="buttonCmd"><br><br>
+            <label for="lname">Sofort senden:</label>
+            <input type="checkbox" id="buttonSend" name="buttonSend"><br><br>
+          </div>
+          <footer class="modal__footer">
+            <button class="modal__btn modal__btn-primary" aria-label="Speichern" id="cmdButtonEditModalDlg-saveButton">Speichern</button>
+            <button class="modal__btn" aria-label="Abbrechen" data-micromodal-close>Abbrechen</button>
+          </footer>
+          </div>
+      </div>
+    </div>
+
+    <!-- Cookie banner -->
+    <input class="checkbox-cb" id="checkbox-cb" type="checkbox"/>
     <div class="cookie-bar" style="display:none">
       <span class="message">Diese Seite ben&ouml;tigt zwingend Cookies. Wenn Du diese Seite verwendest,
         stimmst Du den <a href="/mud/datenschutz.html" target="_blank">Bedingungen</a> zu.</span>

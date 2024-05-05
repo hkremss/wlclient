@@ -65,8 +65,12 @@ app.use('/client/node_modules/ansi_up', express.static(__dirname + '/node_module
 app.use('/client/node_modules/jquery', express.static(__dirname + '/node_modules/jquery/dist/'));
 app.use('/client/node_modules/jquery-ui', express.static(__dirname + '/node_modules/jquery-ui-dist/'));
 app.use('/client/node_modules/lightbox2', express.static(__dirname + '/node_modules/lightbox2/dist/'));
+app.use('/client/node_modules/micromodal', express.static(__dirname + '/node_modules/micromodal/dist/'));
 //app.use('/client/node_modules/picomatch', express.static(__dirname + '/node_modules/picomatch/lib/'));
 //app.use('/client/node_modules/ansi-regex', express.static(__dirname + '/node_modules/ansi-regex/'));
+app.use('/client/editor/lib', express.static(__dirname + '/node_modules/codemirror/lib/'));
+app.use('/client/editor/mode', express.static(__dirname + '/node_modules/codemirror/mode/'));
+app.use('/client/editor/addon', express.static(__dirname + '/node_modules/codemirror/addon/'));
 
 var httpserver = null;
 
