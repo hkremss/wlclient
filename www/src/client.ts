@@ -30,6 +30,12 @@ namespace wlClient {
             console.log('Disconnected.');
         }
 
+        // Set to true, if window/tab is in background
+        private isInactive = false;
+
+        // Count number of messages received while inactive
+        private messagesReceivedWhileInactive = 0;
+
         // Since ansi_up API 2.0 we need an instance of AnsiUp!
         private ansi_up = null;//new AnsiUp;
 
@@ -231,6 +237,19 @@ namespace wlClient {
             }
         }
 
+        // Update the client/window title, if it's in bg and/or there are messages
+        private updateClientTitle() {
+            if (this.isInactive) {
+              if (this.messagesReceivedWhileInactive > 0)
+                document.title = "WL (" + this.messagesReceivedWhileInactive + ")";
+              else
+                document.title = "WL (-)";
+            } else {
+              this.messagesReceivedWhileInactive = 0;
+              document.title = "WL";
+            }
+        }
+
         // Write something to the screen, scroll to bottom and limit number of rows.
         public writeToScreen(str) {
             if (str && str.length > 0) {
@@ -238,6 +257,10 @@ namespace wlClient {
                 out.insertAdjacentHTML('beforeend', str);
                 out.scrollTop = out.scrollHeight;
                 while(out.childNodes.length > 1000) out.childNodes[0].remove();
+                // if inactive, count new messages received
+                if (this.isInactive) this.messagesReceivedWhileInactive++;
+                // update client title (to update messages received counter)
+                this.updateClientTitle();
             }
         }
 
@@ -977,6 +1000,22 @@ namespace wlClient {
                 
             // need to adjust layout after resize
             window.addEventListener('resize', this.adjustLayout);
+
+            // need to know if client becomes inactive (tab in background)
+            window.addEventListener("blur", function (e) {
+                if (!this.isInactive) {
+                  this.isInactive = true;
+                  this.updateClientTitle();
+                }
+            }.bind(this));
+
+            // need to know if client becomes active (tab in foreground)
+            window.addEventListener("focus", function (e) {
+                if (this.isInactive) {
+                  this.isInactive = false;
+                  this.updateClientTitle();
+                }
+            }.bind(this));
 
             // don't close immediately, if connected
             window.addEventListener("beforeunload", function (e) {

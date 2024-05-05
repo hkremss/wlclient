@@ -61,7 +61,7 @@ namespace wlClient {
 
         // New: GMCP support (Holger)
         public getGMCPHello(){
-            return 'Core.Hello { \"client\": \"WL@Web\", \"version\": \"1.3.0\" }';
+            return 'Core.Hello { \"client\": \"WL@Web\", \"version\": \"1.3.1\" }';
         }
   
         public doGMCPReceive(client: wlClient.WLClient, sock, data) {
