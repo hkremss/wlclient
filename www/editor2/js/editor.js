@@ -424,33 +424,33 @@ var wlClient;
                 cm.refresh();
         };
         // Close icon: removing the tab on click
-        WLEditorTabsHandler.prototype.tabCloseIconClicked = function () {
+        WLEditorTabsHandler.prototype.tabCloseIconClicked = function (tabCloseEvent) {
             //
             // TODO: Ask user, if he wants to do this, if editor is dirty!
             //
-            /*
-                        var panelId = $( this ).closest( "li" ).remove().attr( "aria-controls" );
-                        $( "#" + panelId ).remove();
-                        tabs.tabs( "refresh" );
-            
-                        var id = this.getNumFromId(panelId);
-            
-                        var localFileList = localStorage.getItem('wl.editor.localFileList');
-            
-                        if (localFileList) {
-                            localFileList = JSON.parse(localFileList);
-            
-                            // remove item in local storage and in file list
-                            if (localFileList[id]) {
-                                localStorage.removeItem('wl.editor.localFile.'+id);
-                                delete this.localFileList[id];
-                                localStorage.setItem('wl.editor.localFileList', JSON.stringify(localFileList));
-                            }
-            
-                            // refresh buttons
-                            this.refresh_edit_buttons(Object.keys(localFileList).length > 0);
-                        }
-            */
+            var closeIcon = tabCloseEvent.target;
+            var closeTab = closeIcon.parentNode;
+            var editPaneId = closeTab.children[0].getAttribute("href"); // clicked tab or link
+            var editPane = document.querySelector(editPaneId);
+            var id = this.getNumFromId(editPaneId);
+            // close/remove edit pane + tab
+            editPane.remove();
+            closeTab.remove();
+            // remove file from local file list
+            var localFileList = localStorage.getItem('wl.editor.localFileList');
+            if (localFileList) {
+                localFileList = JSON.parse(localFileList);
+                // remove item in local storage and in file list
+                if (localFileList[id]) {
+                    localStorage.removeItem('wl.editor.localFile.' + id);
+                    delete localFileList[id];
+                    localStorage.setItem('wl.editor.localFileList', JSON.stringify(localFileList));
+                }
+                // refresh buttons
+                this.refresh_edit_buttons(Object.keys(localFileList).length > 0);
+            }
+            // prevent other event handlers
+            tabCloseEvent.preventDefault();
         };
         WLEditorTabsHandler.prototype.initialize = function (editor, gmcpHandler) {
             var _this = this;
@@ -463,8 +463,8 @@ var wlClient;
             // store tabs variable
             var myTabs = document.querySelectorAll("ul.nav-tabs > li");
             for (var i = 0; i < myTabs.length; i++) {
-                myTabs[i].addEventListener("click", this.myTabClicks.bind(this));
-                //tabs.on( "click", "span.ui-icon-close", this.tabCloseIconClicked()
+                myTabs[i].addEventListener('click', this.myTabClicks.bind(this));
+                myTabs[i].querySelector('.ui-icon-close').addEventListener('click', this.tabCloseIconClicked.bind(this));
             }
             var autosaveTimer = setInterval(function () {
                 var activeTab = _this.getActiveTab();
@@ -684,6 +684,7 @@ var wlClient;
                     tabLi.appendChild(iconSpan);
                     iconSpan.classList.add("ui-icon", "ui-icon-close");
                     iconSpan.title = "Close tab";
+                    iconSpan.addEventListener('click', this.tabCloseIconClicked.bind(this));
                     document.querySelector("ul.nav.nav-tabs").appendChild(tabLi);
                     var editMode = "htmlmixed";
                     switch (fext.toLowerCase()) {

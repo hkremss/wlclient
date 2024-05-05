@@ -43,17 +43,22 @@ namespace wlClient {
         }
 
         // Close icon: removing the tab on click
-        private tabCloseIconClicked() {
+        private tabCloseIconClicked(tabCloseEvent) {
             //
             // TODO: Ask user, if he wants to do this, if editor is dirty!
             //
-/*
-            var panelId = $( this ).closest( "li" ).remove().attr( "aria-controls" );
-            $( "#" + panelId ).remove();
-            tabs.tabs( "refresh" );
+            let closeIcon = tabCloseEvent.target;
+            let closeTab = closeIcon.parentNode;
+            let editPaneId = closeTab.children[0].getAttribute("href"); // clicked tab or link
+            let editPane = document.querySelector(editPaneId);
 
-            var id = this.getNumFromId(panelId);
+            var id = this.getNumFromId(editPaneId);
 
+            // close/remove edit pane + tab
+            editPane.remove();
+            closeTab.remove();
+
+            // remove file from local file list
             var localFileList = localStorage.getItem('wl.editor.localFileList');
 
             if (localFileList) {
@@ -62,14 +67,16 @@ namespace wlClient {
                 // remove item in local storage and in file list
                 if (localFileList[id]) {
                     localStorage.removeItem('wl.editor.localFile.'+id);
-                    delete this.localFileList[id];
+                    delete localFileList[id];
                     localStorage.setItem('wl.editor.localFileList', JSON.stringify(localFileList));
                 }
 
                 // refresh buttons
                 this.refresh_edit_buttons(Object.keys(localFileList).length > 0);
             }
-*/
+
+            // prevent other event handlers
+            tabCloseEvent.preventDefault();
         }
 
         public initialize(editor: WLEditor, gmcpHandler : WLEditorGMCPHandler) {
@@ -86,8 +93,8 @@ namespace wlClient {
             let myTabs = document.querySelectorAll("ul.nav-tabs > li");
 
             for (let i = 0; i < myTabs.length; i++) {
-                myTabs[i].addEventListener("click", this.myTabClicks.bind(this));
-                //tabs.on( "click", "span.ui-icon-close", this.tabCloseIconClicked()
+                myTabs[i].addEventListener('click', this.myTabClicks.bind(this));
+                myTabs[i].querySelector('.ui-icon-close').addEventListener('click', this.tabCloseIconClicked.bind(this));
             }
 
             var autosaveTimer = setInterval( () => {
@@ -334,6 +341,7 @@ namespace wlClient {
                     tabLi.appendChild(iconSpan);
                     iconSpan.classList.add("ui-icon","ui-icon-close");
                     iconSpan.title = "Close tab";
+                    iconSpan.addEventListener('click', this.tabCloseIconClicked.bind(this));
                     document.querySelector("ul.nav.nav-tabs").appendChild(tabLi);
 
                     var editMode = "htmlmixed";
